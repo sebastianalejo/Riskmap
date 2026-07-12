@@ -7,6 +7,8 @@ import { CRIME_TYPES, DISTRICTS } from '../data/sampleIncidents'
 import { getGoogleMapsApiKey } from '../firebase/client'
 import { useCrimeIncidentsForMap, type MapPoint } from '../hooks/useCrimeIncidentsForMap'
 import { PdfExportButton } from '../components/PdfExportButton'
+import { PdfExportControls } from '../components/PdfExportControls'
+import type { TimeRange } from '../utils/chartData'
 
 type RiskLevel = 'bajo' | 'medio' | 'alto'
 export type Stats = Record<RiskLevel, number>
@@ -57,6 +59,7 @@ export function MapPage() {
   const [districtFilter, setDistrictFilter] = useState('')
   const [hourRange, setHourRange]         = useState(0) // índice en HOUR_LABELS
   const [filtersOpen, setFiltersOpen]     = useState(true)
+  const [range, setRange]                 = useState<TimeRange>('7d')
 
   function toggleRisk(r: RiskLevel) {
     setActiveRisks((prev) => {
@@ -267,6 +270,19 @@ export function MapPage() {
               Filtros activos
             </span>
           )}
+          {!loading && points.length > 0 && (
+            <PdfExportControls
+              points={points}
+              allPointsCount={allPoints.length}
+              stats={stats}
+              crimeFilter={crimeLabel}
+              districtFilter={districtLabel}
+              hourLabel={hourLabel}
+              riskLabels={riskLabels}
+              range={range}
+              onRangeChange={setRange}
+            />
+          )}
           <span className="ml-auto font-mono text-xs text-slate-500">
             {loading ? 'Cargando…' : `${points.length} / ${allPoints.length} puntos`}
           </span>
@@ -298,12 +314,7 @@ export function MapPage() {
           <div className="shrink-0 border-t border-slate-200 px-4 py-4">
             <PdfExportButton
               points={points}
-              allPointsCount={allPoints.length}
-              stats={stats}
-              crimeFilter={crimeLabel}
-              districtFilter={districtLabel}
-              hourLabel={hourLabel}
-              riskLabels={riskLabels}
+              range={range}
             />
           </div>
         )}
