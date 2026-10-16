@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# Frontend — Riskmap (React + TypeScript + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SPA del panel de **predicción de riesgo criminal (Lima)**. Para la guía completa del proyecto
+(arquitectura, Cloud Functions, Firestore y despliegue) consulta el
+[`README.md` de la raíz](../README.md).
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+React 19 · TypeScript · Vite · Tailwind CSS 4 · React Router 7 · Firebase JS SDK 11 (Auth + Firestore)
+· Leaflet / react-leaflet · @react-google-maps/api · xlsx · jsPDF · lucide-react.
 
-## React Compiler
+## Puesta en marcha
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm ci                     # Instala dependencias
 
-## Expanding the ESLint configuration
+# Configura Firebase (una de las dos opciones):
+cp .env.example .env.local                                   # Opción A: VITE_FIREBASE_*
+cp public/firebase-config.example.json public/firebase-config.json   # Opción B: JSON
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+npm run dev                # http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Sin `VITE_FIREBASE_*` ni `public/firebase-config.json` el login falla: el SDK necesita la
+configuración de la **app web** (Consola Firebase). El **UID de usuario no la sustituye**.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Crea un usuario en **Authentication** (correo/contraseña) y úsalo en `/login`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Servidor de desarrollo con HMR. |
+| `npm run build` | Compila a `dist/` (`tsc -b && vite build`). |
+| `npm run preview` | Sirve localmente el build de producción. |
+| `npm run lint` | ESLint. |
+
+## Rutas
+
+`/login` · `/` (Resumen) · `/prediccion` · `/mapa` · `/datos`.
+
+## Notas
+
+- La **Predicción** se resuelve en el cliente (`src/ml/localPredict.ts`): consulta Firestore y,
+  si no hay datos, aplica una heurística. Las Cloud Functions con el modelo Random Forest son
+  opcionales (requieren plan Blaze para desplegarse).
+- El mapa usa **Google Maps** si defines `VITE_GOOGLE_MAPS_API_KEY` / `mapsApiKey`; si no, usa
+  **Leaflet** (sin API key).
+- En Windows, si PowerShell bloquea `npm`, usa `npm.cmd` o consulta §10 del README raíz.
