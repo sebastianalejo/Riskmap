@@ -18,11 +18,22 @@ desplegar Hosting → verificar
 ## 1. Proyecto y plan
 
 1. Crea el proyecto en <https://console.firebase.google.com> (p. ej. `riskmap-tu-nombre`).
-2. **Authentication → activar Correo electrónico/contraseña**. Crea el usuario administrador
+2. **Firestore Database → crear base de datos** en modo producción (región `us-central1` o la
+   más cercana). Necesario antes de desplegar reglas o Functions.
+3. **Authentication → activar Correo electrónico/contraseña**. Crea el usuario administrador
    (no hay registro público en la app).
-3. Acepta el plan **Blaze** (necesario para Functions) y configura una **alerta de presupuesto**
+4. Acepta el plan **Blaze** (necesario para Functions) y configura una **alerta de presupuesto**
    en Google Cloud → Facturación → Presupuestos (p. ej. 5 USD).
-4. En este repo: `firebase login` y `firebase use --add` (selecciona el proyecto nuevo).
+5. Inicia sesión en el CLI **con la cuenta dueña del proyecto nuevo**. Si ya tienes otra cuenta
+   logueada (p. ej. la del proyecto anterior), usa:
+
+   ```bash
+   firebase login:add        # añade la cuenta nueva sin cerrar la anterior
+   firebase login:list       # verifica cuál está activa
+   ```
+
+6. En este repo: `firebase use --add` → elige el proyecto nuevo y ponle el alias `default`
+   (así `firebase deploy` funciona sin `--project`). Esto actualiza `.firebaserc`: commitéalo.
 
 ## 2. Configuración web del frontend
 
@@ -50,7 +61,7 @@ y `localhost`) y rota la clave antigua.
 
 ## 3. Claim admin (antes de las reglas)
 
-Las reglas exigen el claim `admin` para escribir. Con credenciales del proyecto nuevo:
+Las reglas exigen el claim `admin` para escribir. Opción A (recomendada si tienes `gcloud`):
 
 ```bash
 gcloud auth application-default login          # cuenta dueña del proyecto nuevo
@@ -58,14 +69,28 @@ python scripts/set-admin-claim.py tu-correo@ejemplo.com
 firebase deploy --only firestore:rules
 ```
 
+Opción B (sin `gcloud`): crea una **clave de cuenta de servicio** en Google Cloud → IAM →
+Cuentas de servicio (rol `Firebase Admin SDK Administrator Service Agent`), guárdala fuera del
+repo y usa:
+
+```bash
+# PowerShell
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\ruta\fuera\del\repo\clave-servicio.json"
+python scripts/set-admin-claim.py tu-correo@ejemplo.com
+firebase deploy --only firestore:rules
+```
+
+> No subas la clave al repositorio. Bórrala cuando termines.
+
 Cierra sesión y vuelve a entrar en la web para que el claim llegue al ID token.
 
 ## 4. Cloud Functions
 
-Opciones de entorno (se leen de `functions/.env` en el deploy; ese archivo no se versiona):
+Opciones de entorno (se leen de `functions/.env` en el deploy; ese archivo no se versiona —
+hay una plantilla en `functions/.env.example`):
 
 ```bash
-# functions/.env  ← crear con los valores del proyecto nuevo
+# functions/.env  ← copiar de functions/.env.example y completar con el proyecto nuevo
 CORS_ORIGINS=https://TU_PROYECTO.web.app,https://TU_PROYECTO.firebaseapp.com,http://localhost:5173
 # ENFORCE_APP_CHECK=true        # solo tras registrar App Check (paso 6)
 # INCIDENTS_COLLECTION=crime_incidents
@@ -79,6 +104,9 @@ CORS_ORIGINS=https://TU_PROYECTO.web.app,https://TU_PROYECTO.firebaseapp.com,htt
 ```bash
 firebase deploy --only functions
 ```
+
+El runtime es `python311` (definido en `firebase.json`) y el CLI no sube `functions/venv/`
+(está en `.gitignore`), por lo que el despliegue es ligero.
 
 Endpoints expuestos (todos usan el ID token de Firebase; `train_model` y `publish_model`
 requieren además el claim admin):
