@@ -1,9 +1,0 @@
-{
-  "apiKey": "AIzaSyAJBxlG44lBQmBPR5bI6bzki20KWTBgiOE",
-  "authDomain": "riskmap-2fb0f.firebaseapp.com",
-  "projectId": "riskmap-2fb0f",
-  "storageBucket": "riskmap-2fb0f.firebasestorage.app",
-  "messagingSenderId": "428073150552",
-  "appId": "1:428073150552:web:9e4f56594b18a76ad4422d",
-  "functionsOrigin": "https://us-central1-riskmap-2fb0f.cloudfunctions.net"
-}

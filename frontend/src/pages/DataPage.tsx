@@ -1,7 +1,8 @@
 import { addDoc, collection, deleteDoc, getDocs, getFirestore } from 'firebase/firestore'
-import { CheckCircle2, Loader2, Trash2, Upload } from 'lucide-react'
+import { CheckCircle2, Loader2, ShieldAlert, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
+import { useAuth } from '../context/AuthContext'
 import type { CrimeIncident } from '../data/sampleIncidents'
 import { getFirebaseApp } from '../firebase/client'
 
@@ -12,19 +13,67 @@ const REQUIRED = [
   'latitude', 'longitude', 'historical_frequency', 'risk_level',
 ] as const
 
+const DAYS_OF_WEEK = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'] as const
+const RISK_LEVELS = ['bajo', 'medio', 'alto'] as const
+
+// Bbox de Lima Metropolitana — debe coincidir con firestore.rules y
+// functions/crime_ml/validation.py.
+const LAT_MIN = -12.7
+const LAT_MAX = -11.5
+const LON_MIN = -77.5
+const LON_MAX = -76.5
+
 function validateRow(row: Record<string, unknown>): string | null {
   for (const k of REQUIRED) {
     if (row[k] === undefined || row[k] === null || String(row[k]).trim() === '')
       return `Falta el campo "${k}"`
   }
-  if (!['bajo', 'medio', 'alto'].includes(String(row.risk_level).toLowerCase()))
-    return `risk_level debe ser bajo, medio o alto (fila tiene: "${row.risk_level}")`
-  row.hour                 = Number(row.hour)
-  row.latitude             = Number(row.latitude)
-  row.longitude            = Number(row.longitude)
-  row.historical_frequency = Number(row.historical_frequency)
-  row.risk_level           = String(row.risk_level).toLowerCase()
+
+  const crimeType = String(row.crime_type).trim()
+  if (crimeType.length > 60) return 'crime_type excede 60 caracteres'
+
+  const district = String(row.district).trim()
+  if (district.length > 80) return 'district excede 80 caracteres'
+
+  const day = String(row.day_of_week).trim().toLowerCase()
+  if (!(DAYS_OF_WEEK as readonly string[]).includes(day))
+    return `day_of_week debe ser uno de: ${DAYS_OF_WEEK.join(', ')}`
+
+  const hour = Number(row.hour)
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23)
+    return 'hour debe ser un entero entre 0 y 23'
+
+  const latitude = Number(row.latitude)
+  if (!Number.isFinite(latitude) || latitude < LAT_MIN || latitude > LAT_MAX)
+    return `latitude fuera del rango de Lima Metropolitana (${LAT_MIN} a ${LAT_MAX})`
+
+  const longitude = Number(row.longitude)
+  if (!Number.isFinite(longitude) || longitude < LON_MIN || longitude > LON_MAX)
+    return `longitude fuera del rango de Lima Metropolitana (${LON_MIN} a ${LON_MAX})`
+
+  const frequency = Number(row.historical_frequency)
+  if (!Number.isInteger(frequency) || frequency < 1 || frequency > 1_000_000)
+    return 'historical_frequency debe ser un entero ≥ 1'
+
+  const risk = String(row.risk_level).trim().toLowerCase()
+  if (!(RISK_LEVELS as readonly string[]).includes(risk))
+    return `risk_level debe ser bajo, medio o alto (fila tiene: "${String(row.risk_level)}")`
+
   return null
+}
+
+/** Normaliza la fila a exactamente las 8 columnas del esquema (las reglas exigen hasOnly). */
+function toIncident(row: Record<string, unknown>): CrimeIncident {
+  return {
+    crime_type: String(row.crime_type).trim(),
+    hour: Number(row.hour),
+    day_of_week: String(row.day_of_week).trim().toLowerCase(),
+    district: String(row.district).trim().toUpperCase(),
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    historical_frequency: Number(row.historical_frequency),
+    risk_level: String(row.risk_level).trim().toLowerCase() as CrimeIncident['risk_level'],
+  }
 }
 
 async function writeBatch(rows: CrimeIncident[]): Promise<number> {
@@ -54,7 +103,7 @@ function parseSheet(wb: XLSX.WorkBook): CrimeIncident[] {
     const row = { ...data[i] }
     const err = validateRow(row)
     if (err) throw new Error(`Fila ${i + 2}: ${err}`)
-    rows.push(row as unknown as CrimeIncident)
+    rows.push(toIncident(row))
   }
   return rows
 }
@@ -63,6 +112,7 @@ const ta =
   'min-h-[120px] w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/25' as const
 
 export function DataPage() {
+  const { isAdmin } = useAuth()
   const [rowsJson, setRowsJson]           = useState('')
   const [loading, setLoading]             = useState(false)
   const [fileLoading, setFileLoading]     = useState(false)
@@ -79,6 +129,11 @@ export function DataPage() {
     const file = e.target.files?.[0]
     if (!file) return
     reset()
+    if (!isAdmin) {
+      setError('Tu cuenta no tiene el permiso admin necesario para importar datos.')
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
     setFileLoading(true)
     try {
       const buf  = await file.arrayBuffer()
@@ -96,6 +151,10 @@ export function DataPage() {
 
   /* ── Borrar todos ── */
   const onDelete = async () => {
+    if (!isAdmin) {
+      setError('Tu cuenta no tiene el permiso admin necesario para borrar datos.')
+      return
+    }
     if (!confirmDelete) { setConfirmDelete(true); return }
     reset()
     setDeleteLoading(true)
@@ -114,6 +173,10 @@ export function DataPage() {
   const onImportRows = async (e: React.FormEvent) => {
     e.preventDefault()
     reset()
+    if (!isAdmin) {
+      setError('Tu cuenta no tiene el permiso admin necesario para importar datos.')
+      return
+    }
     setLoading(true)
     try {
       let parsed: unknown
@@ -124,7 +187,7 @@ export function DataPage() {
         const err = validateRow(row)
         if (err) throw new Error(err)
       }
-      const n = await writeBatch(rows as unknown as CrimeIncident[])
+      const n = await writeBatch(rows.map(toIncident))
       setSuccess(`✓ ${n} registro(s) guardados en Firestore.`)
       setRowsJson('')
     } catch (e) {
@@ -151,85 +214,99 @@ export function DataPage() {
         </p>
       </div>
 
-      {/* Acciones principales */}
-      <div className="grid gap-4 sm:grid-cols-2">
-
-        {/* Subir Excel / CSV */}
-        <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/80 to-white p-6 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
-              <Upload className="size-5" aria-hidden />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-slate-900">Subir Excel o CSV</h2>
-              <p className="mt-1 text-xs text-slate-500">
-                Acepta <strong>.xlsx</strong>, <strong>.xls</strong> y <strong>.csv</strong>.
-                La primera fila debe ser el encabezado con los nombres de columna exactos.
-              </p>
-            </div>
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            className="hidden"
-            onChange={onFileChange}
-          />
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            disabled={fileLoading}
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {fileLoading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-            {fileLoading ? 'Procesando…' : 'Elegir archivo'}
-          </button>
+      {/* Aviso de solo lectura para cuentas sin claim admin */}
+      {!isAdmin && (
+        <div className="flex gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p>
+            Modo lectura: tu cuenta no tiene el permiso <code className="font-mono text-xs">admin</code> que
+            exigen las reglas de Firestore para importar o borrar registros. Pide a un administrador que
+            asigne el claim (ver <span className="font-mono text-xs">scripts/set-admin-claim.py</span>).
+          </p>
         </div>
+      )}
 
-        {/* Borrar registros */}
-        <div className="rounded-2xl border border-red-100 bg-red-50/60 p-6 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
-              <Trash2 className="size-5" aria-hidden />
+      {/* Acciones principales */}
+      {isAdmin && (
+        <div className="grid gap-4 sm:grid-cols-2">
+
+          {/* Subir Excel / CSV */}
+          <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/80 to-white p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
+                <Upload className="size-5" aria-hidden />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Subir Excel o CSV</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Acepta <strong>.xlsx</strong>, <strong>.xls</strong> y <strong>.csv</strong>.
+                  La primera fila debe ser el encabezado con los nombres de columna exactos.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm font-semibold text-red-900">Borrar registros</h2>
-              <p className="mt-1 text-xs text-red-700">
-                Elimina <strong>todos</strong> los documentos de{' '}
-                <code className="font-mono text-[11px]">crime_incidents</code> en Firestore.
-                Esta acción no se puede deshacer.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={deleteLoading}
-            className={[
-              'mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition disabled:opacity-60',
-              confirmDelete
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'border border-red-300 bg-white text-red-700 hover:bg-red-50',
-            ].join(' ')}
-          >
-            {deleteLoading ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-            {deleteLoading
-              ? 'Borrando…'
-              : confirmDelete
-                ? '¿Confirmar? Pulsa de nuevo'
-                : 'Borrar todos los registros'}
-          </button>
-          {confirmDelete && (
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={onFileChange}
+            />
             <button
               type="button"
-              onClick={() => setConfirmDelete(false)}
-              className="mt-1 w-full text-center text-xs text-red-500 hover:underline"
+              onClick={() => fileRef.current?.click()}
+              disabled={fileLoading}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Cancelar
+              {fileLoading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+              {fileLoading ? 'Procesando…' : 'Elegir archivo'}
             </button>
-          )}
+          </div>
+
+          {/* Borrar registros */}
+          <div className="rounded-2xl border border-red-100 bg-red-50/60 p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                <Trash2 className="size-5" aria-hidden />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-red-900">Borrar registros</h2>
+                <p className="mt-1 text-xs text-red-700">
+                  Elimina <strong>todos</strong> los documentos de{' '}
+                  <code className="font-mono text-[11px]">crime_incidents</code> en Firestore.
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={deleteLoading}
+              className={[
+                'mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition disabled:opacity-60',
+                confirmDelete
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'border border-red-300 bg-white text-red-700 hover:bg-red-50',
+              ].join(' ')}
+            >
+              {deleteLoading ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              {deleteLoading
+                ? 'Borrando…'
+                : confirmDelete
+                  ? '¿Confirmar? Pulsa de nuevo'
+                  : 'Borrar todos los registros'}
+            </button>
+            {confirmDelete && (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="mt-1 w-full text-center text-xs text-red-500 hover:underline"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Mensajes */}
       {error && (
@@ -246,29 +323,31 @@ export function DataPage() {
       )}
 
       {/* JSON manual (colapsado) */}
-      <details className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <summary className="cursor-pointer select-none text-sm font-semibold text-slate-900">
-          Importar filas JSON manualmente
-        </summary>
-        <form onSubmit={onImportRows} className="mt-4 space-y-3">
-          <p className="text-xs text-slate-500">
-            Pega un array JSON con los campos requeridos.
-          </p>
-          <textarea
-            className={ta}
-            value={rowsJson}
-            onChange={(e) => setRowsJson(e.target.value)}
-            placeholder={`[\n  {\n    "crime_type": "robo agravado",\n    "hour": 22,\n    "day_of_week": "viernes",\n    "district": "MIRAFLORES",\n    "latitude": -12.1219,\n    "longitude": -77.0297,\n    "historical_frequency": 140,\n    "risk_level": "alto"\n  }\n]`}
-          />
-          <button
-            type="submit"
-            disabled={loading || !rowsJson.trim()}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {loading ? 'Guardando…' : 'Guardar en Firestore'}
-          </button>
-        </form>
-      </details>
+      {isAdmin && (
+        <details className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <summary className="cursor-pointer select-none text-sm font-semibold text-slate-900">
+            Importar filas JSON manualmente
+          </summary>
+          <form onSubmit={onImportRows} className="mt-4 space-y-3">
+            <p className="text-xs text-slate-500">
+              Pega un array JSON con los campos requeridos.
+            </p>
+            <textarea
+              className={ta}
+              value={rowsJson}
+              onChange={(e) => setRowsJson(e.target.value)}
+              placeholder={`[\n  {\n    "crime_type": "robo agravado",\n    "hour": 22,\n    "day_of_week": "viernes",\n    "district": "MIRAFLORES",\n    "latitude": -12.1219,\n    "longitude": -77.0297,\n    "historical_frequency": 140,\n    "risk_level": "alto"\n  }\n]`}
+            />
+            <button
+              type="submit"
+              disabled={loading || !rowsJson.trim()}
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {loading ? 'Guardando…' : 'Guardar en Firestore'}
+            </button>
+          </form>
+        </details>
+      )}
 
     </div>
   )

@@ -18,6 +18,7 @@ import pandas as pd
 from firebase_admin import auth, firestore, initialize_app
 from firebase_functions import https_fn, options
 
+from crime_ml import validation
 from crime_ml.pipeline import FEATURES, TARGET, CrimeRiskPipelineCore
 
 initialize_app()
@@ -215,11 +216,13 @@ def predict_crime(req: https_fn.Request) -> https_fn.Response:
     except Exception:
         return _json_response({"detail": "JSON inválido"}, status=400)
 
-    missing = [k for k in FEATURES if k not in body]
-    if missing:
-        return _json_response({"detail": f"Faltan campos: {missing}"}, status=400)
+    if not isinstance(body, dict):
+        return _json_response({"detail": "El cuerpo debe ser un objeto JSON."}, status=400)
 
-    features = {k: body[k] for k in FEATURES}
+    try:
+        features = validation.validate_predict_payload(body, FEATURES)
+    except validation.ValidationError as exc:
+        return _json_response({"detail": str(exc)}, status=400)
     local_path = Path(tempfile.gettempdir()) / CrimeRiskPipelineCore.model_filename
 
     if not _model_exists_in_firestore():
@@ -271,14 +274,20 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
     except Exception:
         return _json_response({"detail": "JSON inválido"}, status=400)
 
-    test_size = float(body.get("test_size", 0.2))
-    if not 0.05 <= test_size <= 0.45:
-        return _json_response({"detail": "test_size debe estar entre 0.05 y 0.45"}, status=400)
+    if not isinstance(body, dict):
+        return _json_response({"detail": "El cuerpo debe ser un objeto JSON."}, status=400)
+
+    try:
+        test_size = validation.parse_test_size(body.get("test_size", 0.2))
+    except validation.ValidationError as exc:
+        return _json_response({"detail": str(exc)}, status=400)
 
     rows: list[dict[str, Any]] | None = body.get("dataset")
     if rows is not None:
-        if not isinstance(rows, list) or not rows:
-            return _json_response({"detail": "dataset debe ser un array no vacío"}, status=400)
+        try:
+            rows = validation.validate_dataset_rows(rows)
+        except validation.ValidationError as exc:
+            return _json_response({"detail": str(exc)}, status=400)
         data = pd.DataFrame(rows)
     else:
         rows_fs = _firestore_rows()
@@ -324,9 +333,13 @@ def import_incidents(req: https_fn.Request) -> https_fn.Response:
     except Exception:
         return _json_response({"detail": "JSON inválido"}, status=400)
 
-    rows = body.get("rows")
-    if not isinstance(rows, list) or not rows:
-        return _json_response({"detail": "rows debe ser un array no vacío"}, status=400)
+    if not isinstance(body, dict):
+        return _json_response({"detail": "El cuerpo debe ser un objeto JSON."}, status=400)
+
+    try:
+        rows = validation.validate_import_rows(body.get("rows"))
+    except validation.ValidationError as exc:
+        return _json_response({"detail": str(exc)}, status=400)
 
     db = firestore.client()
     batch = db.batch()
@@ -374,12 +387,13 @@ def import_csv_dataset(req: https_fn.Request) -> https_fn.Response:
     except Exception:
         body = {}
 
-    csv_text = body.get("csv_text")
-    if not csv_text or not isinstance(csv_text, str):
-        return _json_response(
-            {"detail": "Envía JSON { csv_text: '...contenido csv...' } con columnas requeridas."},
-            status=400,
-        )
+    if not isinstance(body, dict):
+        body = {}
+
+    try:
+        csv_text = validation.validate_csv_text(body.get("csv_text"))
+    except validation.ValidationError as exc:
+        return _json_response({"detail": str(exc)}, status=400)
 
     try:
         data = pd.read_csv(io.StringIO(csv_text))
@@ -389,6 +403,12 @@ def import_csv_dataset(req: https_fn.Request) -> https_fn.Response:
     missing = set(FEATURES + [TARGET]) - set(data.columns)
     if missing:
         return _json_response({"detail": f"Faltan columnas: {sorted(missing)}"}, status=400)
+
+    if len(data) > validation.MAX_ROWS_IMPORT:
+        return _json_response(
+            {"detail": f"El CSV excede el máximo de {validation.MAX_ROWS_IMPORT} filas."},
+            status=400,
+        )
 
     rows = data.to_dict(orient="records")
     db = firestore.client()
@@ -456,24 +476,17 @@ def inei_arcgis_points(req: https_fn.Request) -> https_fn.Response:
         return _json_response({"detail": "Usa GET"}, status=405)
 
     # Capa por defecto 107 ≈ modalidad 2022 «Robo agravado» (ver MapServer INEI).
-    layer = (req.args.get("layer") or "107").strip()
-    xmin, ymin, xmax, ymax = (
-        req.args.get("xmin"),
-        req.args.get("ymin"),
-        req.args.get("xmax"),
-        req.args.get("ymax"),
-    )
-    limit_raw = req.args.get("limit") or "400"
     try:
-        lim = max(1, min(int(limit_raw), 1000))
-    except ValueError:
-        lim = 400
-
-    if not all(v is not None and str(v).strip() != "" for v in (xmin, ymin, xmax, ymax)):
-        return _json_response(
-            {"detail": "Parámetros xmin, ymin, xmax, ymax requeridos (WGS84 grados)."},
-            status=400,
+        layer = validation.validate_layer(req.args.get("layer") or "107")
+        xmin, ymin, xmax, ymax = validation.validate_bbox(
+            req.args.get("xmin"),
+            req.args.get("ymin"),
+            req.args.get("xmax"),
+            req.args.get("ymax"),
         )
+    except validation.ValidationError as exc:
+        return _json_response({"detail": str(exc)}, status=400)
+    lim = validation.parse_limit(req.args.get("limit") or "400")
 
     params = {
         "geometry": f"{xmin},{ymin},{xmax},{ymax}",

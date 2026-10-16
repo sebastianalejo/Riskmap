@@ -1,18 +1,11 @@
 import { useState } from 'react'
 import { FileDown, Loader2 } from 'lucide-react'
 import { jsPDF } from 'jspdf'
-import { simulateDates } from '../utils/simulateDates'
-import { computeChartData } from '../utils/chartData'
+import { simulateDates, SIMULATED_DATES_NOTICE } from '../utils/simulateDates'
+import { computeChartData, RANGE_OPTIONS } from '../utils/chartData'
 import type { TimeRange } from '../utils/chartData'
 import type { MapPoint } from '../hooks/useCrimeIncidentsForMap'
 import type { Stats } from '../pages/MapPage'
-
-export const RANGE_OPTIONS: { value: TimeRange; label: string; days: number }[] = [
-  { value: '7d', label: '7 días', days: 7 },
-  { value: '1m', label: '1 mes', days: 30 },
-  { value: '3m', label: '3 meses', days: 90 },
-  { value: '6m', label: '6 meses', days: 180 },
-]
 
 const BAR_RGB: Record<string, [number, number, number]> = {
   bajo: [22, 163, 74],
@@ -136,6 +129,10 @@ export function PdfExportControls({
       doc.setFontSize(13)
       doc.setTextColor(30)
       doc.text(`Tendencia — últimos ${rangeOpt.label.toLowerCase()}`, 14, y)
+      y += 4
+      doc.setFontSize(7)
+      doc.setTextColor(180, 120, 20)
+      doc.text(SIMULATED_DATES_NOTICE, 14, y + 2)
       y += 4
 
       const { chartData, totalChange } = computeChartData(datedPoints, range)

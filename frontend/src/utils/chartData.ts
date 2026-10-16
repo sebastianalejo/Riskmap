@@ -2,12 +2,16 @@ import type { PointWithDate } from './simulateDates'
 
 export type TimeRange = '7d' | '1m' | '3m' | '6m'
 
-export const RANGE_CONFIG: Record<TimeRange, { label: string; days: number }> = {
-  '7d': { label: '7 días', days: 7 },
-  '1m': { label: '1 mes', days: 30 },
-  '3m': { label: '3 meses', days: 90 },
-  '6m': { label: '6 meses', days: 180 },
-}
+export const RANGE_OPTIONS: { value: TimeRange; label: string; days: number }[] = [
+  { value: '7d', label: '7 días', days: 7 },
+  { value: '1m', label: '1 mes', days: 30 },
+  { value: '3m', label: '3 meses', days: 90 },
+  { value: '6m', label: '6 meses', days: 180 },
+]
+
+export const RANGE_CONFIG: Record<TimeRange, { label: string; days: number }> = Object.fromEntries(
+  RANGE_OPTIONS.map(({ value, label, days }) => [value, { label, days }]),
+) as Record<TimeRange, { label: string; days: number }>
 
 interface Bucket {
   name: string

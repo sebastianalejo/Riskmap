@@ -3,9 +3,46 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Delitos históricos para entrenar / analizar (la app escribe desde el cliente autenticado o vía Functions).
+    // ── Helpers ───────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Claim personalizado `admin` (ver scripts/set-admin-claim.py y README §9.1).
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.get('admin', false) == true;
+    }
+
+    // Forma válida de un incidente: exactamente las 8 columnas del esquema,
+    // con tipos y rangos razonables para Lima Metropolitana.
+    function isValidIncident(data) {
+      return data.keys().hasOnly([
+          'crime_type', 'hour', 'day_of_week', 'district',
+          'latitude', 'longitude', 'historical_frequency', 'risk_level'
+        ])
+        && data.crime_type is string
+        && data.crime_type.size() > 0 && data.crime_type.size() <= 60
+        && data.hour is number
+        && data.hour >= 0 && data.hour <= 23
+        && data.day_of_week in ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+        && data.district is string
+        && data.district.size() > 0 && data.district.size() <= 80
+        && data.latitude is number
+        && data.latitude >= -12.7 && data.latitude <= -11.5
+        && data.longitude is number
+        && data.longitude >= -77.5 && data.longitude <= -76.5
+        && data.historical_frequency is number
+        && data.historical_frequency >= 1 && data.historical_frequency <= 1000000
+        && data.risk_level in ['bajo', 'medio', 'alto'];
+    }
+
+    // Delitos históricos: lectura para usuarios autenticados;
+    // creación, actualización y borrado solo para cuentas con claim `admin`,
+    // y solo si el documento cumple el esquema (hasOnly + tipos + rangos).
     match /crime_incidents/{docId} {
-      allow read, write: if request.auth != null;
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin() && isValidIncident(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // Artefacto ML troceado — solo las Cloud Functions (Admin SDK) escriben; clientes no acceden.

@@ -1,6 +1,6 @@
 import { IncidentTrendChart } from './IncidentTrendChart'
 import { simulateDates } from '../utils/simulateDates'
-import { RANGE_OPTIONS } from './PdfExportControls'
+import { RANGE_OPTIONS } from '../utils/chartData'
 import type { TimeRange } from '../utils/chartData'
 import type { MapPoint } from '../hooks/useCrimeIncidentsForMap'
 

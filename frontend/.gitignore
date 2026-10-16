@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Config web de Firebase (contiene la apiKey). Plantilla: public/firebase-config.example.json
+public/firebase-config.json

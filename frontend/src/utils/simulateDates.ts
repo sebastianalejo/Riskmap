@@ -2,6 +2,18 @@ import type { MapPoint } from '../hooks/useCrimeIncidentsForMap'
 
 export type PointWithDate = MapPoint & { date: Date }
 
+/**
+ * Aviso compartido (gráfico y PDF): la fecha de cada punto se genera
+ * aleatoriamente para poder dibujar una serie de demostración.
+ * NO es la fecha real del incidente.
+ */
+export const SIMULATED_DATES_NOTICE =
+  'Fechas simuladas con fines de demostración: no representan la fecha real de los incidentes.'
+
+/**
+ * Asigna fechas aleatorias dentro de los últimos `daysBack` días (solo demo visual).
+ * Se usa porque el esquema de datos actual no almacena la fecha del incidente.
+ */
 export function simulateDates(points: MapPoint[], daysBack: number): PointWithDate[] {
   if (points.length === 0) return []
 

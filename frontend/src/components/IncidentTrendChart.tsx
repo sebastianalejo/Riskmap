@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
 import { riskDotColor } from './maps/riskColors'
 import { computeChartData, RANGE_CONFIG } from '../utils/chartData'
+import { SIMULATED_DATES_NOTICE } from '../utils/simulateDates'
 import type { PointWithDate } from '../utils/simulateDates'
 import type { TimeRange } from '../utils/chartData'
 
@@ -87,6 +88,10 @@ export function IncidentTrendChart({ points, range, height = 240 }: Props) {
           {trendingLabel}
         </span>
       </div>
+
+      <p className="text-[11px] leading-snug text-amber-700" role="note">
+        {SIMULATED_DATES_NOTICE}
+      </p>
 
       <div ref={containerRef} className="w-full">
         <svg width={width} height={height} className="overflow-visible">
