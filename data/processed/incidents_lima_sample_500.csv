@@ -1,0 +1,501 @@
+occurred_year,district,ubigeo,crime_type,macro_category,severity_level,latitude,longitude
+2021,ATE,150103,estafa,delitos contra el patrimonio,baja,-12.050586,-76.953171
+2021,ATE,150103,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.006227,-76.847813
+2021,ATE,150103,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.033357,-76.870129
+2021,ATE,150103,hurto agravado,delitos contra el patrimonio,media,-12.025296,-76.921176
+2021,ATE,150103,hurto frustrado,delitos contra el patrimonio,baja,-12.03856,-76.928749
+2021,ATE,150103,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.058592,-76.973138
+2021,ATE,150103,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.026584,-76.920455
+2021,BELLAVISTA,070102,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.059287,-77.127956
+2021,BREÑA,150105,estafa,delitos contra el patrimonio,baja,-12.053136,-77.055626
+2021,CALLAO,070101,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.997223,-77.12578
+2021,CALLAO,070101,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.062105,-77.139955
+2021,CALLAO,070101,hurto,delitos contra el patrimonio,baja,-12.052738,-77.098303
+2021,CALLAO,070101,hurto agravado,delitos contra el patrimonio,media,-12.061286,-77.13788
+2021,CALLAO,070101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.000298,-77.120125
+2021,CALLAO,070101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.050255,-77.096102
+2021,CALLAO,070101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.044439,-77.105251
+2021,CALLAO,070101,hurto de vehiculo,delitos contra el patrimonio,media,-11.99644,-77.115622
+2021,CALLAO,070101,hurto frustrado,delitos contra el patrimonio,baja,-11.946956,-77.131213
+2021,CALLAO,070101,hurto frustrado,delitos contra el patrimonio,baja,-11.946956,-77.131213
+2021,CALLAO,070101,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.042271,-77.136074
+2021,CALLAO,070101,robo,delitos contra el patrimonio,media,-11.87593,-77.123693
+2021,CALLAO,070101,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.047503,-77.0864
+2021,CALLAO,070101,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.975879,-77.113978
+2021,CALLAO,070101,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.05842,-77.141975
+2021,CARABAYLLO,150106,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.893088,-77.03362
+2021,CARABAYLLO,150106,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-11.898875,-77.036158
+2021,CARABAYLLO,150106,hurto,delitos contra el patrimonio,baja,-11.830056,-77.084691
+2021,CHACLACAYO,150701,hurto de vehiculo,delitos contra el patrimonio,media,-11.976211,-76.772322
+2021,CHORRILLOS,150108,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.190468,-76.987805
+2021,COMAS,150110,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.931478,-77.050617
+2021,COMAS,150110,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.932575,-77.048395
+2021,COMAS,150110,estafa,delitos contra el patrimonio,baja,-11.922245,-77.056026
+2021,COMAS,150110,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-11.913022,-77.032066
+2021,EL AGUSTINO,150111,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.051453,-76.996435
+2021,EL AGUSTINO,150111,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.037296,-76.994339
+2021,EL AGUSTINO,150111,hurto de vehiculo,delitos contra el patrimonio,media,-12.034729,-76.99745
+2021,EL AGUSTINO,150111,robo,delitos contra el patrimonio,media,-12.055288,-77.012712
+2021,EL AGUSTINO,150111,robo,delitos contra el patrimonio,media,-12.055397,-77.004801
+2021,EL AGUSTINO,150111,robo,delitos contra el patrimonio,media,-12.059951,-77.007717
+2021,EL AGUSTINO,150111,robo,delitos contra el patrimonio,media,-12.057705,-77.021033
+2021,EL AGUSTINO,150111,robo,delitos contra el patrimonio,media,-12.059938,-77.007717
+2021,EL AGUSTINO,150111,robo,delitos contra el patrimonio,media,-12.055464,-77.012758
+2021,EL AGUSTINO,150111,robo,delitos contra el patrimonio,media,-12.055728,-77.010581
+2021,EL AGUSTINO,150111,robo agravado,delitos contra el patrimonio,alta,-12.059025,-77.007112
+2021,INDEPENDENCIA,150112,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.998823,-77.056909
+2021,JESUS MARIA,150113,estafa,delitos contra el patrimonio,baja,-12.12494,-77.034255
+2021,JESUS MARIA,150113,estafa,delitos contra el patrimonio,baja,-12.084801,-77.048613
+2021,JESUS MARIA,150113,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.079221,-77.054594
+2021,LA MOLINA,150114,estafa,delitos contra el patrimonio,baja,-12.065941,-76.949606
+2021,LA MOLINA,150114,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.064958,-77.009636
+2021,LA MOLINA,150114,hurto agravado,delitos contra el patrimonio,media,-12.06871,-76.949217
+2021,LA MOLINA,150114,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.061092,-76.952004
+2021,LA VICTORIA,150115,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.066106,-77.026098
+2021,LIMA,150101,estafa,delitos contra el patrimonio,baja,-12.074836,-77.031637
+2021,LIMA,150101,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.012665,-77.059988
+2021,LIMA,150101,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.051073,-77.019328
+2021,LIMA,150101,hurto,delitos contra el patrimonio,baja,-12.048041,-77.037094
+2021,LIMA,150101,hurto,delitos contra el patrimonio,baja,-12.024574,-77.028706
+2021,LIMA,150101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.044192,-77.029977
+2021,LIMA,150101,hurto frustrado,delitos contra el patrimonio,baja,-12.025344,-77.056788
+2021,LIMA,150101,hurto frustrado,delitos contra el patrimonio,baja,-12.057122,-77.030366
+2021,LIMA,150101,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.033528,-77.071295
+2021,LIMA,150101,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.047984,-77.04244
+2021,LIMA,150101,robo,delitos contra el patrimonio,media,-12.05394,-77.012198
+2021,LIMA,150101,robo agravado,delitos contra el patrimonio,alta,-12.044023,-77.069937
+2021,LIMA,150101,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.052911,-77.032945
+2021,LIMA,150101,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.051038,-77.034451
+2021,LINCE,150116,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.087118,-77.033918
+2021,LOS OLIVOS,150117,estafa,delitos contra el patrimonio,baja,-12.0086,-77.064046
+2021,LOS OLIVOS,150117,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.999258,-77.088803
+2021,LOS OLIVOS,150117,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.956523,-77.081078
+2021,LOS OLIVOS,150117,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.961944,-77.070166
+2021,LOS OLIVOS,150117,hurto de vehiculo,delitos contra el patrimonio,media,-11.955913,-77.073389
+2021,LOS OLIVOS,150117,hurto de vehiculo,delitos contra el patrimonio,media,-11.942625,-77.088339
+2021,LOS OLIVOS,150117,hurto frustrado,delitos contra el patrimonio,baja,-11.976717,-77.062266
+2021,LOS OLIVOS,150117,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.991443,-77.081562
+2021,LOS OLIVOS,150117,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.945454,-77.071768
+2021,LOS OLIVOS,150117,robo frustrado,delitos contra el patrimonio,media,-11.999529,-77.102265
+2021,LURIGANCHO,150118,hurto frustrado,delitos contra el patrimonio,baja,-11.926515,-76.686379
+2021,MAGDALENA DEL MAR,150120,hurto agravado,delitos contra el patrimonio,media,-12.092514,-77.067919
+2021,PUEBLO LIBRE,150121,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.075378,-77.057565
+2021,PUEBLO LIBRE,150121,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.070252,-77.056908
+2021,PUENTE PIEDRA,150125,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.840877,-77.089542
+2021,PUENTE PIEDRA,150125,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.874217,-77.05971
+2021,PUENTE PIEDRA,150125,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.852288,-77.094336
+2021,PUENTE PIEDRA,150125,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.873038,-77.058013
+2021,RIMAC,150128,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.026907,-77.025603
+2021,SAN BARTOLO,150129,hurto frustrado,delitos contra el patrimonio,baja,-12.386074,-76.771582
+2021,SAN ISIDRO,150131,hurto frustrado,delitos contra el patrimonio,baja,-12.107665,-77.056149
+2021,SAN ISIDRO,150131,hurto frustrado,delitos contra el patrimonio,baja,-12.092685,-77.024539
+2021,SAN JUAN DE LURIGANCHO,150132,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.965069,-76.975394
+2021,SAN JUAN DE LURIGANCHO,150132,hurto,delitos contra el patrimonio,baja,-11.998931,-77.009301
+2021,SAN JUAN DE LURIGANCHO,150132,hurto,delitos contra el patrimonio,baja,-12.000606,-77.003873
+2021,SAN JUAN DE LURIGANCHO,150132,hurto,delitos contra el patrimonio,baja,-12.001933,-77.013751
+2021,SAN JUAN DE LURIGANCHO,150132,hurto,delitos contra el patrimonio,baja,-12.017837,-77.009518
+2021,SAN JUAN DE LURIGANCHO,150132,hurto,delitos contra el patrimonio,baja,-12.017837,-77.009518
+2021,SAN JUAN DE LURIGANCHO,150132,hurto agravado,delitos contra el patrimonio,media,-12.01438,-77.013003
+2021,SAN JUAN DE LURIGANCHO,150132,hurto agravado,delitos contra el patrimonio,media,-11.947438,-76.984973
+2021,SAN JUAN DE LURIGANCHO,150132,hurto agravado,delitos contra el patrimonio,media,-11.959925,-77.001329
+2021,SAN JUAN DE LURIGANCHO,150132,hurto agravado,delitos contra el patrimonio,media,-11.939963,-76.987521
+2021,SAN JUAN DE LURIGANCHO,150132,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.998665,-77.012316
+2021,SAN JUAN DE LURIGANCHO,150132,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.003798,-77.001619
+2021,SAN JUAN DE LURIGANCHO,150132,robo agravado,delitos contra el patrimonio,alta,-11.947888,-77.008582
+2021,SAN JUAN DE LURIGANCHO,150132,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.005246,-77.01009
+2021,SAN JUAN DE LURIGANCHO,150132,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.006874,-76.999176
+2021,SAN JUAN DE MIRAFLORES,150133,hurto de vehiculo,delitos contra el patrimonio,media,-12.176726,-76.965329
+2021,SAN JUAN DE MIRAFLORES,150133,hurto de vehiculo,delitos contra el patrimonio,media,-12.195545,-76.958911
+2021,SAN JUAN DE MIRAFLORES,150133,hurto de vehiculo,delitos contra el patrimonio,media,-12.191059,-76.959941
+2021,SAN JUAN DE MIRAFLORES,150133,hurto de vehiculo,delitos contra el patrimonio,media,-12.191376,-76.956462
+2021,SAN JUAN DE MIRAFLORES,150133,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.175231,-76.977822
+2021,SAN JUAN DE MIRAFLORES,150133,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.149463,-76.967967
+2021,SAN JUAN DE MIRAFLORES,150133,robo agravado,delitos contra el patrimonio,alta,-12.158584,-76.962704
+2021,SAN MARTIN DE PORRES,150135,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.966196,-77.100117
+2021,SAN MARTIN DE PORRES,150135,robo frustrado,delitos contra el patrimonio,media,-12.03202,-77.074058
+2021,SAN MIGUEL,150136,estafa,delitos contra el patrimonio,baja,-12.09286,-77.059029
+2021,SAN MIGUEL,150136,robo agravado,delitos contra el patrimonio,alta,-12.078548,-77.092462
+2021,SAN MIGUEL,150136,robo agravado,delitos contra el patrimonio,alta,-12.082781,-77.095974
+2021,SANTIAGO DE SURCO,150140,estafa,delitos contra el patrimonio,baja,-12.118614,-76.988617
+2021,SANTIAGO DE SURCO,150140,hurto agravado,delitos contra el patrimonio,media,-12.106455,-76.98426
+2021,SURQUILLO,150141,hurto,delitos contra el patrimonio,baja,-12.112946,-77.016144
+2021,SURQUILLO,150141,robo agravado,delitos contra el patrimonio,alta,-12.110951,-77.012449
+2021,SURQUILLO,150141,robo frustrado,delitos contra el patrimonio,media,-12.108778,-77.015006
+2021,VENTANILLA,070106,robo,delitos contra el patrimonio,media,-12.021171,-77.098554
+2021,VILLA EL SALVADOR,150142,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.240621,-76.913924
+2021,VILLA MARIA DEL TRIUNFO,150143,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.202532,-76.930069
+2021,VILLA MARIA DEL TRIUNFO,150143,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.163791,-76.950154
+2021,VILLA MARIA DEL TRIUNFO,150143,hurto agravado,delitos contra el patrimonio,media,-12.177339,-76.939461
+2021,VILLA MARIA DEL TRIUNFO,150143,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.166034,-76.950256
+2021,VILLA MARIA DEL TRIUNFO,150143,robo agravado,delitos contra el patrimonio,alta,-12.14564,-76.950012
+2021,VILLA MARIA DEL TRIUNFO,150143,robo agravado,delitos contra el patrimonio,alta,-12.20388,-76.905901
+2021,VILLA MARIA DEL TRIUNFO,150143,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.187558,-76.918252
+2021,VILLA MARIA DEL TRIUNFO,150143,robo frustrado,delitos contra el patrimonio,media,-12.162964,-76.947586
+2022,ANCON,150102,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-11.775875,-77.164131
+2022,ANCON,150102,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.731322,-77.133784
+2022,ANCON,150102,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.779932,-77.169365
+2022,ATE,150103,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.079412,-76.980518
+2022,ATE,150103,estafa,delitos contra el patrimonio,baja,-12.066276,-76.971254
+2022,ATE,150103,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.006644,-76.845945
+2022,ATE,150103,hurto,delitos contra el patrimonio,baja,-12.026584,-76.920455
+2022,ATE,150103,hurto,delitos contra el patrimonio,baja,-12.016596,-76.824959
+2022,ATE,150103,hurto de vehiculo,delitos contra el patrimonio,media,-12.024434,-76.87577
+2022,ATE,150103,hurto de vehiculo,delitos contra el patrimonio,media,-12.026013,-76.822063
+2022,ATE,150103,hurto frustrado,delitos contra el patrimonio,baja,-12.049846,-76.938169
+2022,ATE,150103,robo,delitos contra el patrimonio,media,-12.067976,-76.985693
+2022,ATE,150103,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.07233,-76.979182
+2022,BELLAVISTA,070102,hurto agravado,delitos contra el patrimonio,media,-12.062937,-77.127028
+2022,BELLAVISTA,070102,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.066192,-77.124607
+2022,BELLAVISTA,070102,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.067713,-77.132901
+2022,CALLAO,070101,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.011572,-77.091281
+2022,CALLAO,070101,estafa,delitos contra el patrimonio,baja,-12.047946,-77.110964
+2022,CALLAO,070101,hurto agravado,delitos contra el patrimonio,media,-11.993398,-77.126068
+2022,CALLAO,070101,hurto frustrado,delitos contra el patrimonio,baja,-12.055251,-77.131624
+2022,CALLAO,070101,hurto frustrado,delitos contra el patrimonio,baja,-12.002486,-77.131502
+2022,CALLAO,070101,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.02478,-77.12934
+2022,CALLAO,070101,robo,delitos contra el patrimonio,media,-12.035121,-77.097234
+2022,CALLAO,070101,robo agravado,delitos contra el patrimonio,alta,-12.065747,-77.138802
+2022,CALLAO,070101,robo agravado,delitos contra el patrimonio,alta,-12.064305,-77.134926
+2022,CARABAYLLO,150106,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.89073,-77.02734
+2022,CHACLACAYO,150107,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.971606,-76.749706
+2022,CHACLACAYO,150107,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-11.979286,-76.792238
+2022,CHORRILLOS,150108,hurto de vehiculo,delitos contra el patrimonio,media,-12.167152,-77.026191
+2022,COMAS,150110,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.945323,-77.066421
+2022,COMAS,150110,estafa,delitos contra el patrimonio,baja,-11.931572,-77.050341
+2022,COMAS,150110,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.934893,-77.056384
+2022,COMAS,150110,hurto,delitos contra el patrimonio,baja,-11.951677,-77.063518
+2022,COMAS,150110,hurto de vehiculo,delitos contra el patrimonio,media,-11.928501,-77.056675
+2022,COMAS,150110,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.961066,-77.039264
+2022,COMAS,150110,robo,delitos contra el patrimonio,media,-11.945235,-77.068616
+2022,COMAS,150110,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.912905,-77.021595
+2022,EL AGUSTINO,150111,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.052052,-76.997016
+2022,EL AGUSTINO,150111,robo agravado,delitos contra el patrimonio,alta,-12.050487,-76.996268
+2022,INDEPENDENCIA,150112,hurto de vehiculo,delitos contra el patrimonio,media,-12.004213,-77.053983
+2022,INDEPENDENCIA,150112,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.991837,-77.052823
+2022,JESUS MARIA,150113,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.079793,-77.03762
+2022,LA MOLINA,150114,estafa,delitos contra el patrimonio,baja,-12.077091,-76.968641
+2022,LA MOLINA,150114,hurto de vehiculo,delitos contra el patrimonio,media,-12.069186,-76.955837
+2022,LA MOLINA,150114,hurto frustrado,delitos contra el patrimonio,baja,-12.10636,-76.940101
+2022,LA MOLINA,150114,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.068299,-76.958044
+2022,LA VICTORIA,150115,hurto agravado,delitos contra el patrimonio,media,-12.062095,-77.01549
+2022,LA VICTORIA,150115,hurto agravado,delitos contra el patrimonio,media,-12.068224,-77.013022
+2022,LA VICTORIA,150115,hurto agravado,delitos contra el patrimonio,media,-12.077757,-77.012855
+2022,LIMA,150101,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.052158,-77.062861
+2022,LIMA,150101,estafa,delitos contra el patrimonio,baja,-12.054726,-77.076673
+2022,LIMA,150101,estafa,delitos contra el patrimonio,baja,-12.046691,-77.018415
+2022,LIMA,150101,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.055552,-77.029022
+2022,LIMA,150101,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.046962,-77.024936
+2022,LIMA,150101,hurto,delitos contra el patrimonio,baja,-12.045561,-77.067236
+2022,LIMA,150101,hurto,delitos contra el patrimonio,baja,-12.03604,-77.071274
+2022,LIMA,150101,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.049103,-77.015169
+2022,LIMA,150101,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.074193,-77.033235
+2022,LIMA,150101,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.056673,-77.029947
+2022,LIMA,150101,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.037149,-77.056631
+2022,LIMA,150101,robo,delitos contra el patrimonio,media,-12.055288,-77.012712
+2022,LIMA,150101,robo agravado,delitos contra el patrimonio,alta,-12.064654,-77.03751
+2022,LIMA,150101,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.057184,-77.041546
+2022,LIMA,150101,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.072845,-77.031453
+2022,LINCE,150116,hurto de vehiculo,delitos contra el patrimonio,media,-12.088025,-77.030938
+2022,LINCE,150116,hurto frustrado,delitos contra el patrimonio,baja,-12.082375,-77.032701
+2022,LOS OLIVOS,150117,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.966024,-77.073588
+2022,LOS OLIVOS,150117,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.010376,-77.072199
+2022,LOS OLIVOS,150117,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.004789,-77.066249
+2022,LOS OLIVOS,150117,hurto,delitos contra el patrimonio,baja,-11.95728,-77.0795
+2022,LOS OLIVOS,150117,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.972034,-77.084057
+2022,LOS OLIVOS,150117,hurto de vehiculo,delitos contra el patrimonio,media,-11.944369,-77.072578
+2022,LOS OLIVOS,150117,hurto frustrado,delitos contra el patrimonio,baja,-11.957032,-77.067846
+2022,LOS OLIVOS,150117,robo agravado,delitos contra el patrimonio,alta,-11.935731,-77.074683
+2022,LOS OLIVOS,150117,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.953931,-77.073782
+2022,LOS OLIVOS,150117,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.970508,-77.068531
+2022,LOS OLIVOS,150117,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-11.939271,-77.077217
+2022,LURIGANCHO,150118,estafa,delitos contra el patrimonio,baja,-11.941564,-76.712522
+2022,LURIGANCHO,150118,hurto frustrado,delitos contra el patrimonio,baja,-11.939133,-76.695208
+2022,LURIGANCHO,150118,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.934208,-76.703159
+2022,LURIGANCHO,150118,robo,delitos contra el patrimonio,media,-11.930756,-76.693101
+2022,LURIN,150119,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.237861,-76.910663
+2022,MIRAFLORES,150122,estafa,delitos contra el patrimonio,baja,-12.124129,-77.034934
+2022,MIRAFLORES,150122,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.125923,-77.032448
+2022,MIRAFLORES,150122,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.11198,-77.040012
+2022,MIRAFLORES,150122,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.123383,-77.030624
+2022,PACHACAMAC,150123,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.108043,-76.860789
+2022,PUCUSANA,150124,hurto agravado,delitos contra el patrimonio,media,-12.461688,-76.752419
+2022,PUCUSANA,150124,hurto frustrado,delitos contra el patrimonio,baja,-12.482989,-76.79637
+2022,PUEBLO LIBRE,150121,hurto,delitos contra el patrimonio,baja,-12.084544,-77.061804
+2022,PUENTE PIEDRA,150125,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.856877,-77.087343
+2022,PUENTE PIEDRA,150125,hurto frustrado,delitos contra el patrimonio,baja,-11.87324,-77.057967
+2022,PUENTE PIEDRA,150125,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-11.837181,-77.108001
+2022,RIMAC,150128,estafa,delitos contra el patrimonio,baja,-12.018454,-77.032224
+2022,RIMAC,150128,hurto agravado,delitos contra el patrimonio,media,-12.018625,-77.034956
+2022,RIMAC,150128,hurto de vehiculo,delitos contra el patrimonio,media,-12.036493,-77.035123
+2022,RIMAC,150128,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.026807,-77.023502
+2022,RIMAC,150128,robo agravado,delitos contra el patrimonio,alta,-12.03397,-77.038618
+2022,RIMAC,150128,robo agravado,delitos contra el patrimonio,alta,-12.027859,-77.034692
+2022,SAN BORJA,150130,hurto agravado,delitos contra el patrimonio,media,-12.097002,-76.981186
+2022,SAN JUAN DE LURIGANCHO,150132,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.983827,-77.001822
+2022,SAN JUAN DE LURIGANCHO,150132,hurto,delitos contra el patrimonio,baja,-11.968325,-77.004247
+2022,SAN JUAN DE LURIGANCHO,150132,hurto,delitos contra el patrimonio,baja,-11.947609,-76.985023
+2022,SAN JUAN DE LURIGANCHO,150132,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.988022,-77.004928
+2022,SAN JUAN DE LURIGANCHO,150132,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.948114,-76.980818
+2022,SAN JUAN DE LURIGANCHO,150132,robo,delitos contra el patrimonio,media,-12.025696,-77.013605
+2022,SAN JUAN DE LURIGANCHO,150132,robo,delitos contra el patrimonio,media,-12.01171,-76.999078
+2022,SAN JUAN DE LURIGANCHO,150132,robo agravado,delitos contra el patrimonio,alta,-12.025296,-77.01178
+2022,SAN JUAN DE MIRAFLORES,150133,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.192668,-76.973986
+2022,SAN JUAN DE MIRAFLORES,150133,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.146061,-76.971821
+2022,SAN JUAN DE MIRAFLORES,150133,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.153273,-76.974482
+2022,SAN JUAN DE MIRAFLORES,150133,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.167478,-76.974306
+2022,SAN JUAN DE MIRAFLORES,150133,hurto agravado,delitos contra el patrimonio,media,-12.180723,-76.956432
+2022,SAN JUAN DE MIRAFLORES,150133,robo,delitos contra el patrimonio,media,-12.11986,-76.957376
+2022,SAN JUAN DE MIRAFLORES,150133,robo,delitos contra el patrimonio,media,-12.153784,-76.974457
+2022,SAN JUAN DE MIRAFLORES,150133,robo agravado,delitos contra el patrimonio,alta,-12.153507,-76.973904
+2022,SAN JUAN DE MIRAFLORES,150133,robo frustrado,delitos contra el patrimonio,media,-12.156991,-76.960238
+2022,SAN JUAN DE MIRAFLORES,150133,robo frustrado,delitos contra el patrimonio,media,-12.151977,-76.976065
+2022,SAN LUIS,150134,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.073046,-76.999998
+2022,SAN MARTIN DE PORRES,150135,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.955713,-77.085437
+2022,SAN MARTIN DE PORRES,150135,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.962253,-77.083971
+2022,SANTA ANITA,150137,estafa,delitos contra el patrimonio,baja,-12.051529,-76.966661
+2022,SANTIAGO DE SURCO,150140,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.119656,-76.976182
+2022,SANTIAGO DE SURCO,150140,hurto de vehiculo,delitos contra el patrimonio,media,-12.125997,-76.982606
+2022,SURQUILLO,150141,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.108982,-77.020497
+2022,SURQUILLO,150141,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.116638,-77.02535
+2022,VENTANILLA,070106,robo frustrado,delitos contra el patrimonio,media,-11.893444,-77.126107
+2022,VILLA EL SALVADOR,150142,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.195838,-76.953865
+2022,VILLA MARIA DEL TRIUNFO,150143,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.155536,-76.952943
+2022,VILLA MARIA DEL TRIUNFO,150143,hurto,delitos contra el patrimonio,baja,-12.176616,-76.938457
+2022,VILLA MARIA DEL TRIUNFO,150143,robo,delitos contra el patrimonio,media,-12.162531,-76.952786
+2022,VILLA MARIA DEL TRIUNFO,150143,robo agravado,delitos contra el patrimonio,alta,-12.165483,-76.947488
+2022,VILLA MARIA DEL TRIUNFO,150143,robo frustrado,delitos contra el patrimonio,media,-12.212645,-76.910401
+2023,ANCON,150102,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-11.731322,-77.133784
+2023,ANCON,160101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.727187,-77.142438
+2023,ANCON,150102,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.730375,-77.138943
+2023,ATE,150103,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.112844,-76.990838
+2023,ATE,150103,robo agravado,delitos contra el patrimonio,alta,-12.038203,-76.823474
+2023,BREÑA,150105,estafa,delitos contra el patrimonio,baja,-12.059211,-77.042566
+2023,BREÑA,150105,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.062033,-77.043286
+2023,CALLAO,070101,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.034205,-77.079636
+2023,CALLAO,070101,estafa,delitos contra el patrimonio,baja,-12.059096,-77.14221
+2023,CALLAO,070101,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.024241,-76.988811
+2023,CALLAO,070101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.04525,-77.098715
+2023,CALLAO,070101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.042413,-77.125283
+2023,CALLAO,070101,hurto frustrado,delitos contra el patrimonio,baja,-12.019112,-77.138168
+2023,CALLAO,070101,robo,delitos contra el patrimonio,media,-12.025483,-77.098665
+2023,CALLAO,070101,robo agravado,delitos contra el patrimonio,alta,-12.055223,-77.137968
+2023,CALLAO,040104,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.66662,-76.616721
+2023,CARABAYLLO,150106,hurto,delitos contra el patrimonio,baja,-11.862544,-77.035584
+2023,CARABAYLLO,150106,hurto de vehiculo,delitos contra el patrimonio,media,-11.9061,-77.032657
+2023,CARABAYLLO,150106,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.875087,-77.015255
+2023,CHACLACAYO,130105,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.978338,-76.78209
+2023,CHACLACAYO,150107,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.005751,-77.048812
+2023,CHORRILLOS,150108,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.19371,-76.98257
+2023,CHORRILLOS,150108,estafa,delitos contra el patrimonio,baja,-12.202823,-76.982303
+2023,CHORRILLOS,150108,estafa,delitos contra el patrimonio,baja,-12.087343,-77.072196
+2023,CHORRILLOS,150108,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.195146,-77.022072
+2023,COMAS,150110,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.956699,-77.062164
+2023,COMAS,150110,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.939237,-77.002174
+2023,EL AGUSTINO,200101,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.054163,-77.004215
+2023,INDEPENDENCIA,130101,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.987035,-77.052634
+2023,INDEPENDENCIA,150112,hurto de vehiculo,delitos contra el patrimonio,media,-11.99944,-77.054826
+2023,INDEPENDENCIA,150112,hurto de vehiculo,delitos contra el patrimonio,media,-11.956514,-77.075091
+2023,JESUS MARIA,150113,robo agravado,delitos contra el patrimonio,alta,-12.072479,-77.051193
+2023,LA MOLINA,150114,estafa,delitos contra el patrimonio,baja,-12.181829,-76.941293
+2023,LA MOLINA,150114,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.070306,-76.95076
+2023,LA VICTORIA,040112,hurto,delitos contra el patrimonio,baja,-12.060949,-77.033531
+2023,LA VICTORIA,110101,hurto agravado,delitos contra el patrimonio,media,-12.067719,-77.016902
+2023,LA VICTORIA,081307,hurto de vehiculo,delitos contra el patrimonio,media,-12.068153,-77.006191
+2023,LIMA,150101,estafa,delitos contra el patrimonio,baja,-12.057707,-77.014741
+2023,LIMA,050801,hurto agravado,delitos contra el patrimonio,media,-12.049604,-77.05042
+2023,LIMA,150101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.030609,-77.046647
+2023,LIMA,021801,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.050243,-77.021305
+2023,LIMA,130403,robo,delitos contra el patrimonio,media,-12.05825,-77.040401
+2023,LIMA,150101,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.915195,-77.031641
+2023,LINCE,150116,hurto,delitos contra el patrimonio,baja,-12.083598,-77.035665
+2023,LOS OLIVOS,150117,hurto,delitos contra el patrimonio,baja,-11.936268,-77.082643
+2023,LOS OLIVOS,150117,hurto de vehiculo,delitos contra el patrimonio,media,-12.004487,-77.082569
+2023,LOS OLIVOS,150117,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.983138,-77.071318
+2023,LOS OLIVOS,150117,robo agravado,delitos contra el patrimonio,alta,-12.003582,-77.07367
+2023,LOS OLIVOS,150117,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.957948,-77.076876
+2023,LOS OLIVOS,211101,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.988754,-77.081054
+2023,LURIGANCHO,150118,estafa,delitos contra el patrimonio,baja,-11.929593,-76.685699
+2023,LURIN,140105,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.273615,-76.869327
+2023,MAGDALENA DEL MAR,150120,hurto,delitos contra el patrimonio,baja,-12.088896,-77.069383
+2023,MIRAFLORES,150122,hurto agravado,delitos contra el patrimonio,media,-12.133342,-77.023218
+2023,MIRAFLORES,150122,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.132214,-77.020729
+2023,PACHACAMAC,150123,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.113512,-76.871083
+2023,PACHACAMAC,040109,robo,delitos contra el patrimonio,media,-12.198999,-76.874447
+2023,PUCUSANA,150124,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.88928,-77.033314
+2023,PUENTE PIEDRA,150125,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.936318,-77.086028
+2023,PUENTE PIEDRA,150125,hurto de vehiculo,delitos contra el patrimonio,media,-11.862983,-77.07724
+2023,PUENTE PIEDRA,150125,robo,delitos contra el patrimonio,media,-11.922742,-77.092763
+2023,RIMAC,130101,hurto,delitos contra el patrimonio,baja,-12.041034,-77.028345
+2023,RIMAC,150128,hurto,delitos contra el patrimonio,baja,-12.040138,-77.027107
+2023,SAN BORJA,150130,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.099486,-77.001328
+2023,SAN BORJA,150130,estafa,delitos contra el patrimonio,baja,-12.088421,-76.996142
+2023,SAN BORJA,120101,estafa,delitos contra el patrimonio,baja,-12.09459,-76.998128
+2023,SAN BORJA,150130,hurto,delitos contra el patrimonio,baja,-12.117695,-76.976379
+2023,SAN BORJA,150130,robo agravado,delitos contra el patrimonio,alta,-12.098372,-76.995135
+2023,SAN BORJA,150130,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.10381,-76.980282
+2023,SAN ISIDRO,150131,robo,delitos contra el patrimonio,media,-12.098217,-77.055056
+2023,SAN JUAN DE LURIGANCHO,150132,hurto agravado,delitos contra el patrimonio,media,-11.995973,-77.000614
+2023,SAN JUAN DE LURIGANCHO,030109,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.060604,-77.024993
+2023,SAN JUAN DE LURIGANCHO,030201,hurto de vehiculo,delitos contra el patrimonio,media,-12.004579,-77.01215
+2023,SAN JUAN DE LURIGANCHO,150132,robo,delitos contra el patrimonio,media,-11.955548,-76.991489
+2023,SAN JUAN DE LURIGANCHO,150132,robo,delitos contra el patrimonio,media,-11.980955,-77.00215
+2023,SAN JUAN DE LURIGANCHO,150132,robo agravado,delitos contra el patrimonio,alta,-12.020069,-76.886487
+2023,SAN JUAN DE LURIGANCHO,150132,robo agravado,delitos contra el patrimonio,alta,-11.947178,-76.985379
+2023,SAN JUAN DE LURIGANCHO,150132,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.017947,-76.851122
+2023,SAN JUAN DE MIRAFLORES,150133,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.072361,-77.110197
+2023,SAN JUAN DE MIRAFLORES,150133,hurto de vehiculo,delitos contra el patrimonio,media,-12.136184,-76.956656
+2023,SAN LUIS,150134,hurto agravado,delitos contra el patrimonio,media,-11.934102,-77.052374
+2023,SAN MARTIN DE PORRES,150135,hurto agravado,delitos contra el patrimonio,media,-11.99789,-77.102531
+2023,SAN MARTIN DE PORRES,150135,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.95152,-77.092845
+2023,SAN MIGUEL,150136,hurto,delitos contra el patrimonio,baja,-12.120812,-77.03248
+2023,SAN MIGUEL,150136,hurto agravado,delitos contra el patrimonio,media,-12.0773,-77.092671
+2023,SANTA ANITA,150137,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.037711,-76.954009
+2023,SANTIAGO DE SURCO,150140,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.102518,-76.971876
+2023,SANTIAGO DE SURCO,150140,hurto frustrado,delitos contra el patrimonio,baja,-12.111685,-76.9918
+2023,SANTIAGO DE SURCO,150140,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.107349,-76.966218
+2023,SANTIAGO DE SURCO,020801,robo,delitos contra el patrimonio,media,-12.140505,-76.994845
+2023,SURQUILLO,150141,robo agravado,delitos contra el patrimonio,alta,-12.056653,-77.014782
+2023,VENTANILLA,070106,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.878782,-77.131433
+2023,VILLA EL SALVADOR,150142,hurto agravado,delitos contra el patrimonio,media,-12.198308,-76.958052
+2023,VILLA EL SALVADOR,150142,robo agravado,delitos contra el patrimonio,alta,-12.228763,-76.933955
+2023,VILLA MARIA DEL TRIUNFO,150143,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.176036,-76.945946
+2023,VILLA MARIA DEL TRIUNFO,150143,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.171248,-76.950156
+2023,VILLA MARIA DEL TRIUNFO,140101,robo,delitos contra el patrimonio,media,-12.143493,-76.944456
+2023,VILLA MARIA DEL TRIUNFO,150143,robo frustrado,delitos contra el patrimonio,media,-12.016642,-76.904579
+2024,ANCON,150102,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-11.731322,-77.133784
+2024,ATE,150103,estafa,delitos contra el patrimonio,baja,-12.061498,-76.995106
+2024,ATE,150103,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.04387,-76.935933
+2024,ATE,150103,hurto de vehiculo,delitos contra el patrimonio,media,-12.054866,-76.956561
+2024,ATE,150103,hurto frustrado,delitos contra el patrimonio,baja,-12.031525,-76.931307
+2024,ATE,150103,hurto frustrado,delitos contra el patrimonio,baja,-12.031459,-76.931363
+2024,ATE,150103,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.01098,-76.823872
+2024,ATE,150103,robo agravado,delitos contra el patrimonio,alta,-12.071328,-76.97472
+2024,BARRANCO,150104,hurto agravado,delitos contra el patrimonio,media,-12.141328,-77.017127
+2024,BARRANCO,150104,hurto de vehiculo,delitos contra el patrimonio,media,-12.152984,-77.02147
+2024,BARRANCO,150104,robo,delitos contra el patrimonio,media,-12.148465,-77.020505
+2024,BELLAVISTA,070102,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.064513,-77.127964
+2024,BELLAVISTA,070102,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.065609,-77.132103
+2024,BREÑA,150105,estafa,delitos contra el patrimonio,baja,-12.054691,-77.056803
+2024,BREÑA,150105,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.059859,-77.052745
+2024,BREÑA,150105,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.05986,-77.042378
+2024,CALLAO,070101,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.064638,-77.136625
+2024,CALLAO,070101,estafa,delitos contra el patrimonio,baja,-11.997057,-77.112771
+2024,CALLAO,070101,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.051166,-77.129996
+2024,CALLAO,070101,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.020709,-77.140455
+2024,CALLAO,070101,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.007771,-77.136647
+2024,CALLAO,070101,hurto,delitos contra el patrimonio,baja,-11.940908,-77.13305
+2024,CALLAO,070101,hurto agravado,delitos contra el patrimonio,media,-12.029271,-77.10196
+2024,CALLAO,070101,hurto agravado,delitos contra el patrimonio,media,-12.043813,-77.122316
+2024,CALLAO,070101,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.055172,-77.131251
+2024,CALLAO,070101,robo,delitos contra el patrimonio,media,-12.008299,-77.098369
+2024,CALLAO,070101,robo agravado,delitos contra el patrimonio,alta,-12.015749,-77.098011
+2024,CALLAO,070101,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.028206,-77.093336
+2024,CALLAO,070101,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.016995,-77.098124
+2024,CHORRILLOS,150108,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.187999,-76.993368
+2024,CHORRILLOS,150108,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.159587,-77.018878
+2024,COMAS,150110,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.909693,-77.037549
+2024,COMAS,150110,estafa,delitos contra el patrimonio,baja,-11.934677,-77.066424
+2024,COMAS,150110,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.913909,-77.017887
+2024,COMAS,150110,hurto,delitos contra el patrimonio,baja,-11.959481,-77.041708
+2024,COMAS,150110,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.917185,-77.034703
+2024,COMAS,150110,hurto de vehiculo,delitos contra el patrimonio,media,-11.94502,-77.064087
+2024,COMAS,150110,hurto frustrado,delitos contra el patrimonio,baja,-11.942441,-77.060246
+2024,COMAS,150110,robo agravado,delitos contra el patrimonio,alta,-11.914278,-77.02914
+2024,EL AGUSTINO,150111,robo,delitos contra el patrimonio,media,-12.051517,-77.011051
+2024,EL AGUSTINO,150111,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.057773,-77.006722
+2024,INDEPENDENCIA,150112,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.995822,-77.050509
+2024,LA MOLINA,150114,hurto,delitos contra el patrimonio,baja,-12.069622,-76.9521
+2024,LA VICTORIA,150115,estafa,delitos contra el patrimonio,baja,-12.062305,-77.031237
+2024,LA VICTORIA,150115,estafa,delitos contra el patrimonio,baja,-12.065126,-77.008823
+2024,LA VICTORIA,150115,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.069913,-77.009072
+2024,LA VICTORIA,150115,robo,delitos contra el patrimonio,media,-12.068629,-77.007177
+2024,LA VICTORIA,150115,robo,delitos contra el patrimonio,media,-12.072354,-77.011208
+2024,LIMA,150101,estafa,delitos contra el patrimonio,baja,-12.061035,-77.068636
+2024,LIMA,150101,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.0529,-77.029287
+2024,LIMA,150101,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.044518,-77.03653
+2024,LIMA,150101,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-12.065888,-77.067648
+2024,LIMA,150101,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.04704,-77.017252
+2024,LIMA,150101,hurto,delitos contra el patrimonio,baja,-12.058622,-77.00756
+2024,LIMA,150101,hurto,delitos contra el patrimonio,baja,-12.043169,-77.040728
+2024,LIMA,150101,hurto,delitos contra el patrimonio,baja,-12.048516,-77.061686
+2024,LIMA,150101,hurto agravado,delitos contra el patrimonio,media,-12.054477,-77.04189
+2024,LIMA,150101,hurto agravado,delitos contra el patrimonio,media,-12.037919,-77.077687
+2024,LIMA,150101,hurto agravado,delitos contra el patrimonio,media,-12.043633,-77.042014
+2024,LIMA,150101,hurto de vehiculo,delitos contra el patrimonio,media,-12.060039,-77.04011
+2024,LIMA,150101,hurto frustrado,delitos contra el patrimonio,baja,-12.049857,-77.077963
+2024,LIMA,150101,robo,delitos contra el patrimonio,media,-12.054115,-77.019723
+2024,LIMA,150101,robo agravado,delitos contra el patrimonio,alta,-12.035833,-77.007642
+2024,LIMA,150101,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.051129,-77.036425
+2024,LIMA,150101,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.043105,-77.036325
+2024,LINCE,150116,hurto,delitos contra el patrimonio,baja,-12.085085,-77.045118
+2024,LOS OLIVOS,150117,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.921713,-77.075634
+2024,LOS OLIVOS,150117,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.978197,-77.083671
+2024,LOS OLIVOS,150117,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.938213,-77.074458
+2024,LOS OLIVOS,150117,hurto de vehiculo,delitos contra el patrimonio,media,-11.938648,-77.072198
+2024,LOS OLIVOS,150117,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.979939,-77.072585
+2024,LOS OLIVOS,150117,robo,delitos contra el patrimonio,media,-11.952395,-77.081903
+2024,LOS OLIVOS,150117,robo agravado,delitos contra el patrimonio,alta,-11.93586,-77.072402
+2024,LURIGANCHO,150118,hurto agravado,delitos contra el patrimonio,media,-11.983118,-76.939948
+2024,LURIGANCHO,150118,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.936429,-76.696706
+2024,LURIGANCHO,150118,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.010361,-76.905136
+2024,LURIN,150119,robo agravado durante la noche o en lugar desolado,delitos contra el patrimonio,alta,-12.237668,-76.909782
+2024,MIRAFLORES,150122,hurto,delitos contra el patrimonio,baja,-12.129756,-77.034204
+2024,MIRAFLORES,150122,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.127987,-77.024647
+2024,MIRAFLORES,150122,hurto frustrado,delitos contra el patrimonio,baja,-12.121677,-77.03127
+2024,PACHACAMAC,150123,estafa,delitos contra el patrimonio,baja,-12.118687,-76.870395
+2024,PUEBLO LIBRE,150121,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.079656,-77.071832
+2024,PUEBLO LIBRE,150121,robo agravado,delitos contra el patrimonio,alta,-12.067428,-77.056151
+2024,PUENTE PIEDRA,150125,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.915918,-77.078583
+2024,PUENTE PIEDRA,150125,estafa,delitos contra el patrimonio,baja,-11.863821,-77.075997
+2024,PUENTE PIEDRA,150125,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-11.86627,-77.076397
+2024,PUENTE PIEDRA,150125,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-11.93613,-77.086064
+2024,PUENTE PIEDRA,150125,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-11.8679,-77.076607
+2024,PUENTE PIEDRA,150125,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.83306,-77.11394
+2024,PUENTE PIEDRA,150125,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-11.874217,-77.05971
+2024,PUENTE PIEDRA,150125,hurto,delitos contra el patrimonio,baja,-11.88992,-77.075522
+2024,PUENTE PIEDRA,150125,hurto agravado,delitos contra el patrimonio,media,-11.85014,-77.08861
+2024,PUENTE PIEDRA,150125,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.867044,-77.076615
+2024,PUENTE PIEDRA,150125,hurto de vehiculo,delitos contra el patrimonio,media,-11.853831,-77.089307
+2024,PUENTE PIEDRA,150125,hurto de vehiculo,delitos contra el patrimonio,media,-11.88992,-77.075522
+2024,PUENTE PIEDRA,150125,hurto frustrado,delitos contra el patrimonio,baja,-11.889123,-77.074194
+2024,PUENTE PIEDRA,150125,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.936318,-77.086028
+2024,PUENTE PIEDRA,150125,robo agravado a mano armada,delitos contra el patrimonio,alta,-11.862198,-77.078255
+2024,PUENTE PIEDRA,150125,robo frustrado,delitos contra el patrimonio,media,-11.935699,-77.092466
+2024,PUENTE PIEDRA,150125,robo frustrado,delitos contra el patrimonio,media,-11.872557,-77.075656
+2024,RIMAC,150128,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.039213,-77.029396
+2024,SAN BORJA,150130,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.081664,-76.995474
+2024,SAN BORJA,150130,robo,delitos contra el patrimonio,media,-12.098532,-77.010769
+2024,SAN JUAN DE LURIGANCHO,150132,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.010608,-77.012619
+2024,SAN JUAN DE LURIGANCHO,150132,homicidio calificado - asesinato,"delitos contra la vida, el cuerpo y la salud",alta,-11.997899,-77.010141
+2024,SAN JUAN DE LURIGANCHO,150132,hurto agravado,delitos contra el patrimonio,media,-11.967164,-77.008426
+2024,SAN JUAN DE LURIGANCHO,150132,hurto frustrado,delitos contra el patrimonio,baja,-11.987452,-77.009786
+2024,SAN JUAN DE LURIGANCHO,150132,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.029769,-77.011248
+2024,SAN JUAN DE LURIGANCHO,150132,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-11.951277,-76.979315
+2024,SAN JUAN DE LURIGANCHO,150132,robo,delitos contra el patrimonio,media,-12.024207,-76.988839
+2024,SAN JUAN DE LURIGANCHO,150132,robo agravado,delitos contra el patrimonio,alta,-11.971063,-76.997764
+2024,SAN JUAN DE MIRAFLORES,150133,hurto de vehiculo,delitos contra el patrimonio,media,-12.17301,-76.9765
+2024,SAN JUAN DE MIRAFLORES,150133,hurto de vehiculo,delitos contra el patrimonio,media,-12.158995,-76.960381
+2024,SAN JUAN DE MIRAFLORES,150133,hurto frustrado,delitos contra el patrimonio,baja,-12.15327,-76.982902
+2024,SAN JUAN DE MIRAFLORES,150133,robo agravado,delitos contra el patrimonio,alta,-12.184755,-76.977119
+2024,SAN JUAN DE MIRAFLORES,150133,robo agravado,delitos contra el patrimonio,alta,-12.16782,-76.969009
+2024,SAN JUAN DE MIRAFLORES,150133,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.183127,-76.959037
+2024,SAN LUIS,150134,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.07493,-76.996423
+2024,SAN MARTIN DE PORRES,150135,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-11.968613,-77.091208
+2024,SAN MARTIN DE PORRES,150135,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.028237,-77.069029
+2024,SAN MARTIN DE PORRES,150135,hurto agravado,delitos contra el patrimonio,media,-11.999659,-77.095496
+2024,SAN MARTIN DE PORRES,150135,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.94749,-77.08973
+2024,SAN MARTIN DE PORRES,150135,hurto agravado en casa habitada,delitos contra el patrimonio,media,-11.959034,-77.104271
+2024,SAN MARTIN DE PORRES,150135,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.014764,-77.055636
+2024,SAN MARTIN DE PORRES,150135,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.02254,-77.054725
+2024,SAN MARTIN DE PORRES,150135,robo frustrado,delitos contra el patrimonio,media,-12.031824,-77.066063
+2024,SAN MARTIN DE PORRES,150135,robo frustrado,delitos contra el patrimonio,media,-12.015299,-77.053462
+2024,SANTA ANITA,150137,homicidio por paf,"delitos contra la vida, el cuerpo y la salud",alta,-12.04573,-76.984721
+2024,SANTA ANITA,150137,robo,delitos contra el patrimonio,media,-12.045478,-76.975105
+2024,SANTIAGO DE SURCO,150140,hurto,delitos contra el patrimonio,baja,-12.141958,-76.995496
+2024,SANTIAGO DE SURCO,150140,hurto frustrado,delitos contra el patrimonio,baja,-12.148115,-77.009303
+2024,VILLA MARIA DEL TRIUNFO,150143,asalto y robo de vehiculos,delitos contra el patrimonio,alta,-12.174973,-76.93084
+2024,VILLA MARIA DEL TRIUNFO,150143,hurto agravado en casa habitada,delitos contra el patrimonio,media,-12.187148,-76.926816
+2024,VILLA MARIA DEL TRIUNFO,150143,hurto de vehiculo,delitos contra el patrimonio,media,-12.148847,-76.942915
+2024,VILLA MARIA DEL TRIUNFO,150143,microcomercializacion de drogas,delitos contra la seguridad pública,alta,-12.152773,-76.956226
+2024,VILLA MARIA DEL TRIUNFO,150143,robo agravado,delitos contra el patrimonio,alta,-12.159205,-76.938212
+2024,VILLA MARIA DEL TRIUNFO,150143,robo agravado a mano armada,delitos contra el patrimonio,alta,-12.187326,-76.924623

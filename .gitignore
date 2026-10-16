@@ -73,4 +73,6 @@ __pycache__/
 *.pyc
 db.sqlite3
 models/trained/
+models/processed/
+data/processed/incidents_lima.csv
 .env.local

@@ -5,12 +5,19 @@ porque `validation` y `artifacts` no dependen de ellos.
 """
 
 import importlib.util
+import sys
 from pathlib import Path
 from types import ModuleType
 
 import pytest
 
 _MODULES_DIR = Path(__file__).resolve().parents[1] / "crime_ml"
+
+# Permite que `functions/tests` importe `crime_ml.pipeline` (necesario para las
+# pruebas de ML; requiere scikit-learn/pandas instalados).
+_FUNCTIONS_DIR = _MODULES_DIR.parent
+if str(_FUNCTIONS_DIR) not in sys.path:
+    sys.path.insert(0, str(_FUNCTIONS_DIR))
 
 
 def _load_module(name: str, path: Path) -> ModuleType:

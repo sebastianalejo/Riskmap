@@ -1,0 +1,724 @@
+{
+  "generated_at": "2026-10-16T22:40:28.700439+00:00",
+  "service": "https://arcgis3.inei.gob.pe:6443/arcgis/rest/services/Datacrim/DATACRIM005_AGS_PUNTOSDELITOS_CIUDADANO/MapServer",
+  "years": [
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "method": {
+    "sampling": "ventanas aleatorias con semilla sobre el total disponible",
+    "window_size": 40,
+    "windows": 3,
+    "seed": 42,
+    "note": "La fuente no publica la fecha del hecho; la resolución temporal es el año (grupo de capa)."
+  },
+  "totals": {
+    "rows_kept": 5977,
+    "rows_before_dedupe": 6640,
+    "duplicates_dropped": 401,
+    "districts": 49,
+    "modalities": 15
+  },
+  "scope_filter": {
+    "rule": "conservar ubigeo 1501/0701 o distrito de la lista canónica; nombre canónico por moda de ubigeo",
+    "dropped_out_of_scope": 262,
+    "dropped_examples": {
+      "CHILCA": 29,
+      "MALA": 22,
+      "CHANCAY": 17,
+      "SAN ANTONIO": 10,
+      "CHICLAYO": 10,
+      "RICARDO PALMA": 7,
+      "SANTA EULALIA": 7,
+      "TRUJILLO": 7,
+      "AUCALLAMA": 6,
+      "HUARAL": 6,
+      "CALLERIA": 5,
+      "CHIMBOTE": 4
+    },
+    "rows_without_ubigeo_kept_by_name": 152,
+    "canonical_districts": 49
+  },
+  "by_year": {
+    "2021": 1584,
+    "2022": 1594,
+    "2023": 1158,
+    "2024": 1641
+  },
+  "by_severity": {
+    "alta": 2744,
+    "baja": 1283,
+    "media": 1950
+  },
+  "by_macro": {
+    "delitos contra el patrimonio": 4894,
+    "delitos contra la seguridad pública": 434,
+    "delitos contra la vida, el cuerpo y la salud": 649
+  },
+  "unmapped_modalities": [],
+  "coverage": [
+    {
+      "year": 2021,
+      "layer_id": 107,
+      "modality": "robo agravado",
+      "available": 10743,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 108,
+      "modality": "robo agravado a mano armada",
+      "available": 6286,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 109,
+      "modality": "robo",
+      "available": 11352,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 110,
+      "modality": "hurto",
+      "available": 26288,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 111,
+      "modality": "hurto agravado",
+      "available": 14060,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 112,
+      "modality": "hurto de vehiculo",
+      "available": 8499,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 113,
+      "modality": "asalto y robo de vehiculos",
+      "available": 2009,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 114,
+      "modality": "homicidio calificado - asesinato",
+      "available": 76,
+      "fetched": 76,
+      "kept_in_bbox": 76,
+      "cap_reached": false,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 115,
+      "modality": "homicidio por arma de fuego",
+      "available": 416,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 116,
+      "modality": "hurto agravado en casa habitada",
+      "available": 1407,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 117,
+      "modality": "robo frustrado",
+      "available": 49,
+      "fetched": 49,
+      "kept_in_bbox": 49,
+      "cap_reached": false,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 118,
+      "modality": "robo agravado durante la noche o en lugar desolado",
+      "available": 190,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 119,
+      "modality": "microcomercializacion de drogas",
+      "available": 993,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 120,
+      "modality": "hurto frustrado",
+      "available": 184,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2021,
+      "layer_id": 121,
+      "modality": "estafa y otras defraudaciones",
+      "available": 7423,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 123,
+      "modality": "robo agravado",
+      "available": 13727,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 124,
+      "modality": "robo agravado a mano armada",
+      "available": 7375,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 125,
+      "modality": "robo",
+      "available": 16507,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 126,
+      "modality": "hurto",
+      "available": 31335,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 127,
+      "modality": "hurto agravado",
+      "available": 16989,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 128,
+      "modality": "hurto de vehiculo",
+      "available": 9473,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 129,
+      "modality": "asalto y robo de vehiculos",
+      "available": 1893,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 130,
+      "modality": "homicidio calificado - asesinato",
+      "available": 74,
+      "fetched": 74,
+      "kept_in_bbox": 74,
+      "cap_reached": false,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 131,
+      "modality": "homicidio por arma de fuego",
+      "available": 517,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 132,
+      "modality": "hurto agravado en casa habitada",
+      "available": 1624,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 133,
+      "modality": "robo frustrado",
+      "available": 47,
+      "fetched": 47,
+      "kept_in_bbox": 47,
+      "cap_reached": false,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 134,
+      "modality": "robo agravado durante la noche o en lugar desolado",
+      "available": 317,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 135,
+      "modality": "microcomercializacion de drogas",
+      "available": 1182,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 136,
+      "modality": "hurto frustrado",
+      "available": 166,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2022,
+      "layer_id": 137,
+      "modality": "estafa y otras defraudaciones",
+      "available": 9793,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": []
+    },
+    {
+      "year": 2023,
+      "layer_id": 139,
+      "modality": "robo agravado",
+      "available": 3696,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 140,
+      "modality": "robo agravado a mano armada",
+      "available": 2180,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 141,
+      "modality": "robo",
+      "available": 13288,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 142,
+      "modality": "hurto",
+      "available": 14768,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 143,
+      "modality": "hurto agravado",
+      "available": 5079,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 144,
+      "modality": "hurto de vehiculo",
+      "available": 3334,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 145,
+      "modality": "asalto y robo de vehiculos",
+      "available": 718,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 146,
+      "modality": "homicidio calificado - asesinato",
+      "available": 34,
+      "fetched": 34,
+      "kept_in_bbox": 34,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 147,
+      "modality": "homicidio por arma de fuego",
+      "available": 213,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 148,
+      "modality": "hurto agravado en casa habitada",
+      "available": 663,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 149,
+      "modality": "robo frustrado",
+      "available": 29,
+      "fetched": 29,
+      "kept_in_bbox": 29,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 150,
+      "modality": "robo agravado durante la noche o en lugar desolado",
+      "available": 143,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 151,
+      "modality": "microcomercializacion de drogas",
+      "available": 261,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 152,
+      "modality": "hurto frustrado",
+      "available": 48,
+      "fetched": 48,
+      "kept_in_bbox": 48,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2023,
+      "layer_id": 153,
+      "modality": "estafa y otras defraudaciones",
+      "available": 2850,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 155,
+      "modality": "robo agravado",
+      "available": 11647,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 156,
+      "modality": "robo agravado a mano armada",
+      "available": 4630,
+      "fetched": 119,
+      "kept_in_bbox": 119,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 157,
+      "modality": "robo",
+      "available": 38141,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 158,
+      "modality": "hurto",
+      "available": 67341,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 159,
+      "modality": "hurto agravado",
+      "available": 16186,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 160,
+      "modality": "hurto de vehiculo",
+      "available": 10568,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 161,
+      "modality": "asalto y robo de vehiculos",
+      "available": 2075,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 162,
+      "modality": "homicidio calificado - asesinato",
+      "available": 119,
+      "fetched": 119,
+      "kept_in_bbox": 119,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 163,
+      "modality": "homicidio por arma de fuego",
+      "available": 822,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 164,
+      "modality": "hurto agravado en casa habitada",
+      "available": 1502,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 165,
+      "modality": "robo frustrado",
+      "available": 46,
+      "fetched": 46,
+      "kept_in_bbox": 46,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 166,
+      "modality": "robo agravado durante la noche o en lugar desolado",
+      "available": 206,
+      "fetched": 119,
+      "kept_in_bbox": 119,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 167,
+      "modality": "microcomercializacion de drogas",
+      "available": 1636,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 168,
+      "modality": "hurto frustrado",
+      "available": 233,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2024,
+      "layer_id": 169,
+      "modality": "estafa y otras defraudaciones",
+      "available": 15124,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "updated": "2026-10-16",
+  "disclaimer": "Taxonomía declarada con fines analíticos. 'severity_level' clasifica la gravedad típica de cada modalidad según el marco penal/taxonomía INEI-PNP; NO es una medición observada de riesgo ni una probabilidad, y no debe usarse para tomar decisiones sobre personas o zonas.",
+  "severity_levels": {
+    "alta": "Delitos violentos o de alto impacto (vida, integridad, armas, drogas, robo con agravantes).",
+    "media": "Delitos patrimoniales con agravantes, vehiculares o de impacto moderado.",
+    "baja": "Delitos patrimoniales menores o fraudulentos sin violencia directa."
+  },
+  "macro_fallback": "otros",
+  "modalities": {
+    "homicidio calificado - asesinato": {
+      "severity": "alta",
+      "macro": "delitos contra la vida",
+      "rationale": "Homicidio con calificantes."
+    },
+    "homicidio por arma de fuego": {
+      "severity": "alta",
+      "macro": "delitos contra la vida",
+      "rationale": "Homicidio con uso de arma de fuego."
+    },
+    "homicidio por paf": {
+      "severity": "alta",
+      "macro": "delitos contra la vida",
+      "rationale": "Homicidio con arma de fuego (PAF = 'por arma de fuego', nomenclatura INEI)."
+    },
+    "estafa": {
+      "severity": "baja",
+      "macro": "delitos contra la fe publica",
+      "rationale": "Fraude sin violencia directa (variante corta de 'estafa y otras defraudaciones')."
+    },
+    "robo agravado": {
+      "severity": "alta",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Robo con agravantes (violencia o intimidación)."
+    },
+    "robo agravado a mano armada": {
+      "severity": "alta",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Robo con agravante de arma; alto impacto para la víctima."
+    },
+    "robo agravado durante la noche o en lugar desolado": {
+      "severity": "alta",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Circunstancia agravante de nocturnidad/desolación."
+    },
+    "asalto y robo de vehiculos": {
+      "severity": "alta",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Robo violento de vehículos."
+    },
+    "robo": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Robo sin agravantes registrados."
+    },
+    "robo frustrado": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Tentativa de robo."
+    },
+    "hurto agravado": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Hurto con agravantes (sin violencia sobre la persona)."
+    },
+    "hurto agravado en casa habitada": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Hurto agravado por domicilio."
+    },
+    "hurto de vehiculo": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Sustracción de vehículo; impacto material relevante."
+    },
+    "hurto": {
+      "severity": "baja",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Sustracción sin violencia ni agravantes registrados."
+    },
+    "hurto frustrado": {
+      "severity": "baja",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Tentativa de hurto."
+    },
+    "estafa y otras defraudaciones": {
+      "severity": "baja",
+      "macro": "delitos contra la fe publica",
+      "rationale": "Fraude sin violencia directa."
+    },
+    "microcomercializacion de drogas": {
+      "severity": "alta",
+      "macro": "trafico ilicito de drogas",
+      "rationale": "Comercio ilícito de drogas."
+    },
+    "violacion sexual de menores": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Delito sexual grave contra menores."
+    },
+    "trafico ilicito de drogas": {
+      "severity": "alta",
+      "macro": "trafico ilicito de drogas",
+      "rationale": "Tráfico ilícito de drogas."
+    },
+    "tenencia informal de armas": {
+      "severity": "media",
+      "macro": "delitos contra la seguridad publica",
+      "rationale": "Posesión irregular de armas."
+    },
+    "extorsion": {
+      "severity": "alta",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Coacción con amenaza; alto impacto."
+    },
+    "secuestro": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad personal",
+      "rationale": "Privación ilegal de la libertad."
+    }
+  }
+}

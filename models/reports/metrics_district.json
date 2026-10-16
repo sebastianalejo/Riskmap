@@ -1,0 +1,529 @@
+{
+  "generated_at": "2026-10-16T22:41:26.828953+00:00",
+  "task": {
+    "question": "¿Qué modalidad de delito es más probable dado el contexto espacial (distrito y coordenadas)?",
+    "features": [
+      "district",
+      "latitude",
+      "longitude"
+    ],
+    "target": "crime_type",
+    "split": "district"
+  },
+  "dataset": {
+    "path": "data\\processed\\incidents_lima.csv",
+    "rows": 5977,
+    "sha256": "db2494a03f5314bc4aa3e6978b379b3a62a7547a300cd0d442783071b88c88da"
+  },
+  "environment": {
+    "python": "3.13.5",
+    "pandas": "2.3.1",
+    "scikit_learn": "1.7.0"
+  },
+  "config": {
+    "test_size": 0.25,
+    "seed": 42
+  },
+  "result": {
+    "metrics": {
+      "accuracy": 0.0970625798212005,
+      "precision_weighted": 0.0834302979647762,
+      "recall_weighted": 0.0970625798212005,
+      "f1_weighted": 0.06935496234666792,
+      "f1_macro": 0.06085071410571389,
+      "baseline_majority_accuracy": 0.10153256704980843,
+      "per_class": {
+        "asalto y robo de vehiculos": {
+          "precision": 0.1034,
+          "recall": 0.0337,
+          "f1": 0.0508,
+          "support": 89
+        },
+        "estafa": {
+          "precision": 0.0593,
+          "recall": 0.1538,
+          "f1": 0.0856,
+          "support": 104
+        },
+        "homicidio calificado - asesinato": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 65
+        },
+        "homicidio por paf": {
+          "precision": 0.0645,
+          "recall": 0.0548,
+          "f1": 0.0593,
+          "support": 73
+        },
+        "hurto": {
+          "precision": 0.1201,
+          "recall": 0.4966,
+          "f1": 0.1934,
+          "support": 147
+        },
+        "hurto agravado": {
+          "precision": 0.1522,
+          "recall": 0.0881,
+          "f1": 0.1116,
+          "support": 159
+        },
+        "hurto agravado en casa habitada": {
+          "precision": 0.0984,
+          "recall": 0.1712,
+          "f1": 0.125,
+          "support": 111
+        },
+        "hurto de vehiculo": {
+          "precision": 0.1094,
+          "recall": 0.068,
+          "f1": 0.0838,
+          "support": 103
+        },
+        "hurto frustrado": {
+          "precision": 0.0455,
+          "recall": 0.0103,
+          "f1": 0.0168,
+          "support": 97
+        },
+        "microcomercializacion de drogas": {
+          "precision": 0.125,
+          "recall": 0.0179,
+          "f1": 0.0312,
+          "support": 112
+        },
+        "robo": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 139
+        },
+        "robo agravado": {
+          "precision": 0.0112,
+          "recall": 0.0087,
+          "f1": 0.0098,
+          "support": 115
+        },
+        "robo agravado a mano armada": {
+          "precision": 0.1522,
+          "recall": 0.0511,
+          "f1": 0.0765,
+          "support": 137
+        },
+        "robo agravado durante la noche o en lugar desolado": {
+          "precision": 0.0758,
+          "recall": 0.0633,
+          "f1": 0.069,
+          "support": 79
+        },
+        "robo frustrado": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 36
+        }
+      },
+      "confusion_matrix": [
+        [
+          3,
+          20,
+          0,
+          5,
+          20,
+          2,
+          10,
+          8,
+          3,
+          0,
+          0,
+          6,
+          3,
+          9,
+          0
+        ],
+        [
+          0,
+          16,
+          0,
+          2,
+          44,
+          13,
+          14,
+          0,
+          2,
+          1,
+          0,
+          7,
+          4,
+          1,
+          0
+        ],
+        [
+          5,
+          15,
+          0,
+          1,
+          25,
+          3,
+          5,
+          3,
+          0,
+          2,
+          0,
+          1,
+          1,
+          4,
+          0
+        ],
+        [
+          2,
+          17,
+          0,
+          4,
+          21,
+          3,
+          7,
+          4,
+          3,
+          2,
+          0,
+          3,
+          3,
+          4,
+          0
+        ],
+        [
+          2,
+          17,
+          0,
+          8,
+          73,
+          7,
+          11,
+          4,
+          5,
+          2,
+          5,
+          10,
+          1,
+          2,
+          0
+        ],
+        [
+          0,
+          19,
+          0,
+          5,
+          57,
+          14,
+          28,
+          8,
+          1,
+          2,
+          0,
+          10,
+          6,
+          9,
+          0
+        ],
+        [
+          1,
+          25,
+          0,
+          2,
+          33,
+          4,
+          19,
+          5,
+          1,
+          1,
+          0,
+          16,
+          3,
+          1,
+          0
+        ],
+        [
+          0,
+          21,
+          0,
+          3,
+          34,
+          8,
+          11,
+          7,
+          0,
+          1,
+          0,
+          9,
+          3,
+          6,
+          0
+        ],
+        [
+          8,
+          22,
+          0,
+          1,
+          33,
+          9,
+          10,
+          0,
+          1,
+          3,
+          0,
+          6,
+          3,
+          1,
+          0
+        ],
+        [
+          0,
+          25,
+          0,
+          7,
+          49,
+          5,
+          6,
+          7,
+          1,
+          2,
+          2,
+          2,
+          4,
+          2,
+          0
+        ],
+        [
+          2,
+          7,
+          0,
+          2,
+          97,
+          6,
+          10,
+          2,
+          1,
+          0,
+          0,
+          6,
+          1,
+          5,
+          0
+        ],
+        [
+          3,
+          23,
+          0,
+          10,
+          36,
+          5,
+          16,
+          7,
+          2,
+          0,
+          0,
+          1,
+          3,
+          9,
+          0
+        ],
+        [
+          1,
+          23,
+          0,
+          4,
+          48,
+          6,
+          29,
+          4,
+          1,
+          0,
+          1,
+          5,
+          7,
+          8,
+          0
+        ],
+        [
+          2,
+          15,
+          0,
+          7,
+          25,
+          3,
+          13,
+          1,
+          0,
+          0,
+          1,
+          3,
+          4,
+          5,
+          0
+        ],
+        [
+          0,
+          5,
+          0,
+          1,
+          13,
+          4,
+          4,
+          4,
+          1,
+          0,
+          0,
+          4,
+          0,
+          0,
+          0
+        ]
+      ],
+      "classes": [
+        "asalto y robo de vehiculos",
+        "estafa",
+        "homicidio calificado - asesinato",
+        "homicidio por paf",
+        "hurto",
+        "hurto agravado",
+        "hurto agravado en casa habitada",
+        "hurto de vehiculo",
+        "hurto frustrado",
+        "microcomercializacion de drogas",
+        "robo",
+        "robo agravado",
+        "robo agravado a mano armada",
+        "robo agravado durante la noche o en lugar desolado",
+        "robo frustrado"
+      ]
+    },
+    "model_path": "C:\\Users\\alejo\\Documents\\GitHub\\Tesis-main\\models\\processed\\crime_modality_model.joblib",
+    "train_size": 4411,
+    "test_size": 1566,
+    "split": "district",
+    "split_info": {
+      "mode": "district",
+      "group_column": "district",
+      "test_groups": [
+        "BREÑA",
+        "EL AGUSTINO",
+        "INDEPENDENCIA",
+        "LA PUNTA",
+        "LIMA",
+        "MI PERU",
+        "MIRAFLORES",
+        "PACHACAMAC",
+        "PUNTA HERMOSA",
+        "SAN BORJA",
+        "SANTIAGO DE SURCO",
+        "SURQUILLO",
+        "VILLA EL SALVADOR"
+      ],
+      "train_groups": 36
+    },
+    "classes": [
+      "asalto y robo de vehiculos",
+      "estafa",
+      "homicidio calificado - asesinato",
+      "homicidio por paf",
+      "hurto",
+      "hurto agravado",
+      "hurto agravado en casa habitada",
+      "hurto de vehiculo",
+      "hurto frustrado",
+      "microcomercializacion de drogas",
+      "robo",
+      "robo agravado",
+      "robo agravado a mano armada",
+      "robo agravado durante la noche o en lugar desolado",
+      "robo frustrado"
+    ],
+    "feature_importances": {
+      "top": [
+        {
+          "feature": "num__latitude",
+          "importance": 0.466512
+        },
+        {
+          "feature": "num__longitude",
+          "importance": 0.463453
+        },
+        {
+          "feature": "cat__district_SAN JUAN DE LURIGANCHO",
+          "importance": 0.004453
+        },
+        {
+          "feature": "cat__district_SAN MARTIN DE PORRES",
+          "importance": 0.004261
+        },
+        {
+          "feature": "cat__district_CALLAO",
+          "importance": 0.003517
+        },
+        {
+          "feature": "cat__district_VILLA MARIA DEL TRIUNFO",
+          "importance": 0.003389
+        },
+        {
+          "feature": "cat__district_SAN JUAN DE MIRAFLORES",
+          "importance": 0.003333
+        },
+        {
+          "feature": "cat__district_LA MOLINA",
+          "importance": 0.003193
+        },
+        {
+          "feature": "cat__district_JESUS MARIA",
+          "importance": 0.002913
+        },
+        {
+          "feature": "cat__district_PUENTE PIEDRA",
+          "importance": 0.002795
+        },
+        {
+          "feature": "cat__district_COMAS",
+          "importance": 0.002746
+        },
+        {
+          "feature": "cat__district_CARABAYLLO",
+          "importance": 0.002629
+        },
+        {
+          "feature": "cat__district_LA VICTORIA",
+          "importance": 0.002573
+        },
+        {
+          "feature": "cat__district_ATE",
+          "importance": 0.002521
+        },
+        {
+          "feature": "cat__district_LOS OLIVOS",
+          "importance": 0.002517
+        },
+        {
+          "feature": "cat__district_SAN MIGUEL",
+          "importance": 0.002307
+        },
+        {
+          "feature": "cat__district_VENTANILLA",
+          "importance": 0.002099
+        },
+        {
+          "feature": "cat__district_CHORRILLOS",
+          "importance": 0.002094
+        },
+        {
+          "feature": "cat__district_LURIGANCHO",
+          "importance": 0.001924
+        },
+        {
+          "feature": "cat__district_BELLAVISTA",
+          "importance": 0.001864
+        }
+      ],
+      "total_features": 38
+    }
+  }
+}

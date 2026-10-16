@@ -1,7 +1,19 @@
 /**
- * Descarga 1000 incidentes REALES del MapServer INEI DataCrime (2022).
+ * [LEGACY] Descarga 1000 puntos del MapServer INEI DataCrime (dataset de ejemplo).
+ *
+ * La ruta recomendada y reproducible es el pipeline de la Fase 3:
+ *   python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024
+ *   python scripts/pipeline/train.py --split temporal
+ *
+ * Correcciones tras la auditoría (Fases 1/3):
+ * - IDs de capa desactualizados: 107-121 corresponden al grupo
+ *   "Modalidad de delito 2021"; las capas reales de 2022 son 123-137
+ *   (hijos del grupo 122). El CSV generado antes de esta corrección estaba
+ *   etiquetado como 2022 pero contenía datos de 2021.
+ * - Se eliminó `rejectUnauthorized: false`: el certificado del INEI verifica
+ *   correctamente (comprobado con Python/OpenSSL).
+ *
  * Fuente: arcgis3.inei.gob.pe — DATACRIM005_AGS_PUNTOSDELITOS_CIUDADANO
- * Capas 107-121: "Modalidad de delito 2022" (padre: capa 106).
  * Ejecutar: node scripts/fetch-real-data.js
  */
 
@@ -15,18 +27,18 @@ const BASE = 'https://arcgis3.inei.gob.pe:6443/arcgis/rest/services/Datacrim/' +
 // Lima Metropolitana bbox (WGS84)
 const LIMA_BBOX = '-77.35,-12.55,-76.65,-11.65'
 
-// Capas 2022 con cantidad objetivo
+// Capas del grupo 2022 (hijos del grupo 122) con cantidad objetivo
 const LAYERS = [
-  { id: 107, label: 'Robo agravado',                    n: 150, generico: 'DELITOS CONTRA EL PATRIMONIO' },
-  { id: 108, label: 'Robo agravado a mano armada',      n: 130, generico: 'DELITOS CONTRA EL PATRIMONIO' },
-  { id: 109, label: 'Robo',                             n: 110, generico: 'DELITOS CONTRA EL PATRIMONIO' },
-  { id: 110, label: 'Hurto',                            n: 120, generico: 'DELITOS CONTRA EL PATRIMONIO' },
-  { id: 111, label: 'Hurto agravado',                   n: 100, generico: 'DELITOS CONTRA EL PATRIMONIO' },
-  { id: 112, label: 'Hurto de vehiculo',                n: 110, generico: 'DELITOS CONTRA EL PATRIMONIO' },
-  { id: 113, label: 'Asalto y robo de vehiculos',       n: 100, generico: 'DELITOS CONTRA EL PATRIMONIO' },
-  { id: 119, label: 'Microcomercializacion de drogas',  n: 110, generico: 'TRAFICO ILICITO DE DROGAS'   },
-  { id: 121, label: 'Estafa y otras defraudaciones',    n: 110, generico: 'DELITOS CONTRA LA FE PUBLICA' },
-  { id: 120, label: 'Hurto frustrado',                  n:  60, generico: 'DELITOS CONTRA EL PATRIMONIO' },
+  { id: 123, label: 'Robo agravado',                    n: 150, generico: 'DELITOS CONTRA EL PATRIMONIO' },
+  { id: 124, label: 'Robo agravado a mano armada',      n: 130, generico: 'DELITOS CONTRA EL PATRIMONIO' },
+  { id: 125, label: 'Robo',                             n: 110, generico: 'DELITOS CONTRA EL PATRIMONIO' },
+  { id: 126, label: 'Hurto',                            n: 120, generico: 'DELITOS CONTRA EL PATRIMONIO' },
+  { id: 127, label: 'Hurto agravado',                   n: 100, generico: 'DELITOS CONTRA EL PATRIMONIO' },
+  { id: 128, label: 'Hurto de vehiculo',                n: 110, generico: 'DELITOS CONTRA EL PATRIMONIO' },
+  { id: 129, label: 'Asalto y robo de vehiculos',       n: 100, generico: 'DELITOS CONTRA EL PATRIMONIO' },
+  { id: 135, label: 'Microcomercializacion de drogas',  n: 110, generico: 'TRAFICO ILICITO DE DROGAS'   },
+  { id: 137, label: 'Estafa y otras defraudaciones',    n: 110, generico: 'DELITOS CONTRA LA FE PUBLICA' },
+  { id: 136, label: 'Hurto frustrado',                  n:  60, generico: 'DELITOS CONTRA EL PATRIMONIO' },
 ]
 // total = 940 ≈ redondeo a 1000 repartiendo los 60 restantes en los primeros
 
@@ -141,7 +153,7 @@ function getFreq(districtRaw, risk) {
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, { rejectUnauthorized: false }, (res) => {
+    https.get(url, (res) => {
       let data = ''
       res.on('data', c => data += c)
       res.on('end', () => {

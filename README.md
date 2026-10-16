@@ -46,8 +46,10 @@ Todo el estado compartido vive en **Firestore** (base de datos NoSQL de Firebase
 
 | Script | Qué hace |
 |--------|----------|
-| `node scripts/generate-csv.js` | Genera un dataset **sintético** de 1 900 filas (`crime_incidents_lima_1900.csv`). |
-| `node scripts/fetch-real-data.js` | Descarga 1 000 puntos reales (2022) del MapServer del INEI DataCrime a `crime_incidents_lima_real_1000.csv`. **Matiz verificado:** ubicación y distrito son reales; `hour`, `day_of_week`, `historical_frequency` y `risk_level` se derivan con reglas del propio script (ver §12). |
+| `node scripts/generate-csv.js` | [LEGACY] Genera un dataset **sintético** de 1 900 filas (`crime_incidents_lima_1900.csv`). |
+| `node scripts/fetch-real-data.js` | [LEGACY] Descarga 1 000 puntos del grupo INEI 2022 (IDs corregidos en la Fase 3). Ubicación/distrito son reales; `hour`, `day_of_week`, `historical_frequency` y `risk_level` se derivan por reglas (ver §12). |
+| `python scripts/pipeline/ingest_inei.py` | **Pipeline reproducible (Fase 3, recomendado)**: descarga real 2021–2024 con descubrimiento dinámico de capas, filtro Lima/Callao y reporte de calidad → `data/processed/`. |
+| `python scripts/pipeline/train.py --split temporal` | Entrena el clasificador de modalidad (splits `random`/`temporal`/`district`) y guarda métricas en `models/reports/`. Ver [`MODEL_CARD.md`](MODEL_CARD.md). |
 
 ---
 
@@ -226,6 +228,26 @@ node scripts/generate-csv.js
 node scripts/fetch-real-data.js
 ```
 
+### 6.1 Pipeline reproducible (Fase 3, recomendado)
+
+Ingesta real + entrenamiento, sin fabricar campos y con validación temporal y geográfica:
+
+```bash
+python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024
+python scripts/pipeline/train.py --split random
+python scripts/pipeline/train.py --split temporal
+python scripts/pipeline/train.py --split district
+```
+
+Salidas: `data/processed/incidents_lima.csv` (no versionado, regenerable), muestra versionable de
+500 filas, `data/processed/quality_report.json` y métricas por régimen en `models/reports/`.
+Documentación: [`data/README.md`](data/README.md) y [`MODEL_CARD.md`](MODEL_CARD.md).
+
+> Hallazgos de la auditoría que explican este diseño: la fuente **no publica la fecha del hecho**
+> (solo el año, por grupo de capas), sus **IDs de capa cambian** (el script legado descargaba 2021
+> etiquetado como 2022) y sus **etiquetas de distrito/ubigeo son inconsistentes** (la ingesta
+> filtra al ámbito Lima/Callao y canonicaliza por ubigeo).
+
 ---
 
 ## 7. Cloud Functions (API de Machine Learning) — opcional
@@ -355,23 +377,28 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 ## 12. Limitaciones conocidas (datos y modelo)
 
-- **El objetivo es una etiqueta construida, no un riesgo medido.** En `scripts/fetch-real-data.js`
-  `risk_level` se deriva por reglas del tipo de delito, y `historical_frequency` de una tabla por
-  distrito ajustada por ese nivel. El Random Forest aprende esa regla: sus métricas no deben
-  interpretarse como capacidad predictiva del riesgo real.
-- **Parte del dataset "real" es sintética:** la ubicación y el distrito provienen del MapServer del
-  INEI, pero hora, día, frecuencia y `risk_level` se generan por reglas; además el esquema no guarda
-  la fecha del incidente.
-- **La tendencia del mapa y del PDF usa fechas simuladas** (`frontend/src/utils/simulateDates.ts`);
-  la UI y el PDF lo advierten explícitamente. Una serie temporal real requiere añadir la fecha al
-  esquema (Fase 3).
-- **Sesgos de fuente:** los registros policiales reflejan denuncias (subregistro y sesgo territorial);
-  las predicciones deben presentarse con cautela y nunca como verdades absolutas sobre una zona.
+- **El modelo de la Fase 3 aún no está conectado a la API/UI.** La pantalla *Predicción* usa una
+  heurística en el navegador y las Cloud Functions conservan la tarea heredada (`risk_level`
+  derivado por reglas del tipo de delito). El modelo nuevo (clasificador de modalidad con datos
+  reales) y sus métricas medidas están en [`MODEL_CARD.md`](MODEL_CARD.md); su conexión es la Fase 4.
+- **La fuente no publica la fecha del hecho:** la resolución temporal real es el año (grupo de
+  capas). Por eso la tendencia del mapa/PDF usa fechas simuladas y lo advierte explícitamente.
+- **La fuente mezcla etiquetas** (nombres de distrito de otras provincias con coordenadas limeñas,
+  ubigeos incoherentes con el nombre): la ingesta filtra al ámbito Lima/Callao (ubigeo 1501/0701)
+  y canonicaliza el nombre por ubigeo; en el muestreo 2021–2024 se descartaron 262 filas fuera de
+  ámbito (ver `data/processed/quality_report.json`).
+- **Generalización geográfica limitada (medida):** con distritos no vistos, el clasificador de
+  modalidad no supera el baseline (accuracy 0.097 vs 0.102); no debe presentarse como predictor
+  generalizable de zonas nuevas.
+- **Sesgos de fuente:** los registros policiales reflejan denuncias (subregistro y sesgo
+  territorial); las predicciones deben presentarse con cautela y nunca como verdades absolutas
+  sobre una zona (ver §6 de [`MODEL_CARD.md`](MODEL_CARD.md)).
 
 ## 13. Enlaces rápidos
 
 - Frontend: [`frontend/`](frontend/) · Config de ejemplo: [`frontend/.env.example`](frontend/.env.example)
 - Cloud Functions: [`functions/main.py`](functions/main.py) · Pipeline ML: [`functions/crime_ml/pipeline.py`](functions/crime_ml/pipeline.py) · Validación: [`functions/crime_ml/validation.py`](functions/crime_ml/validation.py)
+- Datos y ML (Fase 3): [`scripts/pipeline/`](scripts/pipeline/) · [`data/README.md`](data/README.md) · [`MODEL_CARD.md`](MODEL_CARD.md) · métricas en [`models/reports/`](models/reports/) · taxonomía en [`data/taxonomy/`](data/taxonomy/)
 - Pruebas: [`functions/tests/`](functions/tests/) (pytest) · [`tests/firestore/`](tests/firestore/) (reglas con emulador)
 - Reglas Firestore: [`firestore.rules`](firestore.rules)
 - Config Firebase: [`firebase.json`](firebase.json) · Proyecto: [`.firebaserc`](.firebaserc)
