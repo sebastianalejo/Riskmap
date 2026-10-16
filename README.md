@@ -406,7 +406,20 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
   territorial); las predicciones deben presentarse con cautela y nunca como verdades absolutas
   sobre una zona (ver §6 de [`MODEL_CARD.md`](MODEL_CARD.md)).
 
-## 13. Enlaces rápidos
+## 13. Calidad y verificación
+
+| Capa | Herramienta | Comando | Estado |
+|---|---|---|---|
+| API + ML (Python) | pytest · **65 pruebas** | `python -m pytest functions/tests -q` | ✅ |
+| API end-to-end | emuladores auth+firestore+functions · **17 comprobaciones** | `firebase emulators:exec --only auth,firestore,functions --project demo-riskmap "python tests/functions/e2e_functions.py"` | ✅ |
+| Reglas de Firestore | emulador · **13 pruebas** | `firebase emulators:exec --only firestore --project demo-riskmap "node tests/firestore/firestore.rules.test.mjs"` | ✅ |
+| Frontend | Vitest · **15 pruebas** | `cd frontend && npm test` | ✅ |
+| Lint y build | ESLint 9 + tsc + Vite | `cd frontend && npm run lint && npm run build` | ✅ |
+| Integración continua | GitHub Actions | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en cada push/PR | configurado |
+
+Guía de contribución: [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## 14. Enlaces rápidos
 
 - Frontend: [`frontend/`](frontend/) · Config de ejemplo: [`frontend/.env.example`](frontend/.env.example)
 - Cloud Functions: [`functions/main.py`](functions/main.py) · Pipeline ML: [`functions/crime_ml/pipeline.py`](functions/crime_ml/pipeline.py) · Validación: [`functions/crime_ml/validation.py`](functions/crime_ml/validation.py)
@@ -415,3 +428,4 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 - Despliegue: [`docs/DEPLOY.md`](docs/DEPLOY.md) · Publicación de modelos: [`scripts/publish_model.py`](scripts/publish_model.py)
 - Reglas Firestore: [`firestore.rules`](firestore.rules)
 - Config Firebase: [`firebase.json`](firebase.json) · Proyecto: [`.firebaserc`](.firebaserc)
+- Calidad: [`CONTRIBUTING.md`](CONTRIBUTING.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
