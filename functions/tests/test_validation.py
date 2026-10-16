@@ -44,6 +44,15 @@ def test_predict_normaliza_dia_a_minusculas(validation):
     assert cleaned["day_of_week"] == "viernes"
 
 
+def test_predict_normaliza_crime_type_y_district(validation):
+    body = valid_payload()
+    body["crime_type"] = "  Robo Agravado  "
+    body["district"] = "la victoria"
+    cleaned = validation.validate_predict_payload(body, FEATURES)
+    assert cleaned["crime_type"] == "robo agravado"
+    assert cleaned["district"] == "LA VICTORIA"
+
+
 def test_predict_cuerpo_no_objeto(validation):
     with pytest.raises(validation.ValidationError):
         validation.validate_predict_payload([1, 2, 3], FEATURES)
@@ -131,6 +140,36 @@ def test_import_rows_excede_maximo(validation, monkeypatch):
     monkeypatch.setattr(validation, "MAX_ROWS_IMPORT", 2)
     with pytest.raises(validation.ValidationError, match="excede"):
         validation.validate_import_rows([valid_payload()] * 3)
+
+
+# ── filas completas de incidente (importaciones) ─────────────────────────────
+
+
+def test_incident_row_valida_y_normaliza(validation):
+    row = valid_payload() | {"risk_level": " ALTO ", "extra": "se descarta"}
+    cleaned = validation.validate_incident_row(row, FEATURES, "risk_level")
+    assert cleaned["risk_level"] == "alto"
+    assert cleaned["crime_type"] == "robo agravado"
+    assert "extra" not in cleaned
+    assert set(cleaned) == set(FEATURES + ["risk_level"])
+
+
+def test_incident_row_sin_campo(validation):
+    row = valid_payload() | {"risk_level": "alto"}
+    del row["district"]
+    with pytest.raises(validation.ValidationError, match="Faltan campos"):
+        validation.validate_incident_row(row, FEATURES, "risk_level")
+
+
+def test_incident_row_risk_level_invalido(validation):
+    row = valid_payload() | {"risk_level": "extremo"}
+    with pytest.raises(validation.ValidationError, match="risk_level"):
+        validation.validate_incident_row(row, FEATURES, "risk_level")
+
+
+def test_incident_row_no_objeto(validation):
+    with pytest.raises(validation.ValidationError):
+        validation.validate_incident_row(["no", "es", "fila"], FEATURES, "risk_level")
 
 
 # ── csv_text ─────────────────────────────────────────────────────────────────

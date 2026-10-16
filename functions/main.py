@@ -15,10 +15,11 @@ from typing import Any
 
 import joblib
 import pandas as pd
+import sklearn
 from firebase_admin import auth, firestore, initialize_app
 from firebase_functions import https_fn, options
 
-from crime_ml import validation
+from crime_ml import artifacts, validation
 from crime_ml.pipeline import FEATURES, TARGET, CrimeRiskPipelineCore
 
 initialize_app()
@@ -45,9 +46,8 @@ def _http_get_json(url: str) -> Any:
         except Exception:
             body = str(e)
         raise ValueError(f"HTTP {e.code}: {body[:800]}") from e
-# Modelo .joblib troceado en Firestore (evita usar Firebase Storage / tarjeta).
+# Modelo .joblib versionado por run en Firestore (ver crime_ml/artifacts.py).
 ML_PARTS_COLLECTION = os.environ.get("ML_PARTS_COLLECTION", "ml_model_parts")
-_CHUNK_SIZE = 750_000  # < 1 MiB por campo (límite documento Firestore)
 
 _cors = options.CorsOptions(
     cors_origins=["*"],
@@ -77,58 +77,17 @@ def _verify_user(req: https_fn.Request) -> dict[str, Any] | None:
         return None
 
 
-def _clear_ml_parts(db: Any) -> None:
-    for doc in db.collection(ML_PARTS_COLLECTION).stream():
-        doc.reference.delete()
-
-
-def _save_model_to_firestore(local_path: Path) -> dict[str, Any]:
-    data = local_path.read_bytes()
-    db = firestore.client()
-    _clear_ml_parts(db)
-    chunks = [data[i : i + _CHUNK_SIZE] for i in range(0, len(data), _CHUNK_SIZE)]
-    batch = db.batch()
-    n_batch = 0
-    for i, chunk in enumerate(chunks):
-        ref = db.collection(ML_PARTS_COLLECTION).document(str(i))
-        batch.set(ref, {"data": chunk})
-        n_batch += 1
-        if n_batch >= 400:
-            batch.commit()
-            batch = db.batch()
-            n_batch = 0
-    meta_ref = db.collection(ML_PARTS_COLLECTION).document("_meta")
-    batch.set(meta_ref, {"chunk_count": len(chunks), "bytes": len(data)})
-    batch.commit()
-    return {"stored_bytes": len(data), "chunks": len(chunks), "store": "firestore"}
-
-
-def _load_model_from_firestore(dest: Path) -> bool:
-    db = firestore.client()
-    meta = db.collection(ML_PARTS_COLLECTION).document("_meta").get()
-    if not meta.exists:
-        return False
-    md = meta.to_dict() or {}
-    n = int(md.get("chunk_count", 0))
-    if n <= 0:
-        return False
-    parts: list[bytes] = []
-    for i in range(n):
-        doc = db.collection(ML_PARTS_COLLECTION).document(str(i)).get()
-        if not doc.exists:
-            return False
-        chunk = (doc.to_dict() or {}).get("data")
-        if chunk is None:
-            return False
-        parts.append(chunk if isinstance(chunk, (bytes, bytearray)) else bytes(chunk))
-    dest.write_bytes(b"".join(parts))
-    return True
-
-
-def _model_exists_in_firestore() -> bool:
-    db = firestore.client()
-    meta = db.collection(ML_PARTS_COLLECTION).document("_meta").get()
-    return bool(meta.exists)
+def _require_admin(req: https_fn.Request) -> tuple[dict[str, Any] | None, https_fn.Response | None]:
+    """Exige token válido y claim `admin`; devuelve (usuario, respuesta_de_error)."""
+    user = _verify_user(req)
+    if not user:
+        return None, _json_response({"detail": "Se requiere Firebase ID token."}, status=401)
+    if user.get("admin") is not True:
+        return None, _json_response(
+            {"detail": "Se requiere el permiso admin (custom claim) para esta operación."},
+            status=403,
+        )
+    return user, None
 
 
 def _firestore_rows() -> list[dict[str, Any]]:
@@ -150,19 +109,23 @@ def prediction_health(req: https_fn.Request) -> https_fn.Response:
     if req.method != "GET":
         return _json_response({"detail": "Usa GET"}, status=405)
 
-    exists = _model_exists_in_firestore()
+    db = firestore.client()
+    exists = artifacts.artifact_exists(db, collection=ML_PARTS_COLLECTION)
 
     loadable = False
     model_error: str | None = None
+    model_info: dict[str, Any] = {}
     local_path = Path(tempfile.gettempdir()) / CrimeRiskPipelineCore.model_filename
 
     if exists:
         try:
-            if _load_model_from_firestore(local_path):
+            meta = artifacts.load_artifact(db, local_path, collection=ML_PARTS_COLLECTION)
+            if meta is None:
+                model_error = "No se pudieron leer los trozos del modelo en Firestore."
+            else:
                 joblib.load(local_path)
                 loadable = True
-            else:
-                model_error = "No se pudieron leer los trozos del modelo en Firestore."
+                model_info = meta
         except Exception as exc:
             model_error = str(exc)
             loadable = False
@@ -174,6 +137,8 @@ def prediction_health(req: https_fn.Request) -> https_fn.Response:
             "model_exists": exists,
             "model_loadable": loadable,
             "model_path": f"firestore/{ML_PARTS_COLLECTION}",
+            "model_run": model_info.get("run_id"),
+            "model_saved_at": model_info.get("saved_at"),
             "model_error": model_error,
             "backend": "firebase",
             "store": "firestore",
@@ -224,12 +189,14 @@ def predict_crime(req: https_fn.Request) -> https_fn.Response:
     except validation.ValidationError as exc:
         return _json_response({"detail": str(exc)}, status=400)
     local_path = Path(tempfile.gettempdir()) / CrimeRiskPipelineCore.model_filename
+    db = firestore.client()
 
-    if not _model_exists_in_firestore():
+    if not artifacts.artifact_exists(db, collection=ML_PARTS_COLLECTION):
         return _json_response({"detail": "Modelo no entrenado (Firestore vacío)."}, status=400)
 
     try:
-        if not _load_model_from_firestore(local_path):
+        meta = artifacts.load_artifact(db, local_path, collection=ML_PARTS_COLLECTION)
+        if meta is None:
             return _json_response({"detail": "No se pudo reconstruir el modelo desde Firestore."}, status=500)
         prediction = CrimeRiskPipelineCore.predict(features, local_path)
     except FileNotFoundError as exc:
@@ -242,6 +209,7 @@ def predict_crime(req: https_fn.Request) -> https_fn.Response:
             "prediction": prediction,
             "target": TARGET,
             "classes": ["bajo", "medio", "alto"],
+            "model_run": meta.get("run_id"),
         },
         status=200,
     )
@@ -252,14 +220,15 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
     if req.method == "OPTIONS":
         return https_fn.Response("", status=204)
 
-    user = _verify_user(req)
-    if not user:
-        return _json_response({"detail": "Se requiere Firebase ID token."}, status=401)
+    user, error = _require_admin(req)
+    if error:
+        return error
+    assert user is not None  # _require_admin devuelve usuario cuando no hay error
 
     if req.method == "GET":
         return _json_response(
             {
-                "detail": "POST para entrenar. Opcional: test_size, dataset (array de filas), o usar solo Firestore.",
+                "detail": "POST para entrenar (requiere claim admin). Opcional: test_size, dataset (array de filas), o usar solo Firestore.",
                 "collection": INCIDENTS_COLLECTION,
                 "optional_fields": {"test_size": "float 0.05–0.45", "dataset": "array de objetos con columnas del modelo"},
             },
@@ -301,16 +270,41 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
         data = pd.DataFrame(rows_fs)
 
     local_path = Path(tempfile.gettempdir()) / CrimeRiskPipelineCore.model_filename
+    db = firestore.client()
 
     try:
-        result = CrimeRiskPipelineCore.train_from_dataframe(data, test_size=test_size, artifact_path=local_path)
-    except ValueError as exc:
-        return _json_response({"detail": str(exc)}, status=400)
+        artifacts.acquire_training_lock(db, collection=ML_PARTS_COLLECTION)
+    except artifacts.TrainingInProgress as exc:
+        return _json_response(
+            {"detail": f"Ya hay un entrenamiento en curso (iniciado en {exc.started_at})."},
+            status=409,
+        )
 
-    fs_meta = _save_model_to_firestore(local_path)
+    try:
+        try:
+            result = CrimeRiskPipelineCore.train_from_dataframe(data, test_size=test_size, artifact_path=local_path)
+        except ValueError as exc:
+            return _json_response({"detail": str(exc)}, status=400)
+
+        fs_meta = artifacts.save_artifact(
+            db,
+            local_path.read_bytes(),
+            collection=ML_PARTS_COLLECTION,
+            metadata={
+                "metrics": result.get("metrics"),
+                "train_size": result.get("train_size"),
+                "test_size": result.get("test_size"),
+                "trained_by": user.get("uid"),
+                "sklearn_version": sklearn.__version__,
+            },
+        )
+    finally:
+        artifacts.release_training_lock(db, collection=ML_PARTS_COLLECTION)
+
     result["store"] = fs_meta.get("store")
-    result["stored_bytes"] = fs_meta.get("stored_bytes")
+    result["stored_bytes"] = fs_meta.get("bytes")
     result["chunks"] = fs_meta.get("chunks")
+    result["model_run"] = fs_meta.get("run_id")
     result["backend"] = "firebase"
     return _json_response(result, status=200)
 
@@ -321,9 +315,9 @@ def import_incidents(req: https_fn.Request) -> https_fn.Response:
     if req.method == "OPTIONS":
         return https_fn.Response("", status=204)
 
-    user = _verify_user(req)
-    if not user:
-        return _json_response({"detail": "Se requiere Firebase ID token."}, status=401)
+    _admin, error = _require_admin(req)
+    if error:
+        return error
 
     if req.method != "POST":
         return _json_response({"detail": "Usa POST"}, status=405)
@@ -346,14 +340,15 @@ def import_incidents(req: https_fn.Request) -> https_fn.Response:
     count = 0
     total_written = 0
 
-    for row in rows:
-        missing = [k for k in FEATURES + [TARGET] if k not in row]
-        if missing:
-            return _json_response({"detail": f"Fila incompleta, faltan: {missing}", "row_sample": row}, status=400)
+    for i, row in enumerate(rows):
+        try:
+            cleaned = validation.validate_incident_row(row, FEATURES, TARGET)
+        except validation.ValidationError as exc:
+            return _json_response({"detail": f"Fila {i}: {exc}"}, status=400)
 
         doc_id = str(row.get("incident_id") or uuid.uuid4())
         ref = db.collection(INCIDENTS_COLLECTION).document(doc_id)
-        batch.set(ref, {k: row[k] for k in FEATURES + [TARGET]})
+        batch.set(ref, cleaned)
         count += 1
         total_written += 1
 
@@ -374,9 +369,9 @@ def import_csv_dataset(req: https_fn.Request) -> https_fn.Response:
     if req.method == "OPTIONS":
         return https_fn.Response("", status=204)
 
-    user = _verify_user(req)
-    if not user:
-        return _json_response({"detail": "Se requiere Firebase ID token."}, status=401)
+    _admin, error = _require_admin(req)
+    if error:
+        return error
 
     if req.method != "POST":
         return _json_response({"detail": "Usa POST multipart"}, status=405)
@@ -410,16 +405,23 @@ def import_csv_dataset(req: https_fn.Request) -> https_fn.Response:
             status=400,
         )
 
-    rows = data.to_dict(orient="records")
+    raw_rows = data.to_dict(orient="records")
+    cleaned_rows: list[dict[str, Any]] = []
+    doc_ids: list[str] = []
+    for i, row in enumerate(raw_rows):
+        try:
+            cleaned_rows.append(validation.validate_incident_row(row, FEATURES, TARGET))
+        except validation.ValidationError as exc:
+            return _json_response({"detail": f"Fila {i + 2} del CSV: {exc}"}, status=400)
+        doc_ids.append(str(row.get("incident_id") or f"csv_{i}"))
+
     db = firestore.client()
     batch = db.batch()
     count = 0
     total = 0
-    for i, row in enumerate(rows):
-        doc_id = str(row.get("incident_id") or f"csv_{i}")
-        ref = db.collection(INCIDENTS_COLLECTION).document(doc_id)
-        payload = {k: row[k] for k in FEATURES + [TARGET]}
-        batch.set(ref, payload)
+    for i, row in enumerate(cleaned_rows):
+        ref = db.collection(INCIDENTS_COLLECTION).document(doc_ids[i])
+        batch.set(ref, row)
         count += 1
         total += 1
         if count >= 400:

@@ -14,9 +14,12 @@ Los errores se señalan con `ValidationError`; `main.py` responde 400 con `detai
 
 from __future__ import annotations
 
+import math
+import numbers
 from typing import Any
 
 DAYS_OF_WEEK = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+RISK_LEVELS = ("bajo", "medio", "alto")
 
 # Bbox de Lima Metropolitana con margen (dataset canónico: lat -12.52..-11.71, lon -77.17..-76.66).
 # Debe coincidir con firestore.rules y con frontend/src/pages/DataPage.tsx.
@@ -41,6 +44,11 @@ class ValidationError(ValueError):
     """Payload inválido: la API responde 400 con `detail`."""
 
 
+def _is_number(value: Any) -> bool:
+    """Acepta int/float nativos y escalares numéricos de pandas/numpy (registrados en numbers)."""
+    return isinstance(value, numbers.Number) and not isinstance(value, bool)
+
+
 def _require_str(value: Any, field: str, *, max_length: int) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValidationError(f"'{field}' debe ser un texto no vacío.")
@@ -57,10 +65,10 @@ def _require_number(
     minimum: float | None = None,
     maximum: float | None = None,
 ) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if not _is_number(value):
         raise ValidationError(f"'{field}' debe ser un número.")
     number = float(value)
-    if number != number or number in (float("inf"), float("-inf")):
+    if not math.isfinite(number):
         raise ValidationError(f"'{field}' debe ser un número finito.")
     if minimum is not None and number < minimum:
         raise ValidationError(f"'{field}' debe ser mayor o igual a {minimum}.")
@@ -70,14 +78,15 @@ def _require_number(
 
 
 def _require_int(value: Any, field: str, *, minimum: int, maximum: int) -> int:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if not _is_number(value):
         raise ValidationError(f"'{field}' debe ser un número entero.")
-    if isinstance(value, float) and not value.is_integer():
+    number = float(value)
+    if not math.isfinite(number) or not number.is_integer():
         raise ValidationError(f"'{field}' debe ser un número entero.")
-    number = int(value)
-    if not minimum <= number <= maximum:
+    int_value = int(number)
+    if not minimum <= int_value <= maximum:
         raise ValidationError(f"'{field}' debe estar entre {minimum} y {maximum}.")
-    return number
+    return int_value
 
 
 def validate_predict_payload(body: Any, required_fields: Any) -> dict[str, Any]:
@@ -97,9 +106,11 @@ def validate_predict_payload(body: Any, required_fields: Any) -> dict[str, Any]:
     for field in required_fields:
         value = body[field]
         if field == "crime_type":
-            cleaned[field] = _require_str(value, field, max_length=MAX_STR_CRIME_TYPE)
+            # Se normaliza a minúsculas: así se almacena y así se entrenó el modelo.
+            cleaned[field] = _require_str(value, field, max_length=MAX_STR_CRIME_TYPE).lower()
         elif field == "district":
-            cleaned[field] = _require_str(value, field, max_length=MAX_STR_DISTRICT)
+            # Se normaliza a mayúsculas: así lo usa localPredict y el resto del dataset.
+            cleaned[field] = _require_str(value, field, max_length=MAX_STR_DISTRICT).upper()
         elif field == "day_of_week":
             day = value.strip().lower() if isinstance(value, str) else value
             if day not in DAYS_OF_WEEK:
@@ -117,6 +128,24 @@ def validate_predict_payload(body: Any, required_fields: Any) -> dict[str, Any]:
             # Fail-closed: si el esquema FEATURES cambia, exige actualizar este validador.
             raise ValidationError(f"Campo sin regla de validación: '{field}'.")
 
+    return cleaned
+
+
+def validate_incident_row(row: Any, feature_fields: Any, target_field: str) -> dict[str, Any]:
+    """Valida y normaliza una fila completa de incidente (features + variable objetivo).
+
+    Devuelve la fila con exactamente las columnas del esquema (descarta extras),
+    lista para escribir en Firestore con el Admin SDK (que no pasa por las reglas).
+    """
+    if not isinstance(row, dict):
+        raise ValidationError("La fila debe ser un objeto.")
+    cleaned = validate_predict_payload(row, feature_fields)
+
+    target = row.get(target_field)
+    risk = target.strip().lower() if isinstance(target, str) else target
+    if risk not in RISK_LEVELS:
+        raise ValidationError(f"'{target_field}' debe ser uno de: {', '.join(RISK_LEVELS)}.")
+    cleaned[target_field] = risk
     return cleaned
 
 

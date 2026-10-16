@@ -237,15 +237,16 @@ Todas las rutas (salvo `prediction_health`) exigen `Authorization: Bearer <Fireb
 |---------|--------|----------|
 | `prediction_health` | GET | Estado del modelo almacenado en Firestore. |
 | `predict_crime` | POST | Predice riesgo con el Random Forest entrenado. |
-| `train_model` | POST | Entrena con Firestore o con `dataset` inline; guarda el `.joblib` troceado en Firestore. |
-| `import_incidents` | POST | Inserta filas (`rows`) en `crime_incidents`. |
-| `import_csv_dataset` | POST | Importa CSV (`csv_text`) a `crime_incidents`. |
+| `train_model` | POST | Entrena con Firestore o con `dataset` inline; guarda el `.joblib` **versionado por run** con swap atómico (evita artefactos mezclados). Requiere claim `admin`. |
+| `import_incidents` | POST | Inserta filas (`rows`) en `crime_incidents` (validadas por fila). Requiere claim `admin`. |
+| `import_csv_dataset` | POST | Importa CSV (`csv_text`) a `crime_incidents` (validadas por fila). Requiere claim `admin`. |
 | `inei_datacrim_aggregate` | GET | Proxy de series anuales del INEI (evita CORS). |
 | `inei_arcgis_points` | GET | Proxy de puntos de delitos del MapServer del INEI (ArcGIS). |
 
 Para trabajar con ellas necesitas el plan **Blaze** (Cloud Build + Artifact Registry) y desplegarlas
-(§8). El frontend actual no consume ninguna de estas rutas. Las pruebas locales de Functions
-requerirían el emulador (la Fase 1 ya añadió el bloque `emulators` para Firestore; Functions aún no).
+(§8). El frontend actual no consume ninguna de estas rutas y, desde la Fase 2, `train_model`,
+`import_incidents` e `import_csv_dataset` exigen además el claim **`admin`** (el resto de endpoints
+solo pide sesión). `firebase.json` ya tiene configurados los emuladores de Firestore y Functions.
 
 ---
 
@@ -271,9 +272,9 @@ Sirve el SPA (`frontend/dist`) y aplica `firestore.rules`, pero **no habrá API*
 firebase deploy --only hosting,functions,firestore
 ```
 
-> Nota verificada en la Fase 1: `firebase.json` todavía **no declara** el bloque `functions`
-> (`"functions": { "source": "functions" }`). Si el CLI rechaza la configuración al desplegar
-> Functions, añádelo antes (pendiente para la Fase 2, junto con el emulador de Functions).
+> La Fase 2 añadió a `firebase.json` el bloque `functions` (`source: functions`, runtime
+> `python311`) y el puerto del emulador de Functions (5001), de modo que el CLI ya encuentra la
+> configuración. El despliegue sigue requiriendo plan **Blaze**.
 
 > **¿Por qué aparece el error de Blaze?** Al desplegar Functions, Google usa **Cloud Build** y
 > **Artifact Registry**, que solo se pueden activar con el plan **Blaze** (pago por uso). No es un
@@ -290,7 +291,7 @@ debe apuntar a **`frontend/dist`** (ya está configurado en `firebase.json`).
 | Colección | Uso | Acceso |
 |-----------|-----|--------|
 | `crime_incidents` | Filas de delitos (campos del modelo ML). | Lectura: usuarios autenticados. Crear/actualizar/borrar: solo cuentas con claim `admin`, con validación de esquema en las reglas (Fase 1). |
-| `ml_model_parts` | Trozos del modelo `.joblib` entrenado. | Solo Admin SDK (Cloud Functions). |
+| `ml_model_parts` | Modelo `.joblib` **versionado por run**: puntero `_meta`, metadatos en `ml_model_parts/<run>` y trozos en `ml_model_parts/<run>/chunks/<i>`; candado `_training_lock` para entrenamientos concurrentes. | Solo Admin SDK (Cloud Functions). |
 
 Reglas: [`firestore.rules`](firestore.rules) · Índices: [`firestore.indexes.json`](firestore.indexes.json).
 El modelo ML espera las variables `FEATURES` y el objetivo `TARGET` definidos en

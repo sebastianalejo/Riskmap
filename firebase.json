@@ -17,9 +17,17 @@
       }
     ]
   },
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "runtime": "python311"
+  },
   "emulators": {
     "firestore": {
       "port": 8080
+    },
+    "functions": {
+      "port": 5001
     }
   }
 }

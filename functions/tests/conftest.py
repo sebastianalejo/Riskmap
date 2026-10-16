@@ -1,7 +1,7 @@
-"""Carga `crime_ml/validation.py` de forma aislada.
+"""Carga módulos de `crime_ml/` de forma aislada.
 
 Se evita importar el paquete `crime_ml` completo (que arrastra pandas/sklearn)
-porque la validación no depende de ellos.
+porque `validation` y `artifacts` no dependen de ellos.
 """
 
 import importlib.util
@@ -10,13 +10,22 @@ from types import ModuleType
 
 import pytest
 
-_VALIDATION_PATH = Path(__file__).resolve().parents[1] / "crime_ml" / "validation.py"
+_MODULES_DIR = Path(__file__).resolve().parents[1] / "crime_ml"
 
 
-@pytest.fixture(scope="session")
-def validation() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("crime_ml_validation", _VALIDATION_PATH)
+def _load_module(name: str, path: Path) -> ModuleType:
+    spec = importlib.util.spec_from_file_location(name, path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+@pytest.fixture(scope="session")
+def validation() -> ModuleType:
+    return _load_module("crime_ml_validation", _MODULES_DIR / "validation.py")
+
+
+@pytest.fixture(scope="session")
+def artifacts() -> ModuleType:
+    return _load_module("crime_ml_artifacts", _MODULES_DIR / "artifacts.py")
