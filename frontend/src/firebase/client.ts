@@ -1,3 +1,4 @@
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 import { getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 
@@ -5,12 +6,18 @@ let _app: FirebaseApp | null = null
 let _runtimeOptions: FirebaseOptions | null = null
 let _runtimeFunctionsOrigin: string | undefined
 let _mapsApiKey: string | undefined
+let _runtimeAppCheckSiteKey: string | undefined
+let _appCheckReady = false
 
 /**
- * Misma forma que el objeto `firebaseConfig` de la consola, más opcional `functionsOrigin` y `mapsApiKey`.
+ * Misma forma que el objeto `firebaseConfig` de la consola, más opcional `functionsOrigin`, `mapsApiKey` y `appCheckSiteKey`.
  * Si falta `functionsOrigin`, se usa `https://us-central1-<projectId>.cloudfunctions.net`.
  */
-type RuntimeConfigFile = FirebaseOptions & { functionsOrigin?: string; mapsApiKey?: string }
+type RuntimeConfigFile = FirebaseOptions & {
+  functionsOrigin?: string
+  mapsApiKey?: string
+  appCheckSiteKey?: string
+}
 
 function optionsFromEnv(): FirebaseOptions | null {
   const apiKey = import.meta.env.VITE_FIREBASE_API_KEY?.trim()
@@ -44,6 +51,9 @@ export async function loadFirebaseRuntimeConfig(): Promise<void> {
   if (raw && typeof raw.mapsApiKey === 'string' && raw.mapsApiKey.trim()) {
     _mapsApiKey = raw.mapsApiKey.trim()
   }
+  if (raw && typeof raw.appCheckSiteKey === 'string' && raw.appCheckSiteKey.trim()) {
+    _runtimeAppCheckSiteKey = raw.appCheckSiteKey.trim()
+  }
 
   if (optionsFromEnv()) return
 
@@ -66,6 +76,33 @@ export function getGoogleMapsApiKey(): string | undefined {
   const fromEnv = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim()
   if (fromEnv) return fromEnv
   return _mapsApiKey
+}
+
+/** Clave de sitio de App Check (reCAPTCHA v3). Env o `appCheckSiteKey` en firebase-config.json. */
+export function getAppCheckSiteKey(): string | undefined {
+  const fromEnv = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY?.trim()
+  if (fromEnv) return fromEnv
+  return _runtimeAppCheckSiteKey
+}
+
+/**
+ * Inicializa App Check solo si hay clave de sitio configurada (opcional).
+ * Debe llamarse antes de renderizar React (ver main.tsx).
+ */
+export function initAppCheck(): void {
+  if (_appCheckReady) return
+  const app = getFirebaseApp()
+  const siteKey = getAppCheckSiteKey()
+  if (!app || !siteKey) return
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(siteKey),
+      isTokenAutoRefreshEnabled: true,
+    })
+    _appCheckReady = true
+  } catch {
+    /* ya inicializado o entorno sin reCAPTCHA */
+  }
 }
 
 /** Origen de Cloud Functions (env, JSON o derivado del projectId). */

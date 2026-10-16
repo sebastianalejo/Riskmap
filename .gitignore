@@ -75,4 +75,5 @@ db.sqlite3
 models/trained/
 models/processed/
 data/processed/incidents_lima.csv
+functions/venv/
 .env.local

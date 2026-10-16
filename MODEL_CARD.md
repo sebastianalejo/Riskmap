@@ -95,7 +95,9 @@ El pipeline de las Cloud Functions (`functions/crime_ml/pipeline.py`) sigue sopo
 heredada con `FEATURES`/`TARGET` por defecto, cuyas etiquetas eran una función determinista de
 `crime_type` (circularidad detectada en la auditoría). Ese camino queda como compatibilidad
 histórica; **este model card y el pipeline offline son la referencia metodológica del proyecto**.
-La Fase 4 conectará el clasificador de modalidad a la API y redefinirá la presentación en la UI.
+Desde la Fase 4, el clasificador de modalidad se sirve a través de `predict_crime` (top-5 con
+probabilidad) y la pestaña «Modelo de modalidad» de la UI; que funcione en la nube depende del
+despliegue (ver `docs/DEPLOY.md`).
 
 ## 8. Reproducibilidad
 

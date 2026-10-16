@@ -280,3 +280,26 @@ class CrimeRiskPipelineCore:
         input_df = pd.DataFrame([features])
         prediction = pipeline.predict(input_df)
         return str(prediction[0])
+
+    @classmethod
+    def predict_proba(
+        cls,
+        features: dict[str, Any],
+        artifact_path: Path,
+        top_k: int = 5,
+    ) -> list[tuple[str, float]]:
+        """Devuelve las `top_k` clases más probables como [(etiqueta, probabilidad), …]."""
+        artifact_path = Path(artifact_path)
+        if not artifact_path.exists():
+            raise FileNotFoundError("Modelo no entrenado. Ejecute entrenamiento primero.")
+
+        pipeline: Pipeline = joblib.load(artifact_path)
+        input_df = pd.DataFrame([features])
+        probabilities = pipeline.predict_proba(input_df)[0]
+        classes = [str(class_name) for class_name in pipeline.named_steps["model"].classes_]
+        ranked = sorted(
+            zip(classes, (float(value) for value in probabilities)),
+            key=lambda pair: pair[1],
+            reverse=True,
+        )
+        return ranked[: max(1, int(top_k))]

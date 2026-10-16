@@ -94,7 +94,24 @@ def test_load_layout_legado(artifacts, tmp_path):
     assert loaded is not None
     assert loaded["layout"] == "legacy"
     assert loaded["run_id"] is None
+    assert loaded["metadata"] == {}
     assert dest.read_bytes() == b"ABCD"
+
+
+def test_load_devuelve_metadata_del_run(artifacts, tmp_path):
+    db = FakeFirestore()
+    artifacts.save_artifact(
+        db,
+        b"x" * 5,
+        collection=COLLECTION,
+        run_id="run1",
+        metadata={"features": ["district"], "target": "crime_type"},
+    )
+
+    loaded = artifacts.load_artifact(db, tmp_path / "m.bin", collection=COLLECTION)
+    assert loaded is not None
+    assert loaded["metadata"]["features"] == ["district"]
+    assert loaded["metadata"]["target"] == "crime_type"
 
 
 def test_load_incompleto_devuelve_none(artifacts, tmp_path):
@@ -140,6 +157,32 @@ def test_artefacto_vacio_rechazado(artifacts):
     db = FakeFirestore()
     with pytest.raises(artifacts.ArtifactError):
         artifacts.save_artifact(db, b"", collection=COLLECTION)
+
+
+def test_firestore_safe_evita_arrays_anidados(artifacts):
+    value = {
+        "accuracy": 0.9,
+        "confusion_matrix": [[1, 2], [3, 4]],
+        "per_class": {"hurto": {"f1": 0.5}},
+        "classes": ["a", "b"],
+        "nulo": None,
+    }
+    safe = artifacts.firestore_safe(value)
+    assert safe["confusion_matrix"] == [{"values": [1, 2]}, {"values": [3, 4]}]
+    assert not any(isinstance(item, list) for item in safe["confusion_matrix"])
+    assert safe["per_class"] == {"hurto": {"f1": 0.5}}
+    assert safe["accuracy"] == 0.9
+
+
+def test_firestore_safe_convierte_escalares_exoticos(artifacts):
+    class FakeScalar:
+        def item(self):
+            return 7
+
+    safe = artifacts.firestore_safe({"a": FakeScalar(), "b": object(), "c": (1, 2)})
+    assert safe["a"] == 7
+    assert isinstance(safe["b"], str)
+    assert safe["c"] == [1, 2]
 
 
 # ── candado de entrenamiento ─────────────────────────────────────────────────

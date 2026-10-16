@@ -14,12 +14,18 @@ Los errores se señalan con `ValidationError`; `main.py` responde 400 con `detai
 
 from __future__ import annotations
 
+import base64
+import binascii
 import math
 import numbers
 from typing import Any
 
 DAYS_OF_WEEK = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
 RISK_LEVELS = ("bajo", "medio", "alto")
+VALID_SPLITS = ("random", "temporal", "district")
+MIN_YEAR, MAX_YEAR = 2000, 2100
+MAX_FEATURES = 12
+MAX_ARTIFACT_BYTES = 15 * 1024 * 1024
 
 # Bbox de Lima Metropolitana con margen (dataset canónico: lat -12.52..-11.71, lon -77.17..-76.66).
 # Debe coincidir con firestore.rules y con frontend/src/pages/DataPage.tsx.
@@ -89,11 +95,37 @@ def _require_int(value: Any, field: str, *, minimum: int, maximum: int) -> int:
     return int_value
 
 
-def validate_predict_payload(body: Any, required_fields: Any) -> dict[str, Any]:
-    """Valida y normaliza el payload de `predict_crime`.
+def _clean_field(field: str, value: Any) -> Any:
+    """Valida y normaliza un campo del esquema (falla cerrado si no hay regla)."""
+    if field == "crime_type":
+        # Se normaliza a minúsculas: así se almacena y así se entrenó el modelo.
+        return _require_str(value, field, max_length=MAX_STR_CRIME_TYPE).lower()
+    if field == "district":
+        # Se normaliza a mayúsculas: así lo usa localPredict y el resto del dataset.
+        return _require_str(value, field, max_length=MAX_STR_DISTRICT).upper()
+    if field == "day_of_week":
+        day = value.strip().lower() if isinstance(value, str) else value
+        if day not in DAYS_OF_WEEK:
+            raise ValidationError(f"'day_of_week' debe ser uno de: {', '.join(DAYS_OF_WEEK)}.")
+        return day
+    if field == "hour":
+        return _require_int(value, field, minimum=0, maximum=MAX_HOUR)
+    if field == "historical_frequency":
+        return _require_int(value, field, minimum=1, maximum=MAX_FREQUENCY)
+    if field == "latitude":
+        return _require_number(value, field, minimum=LAT_MIN, maximum=LAT_MAX)
+    if field == "longitude":
+        return _require_number(value, field, minimum=LON_MIN, maximum=LON_MAX)
+    if field == "occurred_year":
+        return _require_int(value, field, minimum=MIN_YEAR, maximum=MAX_YEAR)
+    raise ValidationError(f"Campo sin regla de validación: '{field}'.")
 
-    Devuelve el diccionario de features limpio (hour/frecuencia como int,
-    lat/lon como float, `day_of_week` en minúsculas).
+
+def validate_predict_payload(body: Any, required_fields: Any) -> dict[str, Any]:
+    """Valida y normaliza el payload de `predict_crime` según las features del modelo.
+
+    Devuelve el diccionario limpio (p. ej. hour/frecuencia como int, lat/lon como
+    float, `day_of_week` en minúsculas y `district` en mayúsculas).
     """
     if not isinstance(body, dict):
         raise ValidationError("El cuerpo debe ser un objeto JSON.")
@@ -102,33 +134,7 @@ def validate_predict_payload(body: Any, required_fields: Any) -> dict[str, Any]:
     if missing:
         raise ValidationError(f"Faltan campos obligatorios: {missing}")
 
-    cleaned: dict[str, Any] = {}
-    for field in required_fields:
-        value = body[field]
-        if field == "crime_type":
-            # Se normaliza a minúsculas: así se almacena y así se entrenó el modelo.
-            cleaned[field] = _require_str(value, field, max_length=MAX_STR_CRIME_TYPE).lower()
-        elif field == "district":
-            # Se normaliza a mayúsculas: así lo usa localPredict y el resto del dataset.
-            cleaned[field] = _require_str(value, field, max_length=MAX_STR_DISTRICT).upper()
-        elif field == "day_of_week":
-            day = value.strip().lower() if isinstance(value, str) else value
-            if day not in DAYS_OF_WEEK:
-                raise ValidationError(f"'day_of_week' debe ser uno de: {', '.join(DAYS_OF_WEEK)}.")
-            cleaned[field] = day
-        elif field == "hour":
-            cleaned[field] = _require_int(value, field, minimum=0, maximum=MAX_HOUR)
-        elif field == "historical_frequency":
-            cleaned[field] = _require_int(value, field, minimum=1, maximum=MAX_FREQUENCY)
-        elif field == "latitude":
-            cleaned[field] = _require_number(value, field, minimum=LAT_MIN, maximum=LAT_MAX)
-        elif field == "longitude":
-            cleaned[field] = _require_number(value, field, minimum=LON_MIN, maximum=LON_MAX)
-        else:
-            # Fail-closed: si el esquema FEATURES cambia, exige actualizar este validador.
-            raise ValidationError(f"Campo sin regla de validación: '{field}'.")
-
-    return cleaned
+    return {field: _clean_field(field, body[field]) for field in required_fields}
 
 
 def validate_incident_row(row: Any, feature_fields: Any, target_field: str) -> dict[str, Any]:
@@ -188,6 +194,79 @@ def parse_test_size(value: Any) -> float:
     if not 0.05 <= test_size <= 0.45:
         raise ValidationError("'test_size' debe estar entre 0.05 y 0.45.")
     return test_size
+
+
+def validate_feature_list(value: Any) -> list[str]:
+    """Valida una lista de nombres de columna (features)."""
+    if not isinstance(value, list) or not value:
+        raise ValidationError("'features' debe ser una lista no vacía de nombres de columna.")
+    if len(value) > MAX_FEATURES:
+        raise ValidationError(f"'features' excede el máximo de {MAX_FEATURES} columnas.")
+    cleaned: list[str] = []
+    for item in value:
+        name = _require_str(item, "features", max_length=40)
+        if name in cleaned:
+            raise ValidationError(f"La lista 'features' tiene duplicados: '{name}'.")
+        cleaned.append(name)
+    return cleaned
+
+
+def validate_identifier(value: Any, field: str = "target") -> str:
+    """Valida un nombre de columna único (p. ej. la variable objetivo)."""
+    return _require_str(value, field, max_length=40)
+
+
+def parse_task(task: Any) -> dict[str, Any] | None:
+    """Valida la configuración de tarea de entrenamiento (`task`) o devuelve None."""
+    if task is None:
+        return None
+    if not isinstance(task, dict):
+        raise ValidationError("'task' debe ser un objeto JSON.")
+
+    features = validate_feature_list(task.get("features"))
+    target = _require_str(task.get("target"), "target", max_length=40)
+    if target in features:
+        raise ValidationError("'target' no puede ser también una feature.")
+
+    split = task.get("split", "random")
+    if split not in VALID_SPLITS:
+        raise ValidationError(f"'split' debe ser uno de: {', '.join(VALID_SPLITS)}.")
+
+    time_column = task.get("time_column")
+    group_column = task.get("group_column")
+    if time_column is not None:
+        time_column = _require_str(time_column, "time_column", max_length=40)
+    if group_column is not None:
+        group_column = _require_str(group_column, "group_column", max_length=40)
+    if split == "temporal" and not time_column:
+        raise ValidationError("El split 'temporal' requiere 'time_column'.")
+    if split == "district" and not group_column:
+        raise ValidationError("El split 'district' requiere 'group_column'.")
+
+    return {
+        "features": features,
+        "target": target,
+        "split": split,
+        "time_column": time_column,
+        "group_column": group_column,
+    }
+
+
+def decode_artifact_b64(value: Any) -> bytes:
+    """Decodifica un artefacto .joblib enviado en base64 (con límite de tamaño)."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValidationError("'artifact_b64' es obligatorio (contenido base64 del .joblib).")
+    if len(value) > (MAX_ARTIFACT_BYTES * 4 // 3) + 1024:
+        raise ValidationError(f"'artifact_b64' excede el tamaño máximo ({MAX_ARTIFACT_BYTES // (1024 * 1024)} MB).")
+    try:
+        raw = base64.b64decode(value.strip(), validate=True)
+    except (binascii.Error, ValueError):
+        raise ValidationError("'artifact_b64' no es base64 válido.") from None
+    if not raw:
+        raise ValidationError("'artifact_b64' está vacío.")
+    if len(raw) > MAX_ARTIFACT_BYTES:
+        raise ValidationError(f"El artefacto excede el tamaño máximo ({MAX_ARTIFACT_BYTES // (1024 * 1024)} MB).")
+    return raw
 
 
 def validate_layer(layer: Any) -> int:

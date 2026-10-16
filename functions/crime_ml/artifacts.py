@@ -172,12 +172,16 @@ def load_artifact(db: Any, dest: Path, *, collection: str) -> dict[str, Any] | N
                 return None
             parts.append(chunk if isinstance(chunk, (bytes, bytearray)) else bytes(chunk))
         dest.write_bytes(b"".join(parts))
+        metadata = {
+            key: value for key, value in run_meta.items() if key not in ("bytes", "chunk_count", "created_at")
+        }
         return {
             "layout": "run",
             "run_id": run_id,
             "chunk_count": chunk_count,
             "bytes": run_meta.get("bytes"),
             "saved_at": run_meta.get("created_at"),
+            "metadata": metadata,
         }
 
     # ── Layout legado (artefactos guardados antes de la Fase 2) ──────────────
@@ -200,6 +204,7 @@ def load_artifact(db: Any, dest: Path, *, collection: str) -> dict[str, Any] | N
         "chunk_count": legacy_count,
         "bytes": meta.get("bytes"),
         "saved_at": None,
+        "metadata": {},
     }
 
 
@@ -210,6 +215,30 @@ def artifact_exists(db: Any, *, collection: str) -> bool:
         return False
     meta = meta_doc.to_dict() or {}
     return bool(meta.get("current_run")) or int(meta.get("chunk_count", 0)) > 0
+
+
+def firestore_safe(value: Any) -> Any:
+    """Copia una estructura para Firestore (que no admite arrays dentro de arrays).
+
+    Las listas anidadas se envuelven como `{"values": [...]}` y los escalares no
+    nativos (p. ej. numpy) se convierten con `.item()` o a texto.
+    """
+    if isinstance(value, dict):
+        return {str(key): firestore_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        safe_items = [firestore_safe(item) for item in value]
+        return [{"values": item} if isinstance(item, list) else item for item in safe_items]
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return value
+    if isinstance(value, (int, float)):
+        return value
+    item_method = getattr(value, "item", None)
+    if callable(item_method):
+        try:
+            return value.item()
+        except Exception:  # pragma: no cover - escalares exóticos
+            pass
+    return str(value)
 
 
 def _utcnow(now: datetime | None) -> datetime:

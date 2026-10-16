@@ -172,6 +172,82 @@ def test_incident_row_no_objeto(validation):
         validation.validate_incident_row(["no", "es", "fila"], FEATURES, "risk_level")
 
 
+# ── tareas de entrenamiento y publicación (Fase 4) ───────────────────────────
+
+
+def test_parse_task_valida(validation):
+    task = validation.parse_task(
+        {
+            "features": ["district", "latitude", "longitude"],
+            "target": "crime_type",
+            "split": "temporal",
+            "time_column": "occurred_year",
+        }
+    )
+    assert task["features"] == ["district", "latitude", "longitude"]
+    assert task["split"] == "temporal"
+    assert task["time_column"] == "occurred_year"
+
+
+def test_parse_task_split_por_defecto(validation):
+    task = validation.parse_task({"features": ["district"], "target": "crime_type"})
+    assert task["split"] == "random"
+    assert validation.parse_task(None) is None
+
+
+def test_parse_task_errores(validation):
+    with pytest.raises(validation.ValidationError, match="objeto JSON"):
+        validation.parse_task("no soy objeto")
+    with pytest.raises(validation.ValidationError, match="features"):
+        validation.parse_task({"features": [], "target": "crime_type"})
+    with pytest.raises(validation.ValidationError, match="duplicados"):
+        validation.parse_task({"features": ["a", "a"], "target": "crime_type"})
+    with pytest.raises(validation.ValidationError, match="también una feature"):
+        validation.parse_task({"features": ["district"], "target": "district"})
+    with pytest.raises(validation.ValidationError, match="split"):
+        validation.parse_task({"features": ["district"], "target": "t", "split": "magico"})
+    with pytest.raises(validation.ValidationError, match="time_column"):
+        validation.parse_task({"features": ["district"], "target": "t", "split": "temporal"})
+    with pytest.raises(validation.ValidationError, match="group_column"):
+        validation.parse_task({"features": ["district"], "target": "t", "split": "district"})
+
+
+def test_predict_con_features_de_modalidad(validation):
+    body = {"district": "la victoria", "latitude": -12.071, "longitude": -77.02}
+    cleaned = validation.validate_predict_payload(body, ["district", "latitude", "longitude"])
+    assert cleaned == {"district": "LA VICTORIA", "latitude": -12.071, "longitude": -77.02}
+
+
+def test_predict_con_occurred_year(validation):
+    assert validation.validate_predict_payload({"occurred_year": 2024}, ["occurred_year"]) == {
+        "occurred_year": 2024
+    }
+    with pytest.raises(validation.ValidationError):
+        validation.validate_predict_payload({"occurred_year": 1800}, ["occurred_year"])
+
+
+def test_decode_artifact_b64(validation):
+    import base64
+
+    payload = b"contenido-de-modelo"
+    assert validation.decode_artifact_b64(base64.b64encode(payload).decode()) == payload
+
+    with pytest.raises(validation.ValidationError):
+        validation.decode_artifact_b64("no-es-base64!!")
+    with pytest.raises(validation.ValidationError):
+        validation.decode_artifact_b64("")
+    with pytest.raises(validation.ValidationError):
+        validation.decode_artifact_b64(12345)
+
+
+def test_decode_artifact_excede_tamano(validation, monkeypatch):
+    import base64
+
+    monkeypatch.setattr(validation, "MAX_ARTIFACT_BYTES", 4)
+    with pytest.raises(validation.ValidationError, match="tamaño máximo"):
+        validation.decode_artifact_b64(base64.b64encode(b"12345").decode())
+
+
 # ── csv_text ─────────────────────────────────────────────────────────────────
 
 

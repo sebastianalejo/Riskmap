@@ -6,5 +6,6 @@
   "messagingSenderId": "123456789012",
   "appId": "1:123456789012:web:abcdef",
   "functionsOrigin": "https://us-central1-tu-proyecto.cloudfunctions.net",
-  "mapsApiKey": "TU_CLAVE_MAPS_JAVASCRIPT_API"
+  "mapsApiKey": "TU_CLAVE_MAPS_JAVASCRIPT_API",
+  "appCheckSiteKey": ""
 }

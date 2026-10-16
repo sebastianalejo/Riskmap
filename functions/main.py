@@ -1,11 +1,34 @@
-"""Firebase Cloud Functions (Gen 2) — predicción y entrenamiento sin Django."""
+"""Firebase Cloud Functions (Gen 2) — API de datos y ML del proyecto Riskmap.
+
+Contratos principales (Fase 4):
+- `predict_crime` sirve el último modelo publicado en Firestore. El contrato de
+  entrada depende de las features guardadas con el modelo (por defecto, el
+  clasificador de modalidad: `district`, `latitude`, `longitude`) y la respuesta
+  incluye las clases más probables.
+- `train_model` (solo admin) entrena con Firestore o con `dataset` inline y una
+  `task` opcional (features/target/split random-temporal-district).
+- `publish_model` (solo admin) publica un artefacto `.joblib` entrenado offline
+  con `scripts/pipeline/train.py`.
+
+Infraestructura:
+- CORS manual con allowlist (`CORS_ORIGINS`, por defecto solo desarrollo local).
+- Logging con `request_id` y duración por petición.
+- Verificación de ID tokens con `check_revoked`.
+- `enforce_app_check` activable por entorno (`ENFORCE_APP_CHECK=true`).
+
+Nota: las dependencias pesadas (pandas, scikit-learn, firebase-admin) se cargan
+de forma diferida porque el descubrimiento de Functions limita el import a ~10 s.
+"""
 
 from __future__ import annotations
 
+import functools
 import io
 import json
+import logging
 import os
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -13,16 +36,11 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-import joblib
-import pandas as pd
-import sklearn
-from firebase_admin import auth, firestore, initialize_app
 from firebase_functions import https_fn, options
 
 from crime_ml import artifacts, validation
-from crime_ml.pipeline import FEATURES, TARGET, CrimeRiskPipelineCore
 
-initialize_app()
+logger = logging.getLogger("riskmap")
 
 INCIDENTS_COLLECTION = os.environ.get("INCIDENTS_COLLECTION", "crime_incidents")
 
@@ -33,6 +51,123 @@ ARCGIS_PUNTOS_CIUDADANO_MS = (
     "https://arcgis3.inei.gob.pe:6443/arcgis/rest/services/Datacrim/"
     "DATACRIM005_AGS_PUNTOSDELITOS_CIUDADANO/MapServer"
 )
+
+# Modelo .joblib versionado por run en Firestore (ver crime_ml/artifacts.py).
+ML_PARTS_COLLECTION = os.environ.get("ML_PARTS_COLLECTION", "ml_model_parts")
+
+# ── CORS (allowlist por entorno; sin comodín por defecto) ────────────────────
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173,http://localhost:5174,http://localhost:5000,"
+    "http://127.0.0.1:5173,http://127.0.0.1:5174"
+)
+_cors_origins = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
+_CORS_ALLOW_METHODS = "GET, POST, OPTIONS"
+_CORS_ALLOW_HEADERS = "Authorization, Content-Type, X-Request-Id"
+
+# App Check: se activa explícitamente por entorno tras registrar la app web.
+_ENFORCE_APP_CHECK = os.environ.get("ENFORCE_APP_CHECK", "false").strip().lower() == "true"
+
+
+# ── Carga diferida (el descubrimiento de Functions limita el import a ~10 s) ─
+_admin_cache: dict[str, Any] = {}
+_ml_cache: dict[str, Any] = {}
+
+
+def _admin() -> dict[str, Any]:
+    """Inicializa firebase-admin una sola vez y devuelve {auth, firestore}."""
+    if not _admin_cache:
+        from firebase_admin import auth, firestore, initialize_app
+
+        initialize_app()
+        _admin_cache.update({"auth": auth, "firestore": firestore})
+    return _admin_cache
+
+
+def _firestore():
+    return _admin()["firestore"].client()
+
+
+def _joblib():
+    if "joblib" not in _ml_cache:
+        import joblib
+
+        _ml_cache["joblib"] = joblib
+    return _ml_cache["joblib"]
+
+
+def _ml() -> dict[str, Any]:
+    """Importa pandas y el pipeline de ML solo cuando se usan."""
+    if "pd" not in _ml_cache:
+        import pandas as pd
+
+        from crime_ml.pipeline import FEATURES, TARGET, CrimeRiskPipelineCore
+
+        _ml_cache.update({"pd": pd, "features": FEATURES, "target": TARGET, "core": CrimeRiskPipelineCore})
+    return _ml_cache
+
+
+def _sklearn_version() -> str:
+    try:
+        from importlib.metadata import version
+
+        return version("scikit-learn")
+    except Exception:
+        return "desconocida"
+
+
+def _cors_headers(req: https_fn.Request) -> dict[str, str]:
+    origin = req.headers.get("Origin")
+    if not origin:
+        return {}
+    if "*" in _cors_origins:
+        allowed = "*"
+    elif origin in _cors_origins:
+        allowed = origin
+    else:
+        return {}
+    return {
+        "Access-Control-Allow-Origin": allowed,
+        "Access-Control-Allow-Methods": _CORS_ALLOW_METHODS,
+        "Access-Control-Allow-Headers": _CORS_ALLOW_HEADERS,
+        "Access-Control-Max-Age": "3600",
+        "Vary": "Origin",
+    }
+
+
+def _instrument(name: str):
+    """Envuelve un handler: CORS, request_id, logging y 500 genérico controlado."""
+
+    def decorator(handler):
+        @functools.wraps(handler)
+        def wrapper(req: https_fn.Request) -> https_fn.Response:
+            request_id = (req.headers.get("X-Request-Id") or uuid.uuid4().hex[:12]).strip()
+            started = time.perf_counter()
+            try:
+                response = handler(req)
+            except Exception:
+                logger.exception("request_error name=%s request_id=%s", name, request_id)
+                response = _json_response(
+                    {"detail": "Error interno del servidor.", "request_id": request_id},
+                    status=500,
+                )
+            for header, value in {**_cors_headers(req), "X-Request-Id": request_id}.items():
+                response.headers[header] = value
+            logger.info(
+                "request_end name=%s status=%s duration_ms=%.1f request_id=%s",
+                name,
+                getattr(response, "status_code", "?"),
+                (time.perf_counter() - started) * 1000,
+                request_id,
+            )
+            return response
+
+        return wrapper
+
+    return decorator
 
 
 def _http_get_json(url: str) -> Any:
@@ -46,14 +181,6 @@ def _http_get_json(url: str) -> Any:
         except Exception:
             body = str(e)
         raise ValueError(f"HTTP {e.code}: {body[:800]}") from e
-# Modelo .joblib versionado por run en Firestore (ver crime_ml/artifacts.py).
-ML_PARTS_COLLECTION = os.environ.get("ML_PARTS_COLLECTION", "ml_model_parts")
-
-_cors = options.CorsOptions(
-    cors_origins=["*"],
-    cors_methods=["GET", "POST", "OPTIONS"],
-    cors_allow_headers=["Authorization", "Content-Type"],
-)
 
 
 def _json_response(payload: dict[str, Any], status: int = 200) -> https_fn.Response:
@@ -72,7 +199,7 @@ def _verify_user(req: https_fn.Request) -> dict[str, Any] | None:
     if not token:
         return None
     try:
-        return auth.verify_id_token(token)
+        return _admin()["auth"].verify_id_token(token, check_revoked=True)
     except Exception:
         return None
 
@@ -90,8 +217,20 @@ def _require_admin(req: https_fn.Request) -> tuple[dict[str, Any] | None, https_
     return user, None
 
 
+def _model_artifact() -> tuple[Path, dict[str, Any] | None]:
+    """Descarga el modelo publicado a un archivo temporal. Devuelve (ruta, metadatos)."""
+    db = _firestore()
+    if not artifacts.artifact_exists(db, collection=ML_PARTS_COLLECTION):
+        return Path(""), None
+    local_path = Path(tempfile.gettempdir()) / f"riskmap_{uuid.uuid4().hex}.joblib"
+    meta = artifacts.load_artifact(db, local_path, collection=ML_PARTS_COLLECTION)
+    if meta is None:
+        return Path(""), None
+    return local_path, meta
+
+
 def _firestore_rows() -> list[dict[str, Any]]:
-    db = firestore.client()
+    db = _firestore()
     snap = db.collection(INCIDENTS_COLLECTION).stream()
     rows: list[dict[str, Any]] = []
     for doc in snap:
@@ -101,7 +240,8 @@ def _firestore_rows() -> list[dict[str, Any]]:
     return rows
 
 
-@https_fn.on_request(cors=_cors)
+@https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
+@_instrument("prediction_health")
 def prediction_health(req: https_fn.Request) -> https_fn.Response:
     if req.method == "OPTIONS":
         return https_fn.Response("", status=204)
@@ -109,13 +249,16 @@ def prediction_health(req: https_fn.Request) -> https_fn.Response:
     if req.method != "GET":
         return _json_response({"detail": "Usa GET"}, status=405)
 
-    db = firestore.client()
+    db = _firestore()
     exists = artifacts.artifact_exists(db, collection=ML_PARTS_COLLECTION)
 
     loadable = False
     model_error: str | None = None
-    model_info: dict[str, Any] = {}
-    local_path = Path(tempfile.gettempdir()) / CrimeRiskPipelineCore.model_filename
+    model_run: str | None = None
+    model_target: str | None = None
+    model_features: list[str] | None = None
+    model_saved_at: str | None = None
+    local_path = Path(tempfile.gettempdir()) / f"riskmap_{uuid.uuid4().hex}.joblib"
 
     if exists:
         try:
@@ -123,12 +266,18 @@ def prediction_health(req: https_fn.Request) -> https_fn.Response:
             if meta is None:
                 model_error = "No se pudieron leer los trozos del modelo en Firestore."
             else:
-                joblib.load(local_path)
+                _joblib().load(local_path)
                 loadable = True
-                model_info = meta
+                metadata = meta.get("metadata") or {}
+                model_run = meta.get("run_id")
+                model_target = metadata.get("target")
+                model_features = metadata.get("features")
+                model_saved_at = meta.get("saved_at")
         except Exception as exc:
             model_error = str(exc)
             loadable = False
+        finally:
+            local_path.unlink(missing_ok=True)
 
     status_ok = exists and loadable
     return _json_response(
@@ -137,8 +286,10 @@ def prediction_health(req: https_fn.Request) -> https_fn.Response:
             "model_exists": exists,
             "model_loadable": loadable,
             "model_path": f"firestore/{ML_PARTS_COLLECTION}",
-            "model_run": model_info.get("run_id"),
-            "model_saved_at": model_info.get("saved_at"),
+            "model_run": model_run,
+            "model_target": model_target,
+            "model_features": model_features,
+            "model_saved_at": model_saved_at,
             "model_error": model_error,
             "backend": "firebase",
             "store": "firestore",
@@ -147,7 +298,8 @@ def prediction_health(req: https_fn.Request) -> https_fn.Response:
     )
 
 
-@https_fn.on_request(cors=_cors)
+@https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
+@_instrument("predict_crime")
 def predict_crime(req: https_fn.Request) -> https_fn.Response:
     if req.method == "OPTIONS":
         return https_fn.Response("", status=204)
@@ -160,15 +312,8 @@ def predict_crime(req: https_fn.Request) -> https_fn.Response:
         return _json_response(
             {
                 "detail": "Usa POST para predecir.",
-                "required_fields": {
-                    "crime_type": "str",
-                    "hour": "int (0-23)",
-                    "day_of_week": "str",
-                    "district": "str",
-                    "latitude": "float",
-                    "longitude": "float",
-                    "historical_frequency": "int (>=1)",
-                },
+                "example_body": {"district": "LA VICTORIA", "latitude": -12.071, "longitude": -77.02},
+                "note": "El contrato exacto depende de las features del modelo publicado; consulta prediction_health.",
             },
             status=200,
         )
@@ -184,38 +329,55 @@ def predict_crime(req: https_fn.Request) -> https_fn.Response:
     if not isinstance(body, dict):
         return _json_response({"detail": "El cuerpo debe ser un objeto JSON."}, status=400)
 
-    try:
-        features = validation.validate_predict_payload(body, FEATURES)
-    except validation.ValidationError as exc:
-        return _json_response({"detail": str(exc)}, status=400)
-    local_path = Path(tempfile.gettempdir()) / CrimeRiskPipelineCore.model_filename
-    db = firestore.client()
-
-    if not artifacts.artifact_exists(db, collection=ML_PARTS_COLLECTION):
+    local_path, meta = _model_artifact()
+    if meta is None:
         return _json_response({"detail": "Modelo no entrenado (Firestore vacío)."}, status=400)
 
+    metadata = meta.get("metadata") or {}
+    features = metadata.get("features") or list(_ml()["features"])
+    target = metadata.get("target") or _ml()["target"]
+
     try:
-        meta = artifacts.load_artifact(db, local_path, collection=ML_PARTS_COLLECTION)
-        if meta is None:
-            return _json_response({"detail": "No se pudo reconstruir el modelo desde Firestore."}, status=500)
-        prediction = CrimeRiskPipelineCore.predict(features, local_path)
+        cleaned = validation.validate_predict_payload(body, features)
+    except validation.ValidationError as exc:
+        return _json_response(
+            {"detail": str(exc), "model_features": features},
+            status=400,
+        )
+
+    try:
+        ranked = _ml()["core"].predict_proba(cleaned, local_path, top_k=5)
     except FileNotFoundError as exc:
         return _json_response({"detail": str(exc)}, status=400)
     except Exception as exc:
-        return _json_response({"detail": str(exc)}, status=500)
+        logger.exception("predict_failed run_id=%s", meta.get("run_id"))
+        return _json_response({"detail": f"No se pudo ejecutar el modelo: {exc}"}, status=500)
+    finally:
+        local_path.unlink(missing_ok=True)
 
     return _json_response(
         {
-            "prediction": prediction,
-            "target": TARGET,
-            "classes": ["bajo", "medio", "alto"],
+            "predictions": [
+                {"label": label, "probability": round(probability, 4)} for label, probability in ranked
+            ],
+            "target": target,
             "model_run": meta.get("run_id"),
+            "sklearn_version": metadata.get("sklearn_version"),
+            "disclaimer": (
+                "Clasificador experimental de modalidad delictiva (datos INEI 2021-2024). "
+                "No representa riesgo real ni probabilidad de victimización; ver MODEL_CARD."
+            ),
         },
         status=200,
     )
 
 
-@https_fn.on_request(cors=_cors)
+@https_fn.on_request(
+    enforce_app_check=_ENFORCE_APP_CHECK,
+    memory=options.MemoryOption.GB_1,
+    timeout_sec=300,
+)
+@_instrument("train_model")
 def train_model(req: https_fn.Request) -> https_fn.Response:
     if req.method == "OPTIONS":
         return https_fn.Response("", status=204)
@@ -228,9 +390,19 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
     if req.method == "GET":
         return _json_response(
             {
-                "detail": "POST para entrenar (requiere claim admin). Opcional: test_size, dataset (array de filas), o usar solo Firestore.",
+                "detail": "POST para entrenar (requiere claim admin).",
+                "optional_fields": {
+                    "test_size": "float en (0,1); la API exige 0.05-0.45",
+                    "dataset": "array de objetos con las columnas del modelo",
+                    "task": {
+                        "features": ["district", "latitude", "longitude"],
+                        "target": "crime_type",
+                        "split": "random | temporal | district",
+                        "time_column": "columna temporal (split temporal)",
+                        "group_column": "columna de grupos (split district)",
+                    },
+                },
                 "collection": INCIDENTS_COLLECTION,
-                "optional_fields": {"test_size": "float 0.05–0.45", "dataset": "array de objetos con columnas del modelo"},
             },
             status=200,
         )
@@ -248,16 +420,18 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
 
     try:
         test_size = validation.parse_test_size(body.get("test_size", 0.2))
+        task = validation.parse_task(body.get("task"))
     except validation.ValidationError as exc:
         return _json_response({"detail": str(exc)}, status=400)
 
+    ml = _ml()
     rows: list[dict[str, Any]] | None = body.get("dataset")
     if rows is not None:
         try:
             rows = validation.validate_dataset_rows(rows)
         except validation.ValidationError as exc:
             return _json_response({"detail": str(exc)}, status=400)
-        data = pd.DataFrame(rows)
+        data = ml["pd"].DataFrame(rows)
     else:
         rows_fs = _firestore_rows()
         if not rows_fs:
@@ -267,10 +441,10 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
                 },
                 status=400,
             )
-        data = pd.DataFrame(rows_fs)
+        data = ml["pd"].DataFrame(rows_fs)
 
-    local_path = Path(tempfile.gettempdir()) / CrimeRiskPipelineCore.model_filename
-    db = firestore.client()
+    local_path = Path(tempfile.gettempdir()) / f"{ml['core'].model_filename}"
+    db = _firestore()
 
     try:
         artifacts.acquire_training_lock(db, collection=ML_PARTS_COLLECTION)
@@ -282,7 +456,16 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
 
     try:
         try:
-            result = CrimeRiskPipelineCore.train_from_dataframe(data, test_size=test_size, artifact_path=local_path)
+            result = ml["core"].train_from_dataframe(
+                data,
+                test_size=test_size,
+                artifact_path=local_path,
+                features=(task or {}).get("features"),
+                target=(task or {}).get("target"),
+                split=(task or {}).get("split", "random"),
+                time_column=(task or {}).get("time_column"),
+                group_column=(task or {}).get("group_column"),
+            )
         except ValueError as exc:
             return _json_response({"detail": str(exc)}, status=400)
 
@@ -291,11 +474,17 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
             local_path.read_bytes(),
             collection=ML_PARTS_COLLECTION,
             metadata={
-                "metrics": result.get("metrics"),
+                "features": (task or {}).get("features") or list(ml["features"]),
+                "target": (task or {}).get("target") or ml["target"],
+                "split": result.get("split"),
+                "split_info": result.get("split_info"),
+                "metrics": artifacts.firestore_safe(result.get("metrics")),
                 "train_size": result.get("train_size"),
                 "test_size": result.get("test_size"),
+                "feature_importances_top": (result.get("feature_importances") or {}).get("top", [])[:10],
                 "trained_by": user.get("uid"),
-                "sklearn_version": sklearn.__version__,
+                "sklearn_version": _sklearn_version(),
+                "source": "train_model",
             },
         )
     finally:
@@ -309,13 +498,114 @@ def train_model(req: https_fn.Request) -> https_fn.Response:
     return _json_response(result, status=200)
 
 
-@https_fn.on_request(cors=_cors)
+@https_fn.on_request(
+    enforce_app_check=_ENFORCE_APP_CHECK,
+    memory=options.MemoryOption.GB_1,
+    timeout_sec=300,
+)
+@_instrument("publish_model")
+def publish_model(req: https_fn.Request) -> https_fn.Response:
+    """Publica un artefacto .joblib entrenado offline (pipeline de la Fase 3)."""
+    if req.method == "OPTIONS":
+        return https_fn.Response("", status=204)
+
+    user, error = _require_admin(req)
+    if error:
+        return error
+    assert user is not None
+
+    if req.method == "GET":
+        return _json_response(
+            {
+                "detail": "POST para publicar un modelo entrenado offline (requiere claim admin).",
+                "required_fields": {
+                    "artifact_b64": "contenido base64 del .joblib (máx. 15 MB)",
+                    "features": ["district", "latitude", "longitude"],
+                    "target": "crime_type",
+                },
+                "optional_fields": {"metrics": "objeto JSON con métricas del entrenamiento offline"},
+            },
+            status=200,
+        )
+
+    if req.method != "POST":
+        return _json_response({"detail": "Método no permitido"}, status=405)
+
+    try:
+        body = req.get_json(silent=True) or {}
+    except Exception:
+        return _json_response({"detail": "JSON inválido"}, status=400)
+
+    if not isinstance(body, dict):
+        return _json_response({"detail": "El cuerpo debe ser un objeto JSON."}, status=400)
+
+    try:
+        features = validation.validate_feature_list(body.get("features"))
+        target = validation.validate_identifier(body.get("target"))
+        artifact_bytes = validation.decode_artifact_b64(body.get("artifact_b64"))
+    except validation.ValidationError as exc:
+        return _json_response({"detail": str(exc)}, status=400)
+
+    # Validación del artefacto: debe cargar y exponer clases.
+    tmp_path = Path(tempfile.gettempdir()) / f"publish_{uuid.uuid4().hex}.joblib"
+    tmp_path.write_bytes(artifact_bytes)
+    try:
+        pipeline = _joblib().load(tmp_path)
+        model_step = pipeline.named_steps.get("model") if hasattr(pipeline, "named_steps") else None
+        if model_step is None or not hasattr(model_step, "classes_"):
+            return _json_response(
+                {"detail": "El artefacto no parece un Pipeline compatible (falta el paso 'model' con clases)."},
+                status=400,
+            )
+        classes = [str(class_name) for class_name in model_step.classes_]
+    except Exception as exc:
+        return _json_response(
+            {"detail": f"El artefacto no es un .joblib válido: {type(exc).__name__}"},
+            status=400,
+        )
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    metrics = body.get("metrics") if isinstance(body.get("metrics"), dict) else None
+    db = _firestore()
+    fs_meta = artifacts.save_artifact(
+        db,
+        artifact_bytes,
+        collection=ML_PARTS_COLLECTION,
+        metadata={
+            "features": features,
+            "target": target,
+            "classes": classes,
+            "metrics": artifacts.firestore_safe(metrics) if metrics else None,
+            "trained_by": user.get("uid"),
+            "published_by": user.get("uid"),
+            "sklearn_runtime": _sklearn_version(),
+            "source": "publish_model",
+        },
+    )
+
+    return _json_response(
+        {
+            "published": True,
+            "model_run": fs_meta.get("run_id"),
+            "stored_bytes": fs_meta.get("bytes"),
+            "chunks": fs_meta.get("chunks"),
+            "features": features,
+            "target": target,
+            "classes": classes,
+        },
+        status=200,
+    )
+
+
+@https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
+@_instrument("import_incidents")
 def import_incidents(req: https_fn.Request) -> https_fn.Response:
     """Carga filas en Firestore (mismo esquema que CrimeIncident). Útil antes de entrenar sin dataset inline."""
     if req.method == "OPTIONS":
         return https_fn.Response("", status=204)
 
-    _admin, error = _require_admin(req)
+    _admin_user, error = _require_admin(req)
     if error:
         return error
 
@@ -335,14 +625,15 @@ def import_incidents(req: https_fn.Request) -> https_fn.Response:
     except validation.ValidationError as exc:
         return _json_response({"detail": str(exc)}, status=400)
 
-    db = firestore.client()
+    ml = _ml()
+    db = _firestore()
     batch = db.batch()
     count = 0
     total_written = 0
 
     for i, row in enumerate(rows):
         try:
-            cleaned = validation.validate_incident_row(row, FEATURES, TARGET)
+            cleaned = validation.validate_incident_row(row, ml["features"], ml["target"])
         except validation.ValidationError as exc:
             return _json_response({"detail": f"Fila {i}: {exc}"}, status=400)
 
@@ -363,13 +654,14 @@ def import_incidents(req: https_fn.Request) -> https_fn.Response:
     return _json_response({"written": total_written, "collection": INCIDENTS_COLLECTION}, status=200)
 
 
-@https_fn.on_request(cors=_cors)
+@https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
+@_instrument("import_csv_dataset")
 def import_csv_dataset(req: https_fn.Request) -> https_fn.Response:
-    """POST multipart/form-data con campo 'file' (CSV) — inserta en Firestore."""
+    """POST con JSON { csv_text } — inserta un CSV en Firestore (valida fila por fila)."""
     if req.method == "OPTIONS":
         return https_fn.Response("", status=204)
 
-    _admin, error = _require_admin(req)
+    _admin_user, error = _require_admin(req)
     if error:
         return error
 
@@ -390,12 +682,13 @@ def import_csv_dataset(req: https_fn.Request) -> https_fn.Response:
     except validation.ValidationError as exc:
         return _json_response({"detail": str(exc)}, status=400)
 
+    ml = _ml()
     try:
-        data = pd.read_csv(io.StringIO(csv_text))
+        data = ml["pd"].read_csv(io.StringIO(csv_text))
     except Exception as exc:
         return _json_response({"detail": f"CSV inválido: {exc}"}, status=400)
 
-    missing = set(FEATURES + [TARGET]) - set(data.columns)
+    missing = set(ml["features"] + [ml["target"]]) - set(data.columns)
     if missing:
         return _json_response({"detail": f"Faltan columnas: {sorted(missing)}"}, status=400)
 
@@ -410,12 +703,12 @@ def import_csv_dataset(req: https_fn.Request) -> https_fn.Response:
     doc_ids: list[str] = []
     for i, row in enumerate(raw_rows):
         try:
-            cleaned_rows.append(validation.validate_incident_row(row, FEATURES, TARGET))
+            cleaned_rows.append(validation.validate_incident_row(row, ml["features"], ml["target"]))
         except validation.ValidationError as exc:
             return _json_response({"detail": f"Fila {i + 2} del CSV: {exc}"}, status=400)
         doc_ids.append(str(row.get("incident_id") or f"csv_{i}"))
 
-    db = firestore.client()
+    db = _firestore()
     batch = db.batch()
     count = 0
     total = 0
@@ -434,7 +727,8 @@ def import_csv_dataset(req: https_fn.Request) -> https_fn.Response:
     return _json_response({"written": total, "collection": INCIDENTS_COLLECTION}, status=200)
 
 
-@https_fn.on_request(cors=_cors)
+@https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
+@_instrument("inei_datacrim_aggregate")
 def inei_datacrim_aggregate(req: https_fn.Request) -> https_fn.Response:
     """Proxy GET → INEI `delitos/aggregate/{ubigeo}/` (serie anual de cantidades por distrito)."""
     if req.method == "OPTIONS":
@@ -464,7 +758,8 @@ def inei_datacrim_aggregate(req: https_fn.Request) -> https_fn.Response:
     )
 
 
-@https_fn.on_request(cors=_cors)
+@https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
+@_instrument("inei_arcgis_points")
 def inei_arcgis_points(req: https_fn.Request) -> https_fn.Response:
     """Proxy GET → consulta ArcGIS /layer/query con sobre espacial (evita bloqueos CORS del navegador)."""
     if req.method == "OPTIONS":
@@ -477,7 +772,7 @@ def inei_arcgis_points(req: https_fn.Request) -> https_fn.Response:
     if req.method != "GET":
         return _json_response({"detail": "Usa GET"}, status=405)
 
-    # Capa por defecto 107 ≈ modalidad 2022 «Robo agravado» (ver MapServer INEI).
+    # Capa por defecto 107 ≈ modalidad 2021 «Robo agravado» (ver MapServer INEI).
     try:
         layer = validation.validate_layer(req.args.get("layer") or "107")
         xmin, ymin, xmax, ymax = validation.validate_bbox(

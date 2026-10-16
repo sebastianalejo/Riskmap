@@ -75,15 +75,11 @@ Todo el estado compartido vive en **Firestore** (base de datos NoSQL de Firebase
                          └──────────────────────────────────────┘
 ```
 
-**Nota importante:** la pantalla **Predicción** del frontend resuelve el resultado en el navegador
-(`frontend/src/ml/localPredict.ts`): consulta Firestore y, si no hay datos, usa una heurística.
-Las **Cloud Functions** contienen el modelo ML real (Random Forest), pero son **opcionales** y
-necesitan plan **Blaze** para desplegarse. Sin Functions, la app sigue funcionando para
-login, mapa, importación de datos y predicción heurística.
-
-Además, hoy **ninguna pantalla llama a las Cloud Functions**: `frontend/src/api/client.ts` y
-`frontend/src/config/api.ts` quedaron sin uso (conectarlas a la UI es trabajo de la Fase 4).
-La predicción es siempre `localPredict`, no el Random Forest.
+**Nota importante:** la pantalla **Predicción** tiene dos modos: **Modelo de modalidad** (llama a
+`predict_crime` y muestra las top-5 modalidades con probabilidad — requiere Cloud Functions
+desplegadas) y **Estimación local** (`frontend/src/ml/localPredict.ts`: consulta Firestore y
+aplica una heurística de respaldo). Las Cloud Functions necesitan plan **Blaze**; sin ellas, la
+app sigue funcionando para login, mapa, importación de datos y estimación local.
 
 ---
 
@@ -252,23 +248,25 @@ Documentación: [`data/README.md`](data/README.md) y [`MODEL_CARD.md`](MODEL_CAR
 
 ## 7. Cloud Functions (API de Machine Learning) — opcional
 
-Lógica en `functions/crime_ml/pipeline.py` y endpoints en `functions/main.py`.
-Todas las rutas (salvo `prediction_health`) exigen `Authorization: Bearer <Firebase ID token>`.
+Lógica en `functions/crime_ml/` (`pipeline.py` de ML, `validation.py` de payloads, `artifacts.py` del
+almacén versionado) y endpoints en `functions/main.py`.
+Todas las rutas (salvo `prediction_health`) exigen `Authorization: Bearer <Firebase ID token>`
+(verificado con `check_revoked`).
 
 | Función | Método | Qué hace |
 |---------|--------|----------|
-| `prediction_health` | GET | Estado del modelo almacenado en Firestore. |
-| `predict_crime` | POST | Predice riesgo con el Random Forest entrenado. |
-| `train_model` | POST | Entrena con Firestore o con `dataset` inline; guarda el `.joblib` **versionado por run** con swap atómico (evita artefactos mezclados). Requiere claim `admin`. |
-| `import_incidents` | POST | Inserta filas (`rows`) en `crime_incidents` (validadas por fila). Requiere claim `admin`. |
-| `import_csv_dataset` | POST | Importa CSV (`csv_text`) a `crime_incidents` (validadas por fila). Requiere claim `admin`. |
-| `inei_datacrim_aggregate` | GET | Proxy de series anuales del INEI (evita CORS). |
-| `inei_arcgis_points` | GET | Proxy de puntos de delitos del MapServer del INEI (ArcGIS). |
+| `prediction_health` | GET | Estado del modelo publicado: run, target, features y si es cargable (público). |
+| `predict_crime` | POST | Predicción con el modelo publicado: **top-5 clases con probabilidad** (modelo de modalidad: `district`, `latitude`, `longitude`). Requiere sesión. |
+| `train_model` | POST | Entrena con Firestore o con `dataset` inline y una `task` opcional (`features`, `target`, `split` random/temporal/district). Guarda el `.joblib` **versionado por run** con swap atómico. Requiere claim `admin`. |
+| `publish_model` | POST | Publica un `.joblib` entrenado offline (ver `scripts/publish_model.py`). Requiere claim `admin`. |
+| `import_incidents` | POST | Inserta filas (`rows`) validadas por fila. Requiere claim `admin`. |
+| `import_csv_dataset` | POST | Importa CSV (`csv_text`) validado por fila. Requiere claim `admin`. |
+| `inei_datacrim_aggregate` / `inei_arcgis_points` | GET | Proxies del INEI (series anuales y puntos ArcGIS). |
 
-Para trabajar con ellas necesitas el plan **Blaze** (Cloud Build + Artifact Registry) y desplegarlas
-(§8). El frontend actual no consume ninguna de estas rutas y, desde la Fase 2, `train_model`,
-`import_incidents` e `import_csv_dataset` exigen además el claim **`admin`** (el resto de endpoints
-solo pide sesión). `firebase.json` ya tiene configurados los emuladores de Firestore y Functions.
+Configuración por entorno en `functions/.env` (no versionado): `CORS_ORIGINS` (**define tus
+dominios en producción**; el valor por defecto solo permite localhost), `ENFORCE_APP_CHECK`,
+`INCIDENTS_COLLECTION`, `ML_PARTS_COLLECTION`. Guía completa para un proyecto nuevo:
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ---
 
@@ -277,8 +275,11 @@ solo pide sesión). `firebase.json` ya tiene configurados los emuladores de Fire
 ```bash
 cd frontend && npm run build && cd ..
 firebase login
-firebase use riskmap-2fb0f        # o: firebase use --add  (tu propio proyecto)
+firebase use --add                 # tu proyecto nuevo (reemplaza el anterior en .firebaserc)
 ```
+
+> Guía paso a paso para un proyecto nuevo (Blaze, CORS, App Check, claim admin y publicación
+> del modelo): [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 **Solo web + reglas de Firestore (sin Blaze):**
 
@@ -345,6 +346,17 @@ firebase emulators:exec --only firestore --project demo-riskmap "node tests/fire
 
 No toca ningún proyecto real (usa el id `demo-riskmap` contra el emulador local; requiere Java).
 
+### 9.3 Pruebas end-to-end de la API (emuladores)
+
+```bash
+firebase emulators:exec --only auth,firestore,functions --project demo-riskmap "python tests/functions/e2e_functions.py"
+```
+
+Levanta auth + firestore + functions y verifica CORS, permisos admin, entrenamiento inline,
+publicación de artefactos, predicción con probabilidades, importaciones validadas, health y
+`check_revoked` de punta a punta (requiere Java y las dependencias de `functions/` instaladas
+en `functions/venv`; si el puerto 8080 queda ocupado por el emulador anterior, ciérralo antes).
+
 ---
 
 ## 10. Notas para Windows
@@ -377,10 +389,10 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 ## 12. Limitaciones conocidas (datos y modelo)
 
-- **El modelo de la Fase 3 aún no está conectado a la API/UI.** La pantalla *Predicción* usa una
-  heurística en el navegador y las Cloud Functions conservan la tarea heredada (`risk_level`
-  derivado por reglas del tipo de delito). El modelo nuevo (clasificador de modalidad con datos
-  reales) y sus métricas medidas están en [`MODEL_CARD.md`](MODEL_CARD.md); su conexión es la Fase 4.
+- **El modelo de la Fase 3 ya está conectado a la API** (`predict_crime` devuelve las top-5
+  modalidades con probabilidad y la pestaña «Modelo de modalidad» de *Predicción* lo consume;
+  requiere Cloud Functions desplegadas). La **estimación local** sigue disponible como respaldo
+  heurístico. Métricas y limitaciones medidas: [`MODEL_CARD.md`](MODEL_CARD.md).
 - **La fuente no publica la fecha del hecho:** la resolución temporal real es el año (grupo de
   capas). Por eso la tendencia del mapa/PDF usa fechas simuladas y lo advierte explícitamente.
 - **La fuente mezcla etiquetas** (nombres de distrito de otras provincias con coordenadas limeñas,
@@ -399,6 +411,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 - Frontend: [`frontend/`](frontend/) · Config de ejemplo: [`frontend/.env.example`](frontend/.env.example)
 - Cloud Functions: [`functions/main.py`](functions/main.py) · Pipeline ML: [`functions/crime_ml/pipeline.py`](functions/crime_ml/pipeline.py) · Validación: [`functions/crime_ml/validation.py`](functions/crime_ml/validation.py)
 - Datos y ML (Fase 3): [`scripts/pipeline/`](scripts/pipeline/) · [`data/README.md`](data/README.md) · [`MODEL_CARD.md`](MODEL_CARD.md) · métricas en [`models/reports/`](models/reports/) · taxonomía en [`data/taxonomy/`](data/taxonomy/)
-- Pruebas: [`functions/tests/`](functions/tests/) (pytest) · [`tests/firestore/`](tests/firestore/) (reglas con emulador)
+- Pruebas: [`functions/tests/`](functions/tests/) (pytest) · [`tests/firestore/`](tests/firestore/) (reglas con emulador) · [`tests/functions/`](tests/functions/) (e2e de la API con emuladores)
+- Despliegue: [`docs/DEPLOY.md`](docs/DEPLOY.md) · Publicación de modelos: [`scripts/publish_model.py`](scripts/publish_model.py)
 - Reglas Firestore: [`firestore.rules`](firestore.rules)
 - Config Firebase: [`firebase.json`](firebase.json) · Proyecto: [`.firebaserc`](.firebaserc)

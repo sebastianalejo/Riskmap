@@ -103,6 +103,22 @@ def test_predict_con_categoria_desconocida(tmp_path):
     assert result["classes"] == sorted(MODALITIES)
 
 
+def test_predict_proba_top_k(tmp_path):
+    train(make_dataset(), tmp_path)
+
+    ranked = CrimeRiskPipelineCore.predict_proba(
+        {"district": "DISTRITO A", "latitude": -12.1, "longitude": -77.05},
+        tmp_path / "model.joblib",
+        top_k=3,
+    )
+    assert len(ranked) == 3
+    labels = [label for label, _ in ranked]
+    probabilities = [probability for _, probability in ranked]
+    assert set(labels) <= set(MODALITIES)
+    assert probabilities == sorted(probabilities, reverse=True)
+    assert all(0.0 <= probability <= 1.0 for probability in probabilities)
+
+
 def test_errores_de_validacion(tmp_path):
     df = make_dataset()
 
