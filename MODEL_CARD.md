@@ -35,6 +35,10 @@ el modelo nuevo del pipeline offline; su conexión a la API y la UI es trabajo d
 | Filtro de ámbito | 262 filas descartadas: la fuente mezcla nombres de distrito de otras provincias con coordenadas limeñas y ubigeos incoherentes; se conservan filas con ubigeo 1501/0701 o con nombre canónico, y el nombre se normaliza al más frecuente por ubigeo |
 | Reporte completo | `data/processed/quality_report.json` |
 
+**Fuente complementaria (Oleada 1):** serie mensual SIDPOL/MININTER por distrito y modalidad
+(2018–hoy) en `crime_stats_monthly`, usada para la **tendencia real** del panel y el PDF. No es
+una feature del modelo todavía (ver `data/README.md`).
+
 **Limitaciones de los datos:** subregistro de denuncias (cifra negra), posible doble conteo
 residual, muestreo por ventanas (no es un censo), geocodificación y etiquetas de la fuente con
 inconsistencias (mitigadas, no eliminadas), ausencia de hora/día y de población como denominador.

@@ -45,6 +45,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Serie mensual real SIDPOL (Oleada 1): solo lectura para usuarios autenticados.
+    // La escribe el pipeline offline con el Admin SDK (no pasa por reglas).
+    match /crime_stats_monthly/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Artefacto ML troceado — solo las Cloud Functions (Admin SDK) escriben; clientes no acceden.
     match /ml_model_parts/{docId} {
       allow read, write: if false;

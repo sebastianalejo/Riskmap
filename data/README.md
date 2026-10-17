@@ -67,3 +67,37 @@ distrito. Requiere pandas y conexión a internet; verifica el certificado TLS.
   pruebas sin red.
 - Los datos son denuncias públicas del INEI: no contienen información personal, pero describen
   lugares concretos; evitar publicaciones que estigmaticen zonas (ver `MODEL_CARD.md` §6).
+
+## Serie mensual SIDPOL (Oleada 1)
+
+Segunda fuente, independiente de los puntos del INEI:
+
+- **Origen**: MININTER — "Denuncias policiales registradas a nivel nacional" (SIDPOL), Portal de
+  Datos Abiertos. Columnas reales: año, mes, departamento, provincia, **distrito**, ubigeo,
+  **modalidad** y cantidad.
+- **Cobertura descargada**: 2018 – hoy (la fuente se actualiza mensualmente), filtrada a Lima
+  Metropolitana y Callao.
+- **Salidas**: `data/processed/sidpol_monthly_lima.csv` (aplanado, versionable) y
+  `data/processed/sidpol_quality_report.json`. El crudo (26 MB) va a `data/raw/sidpol/`
+  (no versionado).
+
+```bash
+python scripts/pipeline/ingest_sidpol.py --refresh --upload
+```
+
+- **Diseño anti-duplicados**: un documento por `(año, mes, ubigeo)` en la colección
+  `crime_stats_monthly` con **ID determinista `AAAA-MM-UBIGEO`** y escritura `set()` (upsert).
+  Re-ejecutar la ingesta sobreescribe los mismos documentos; verificado: 5 141 documentos tras
+  dos ejecuciones consecutivas.
+- **Uso en la app**: tarjeta "Tendencia mensual" en Resumen y Mapa (barras apiladas por
+  modalidad, filtro por distrito y periodo) y sección de tendencia del PDF.
+- **Limitación**: son denuncias registradas (subregistro y sesgo territorial), no victimización
+  real; y al ser agregado distrito-mes no incluye hora ni día.
+
+## Incidentes idempotentes (sin duplicados)
+
+`crime_incidents` usa **ID determinista por contenido** (FNV-1a 64 sobre la fila normalizada,
+`inc_<hex>`) tanto en la interfaz (`frontend/src/utils/stableId.ts`) como en el pipeline
+(`scripts/pipeline/upload_incidents.py`), con pruebas de paridad en JS y Python. Reimportar el
+mismo archivo actualiza los mismos documentos; la migración inicial fusionó 1 fila duplicada del
+CSV (1 000 filas → 999 documentos).

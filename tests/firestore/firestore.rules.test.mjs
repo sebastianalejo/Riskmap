@@ -85,6 +85,15 @@ await check('admin no puede crear con coordenadas fuera de Lima', () =>
 await check('nadie escribe ml_model_parts (ni con claim admin)', () =>
   assertFails(setDoc(doc(admin.firestore(), 'ml_model_parts/0'), { data: 'x' })))
 
+await check('usuario autenticado puede leer crime_stats_monthly', () =>
+  assertSucceeds(getDoc(doc(user.firestore(), 'crime_stats_monthly/2024-06-150122'))))
+
+await check('nadie escribe crime_stats_monthly (ni con claim admin)', () =>
+  assertFails(setDoc(doc(admin.firestore(), 'crime_stats_monthly/2024-06-150122'), { total: 1 })))
+
+await check('anónimo no puede leer crime_stats_monthly', () =>
+  assertFails(getDoc(doc(anon.firestore(), 'crime_stats_monthly/2024-06-150122'))))
+
 await check('nadie lee colecciones no listadas', () =>
   assertFails(getDoc(doc(user.firestore(), 'otros_datos/x'))))
 

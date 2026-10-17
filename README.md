@@ -50,6 +50,8 @@ Todo el estado compartido vive en **Firestore** (base de datos NoSQL de Firebase
 | `node scripts/fetch-real-data.js` | [LEGACY] Descarga 1 000 puntos del grupo INEI 2022 (IDs corregidos en la Fase 3). Ubicación/distrito son reales; `hour`, `day_of_week`, `historical_frequency` y `risk_level` se derivan por reglas (ver §12). |
 | `python scripts/pipeline/ingest_inei.py` | **Pipeline reproducible (Fase 3, recomendado)**: descarga real 2021–2024 con descubrimiento dinámico de capas, filtro Lima/Callao y reporte de calidad → `data/processed/`. |
 | `python scripts/pipeline/train.py --split temporal` | Entrena el clasificador de modalidad (splits `random`/`temporal`/`district`) y guarda métricas en `models/reports/`. Ver [`MODEL_CARD.md`](MODEL_CARD.md). |
+| `python scripts/pipeline/ingest_sidpol.py --refresh --upload` | **Serie mensual real (Oleada 1)**: denuncias SIDPOL/MININTER por distrito y modalidad (2018–hoy) → `crime_stats_monthly` en Firestore (ID determinista, sin duplicados). |
+| `python scripts/pipeline/upload_incidents.py --replace --verify` | Sube incidentes del CSV con **ID determinista por contenido** (reimportar no duplica; fusiona filas repetidas). |
 
 ---
 
@@ -175,10 +177,13 @@ cp firebase-config.example.json firebase-config.json
 > de Firebase, pero conviene restringirla por dominio (HTTP referrers) en la consola y no volver
 > a subirla a Git.
 
-### 5.3 Crear un usuario para iniciar sesión
+### 5.3 Crear usuarios para iniciar sesión
 
-En la Consola Firebase → **Authentication** → activa **Correo electrónico/Contraseña** y crea un
-usuario (o usa el que ya tengas). Esas credenciales son las que se usan en `/login`.
+En la Consola Firebase → **Authentication** → activa **Correo electrónico/Contraseña** y crea el
+primer usuario (administrador). Ese usuario necesita el claim `admin` (ver §9.1) para poder crear
+más cuentas desde la app en la sección **Usuarios** (`/usuarios`), que llama a la Cloud Function
+`create_user` (nombre, correo y contraseña temporal). No hay registro público: todas las cuentas
+las crea un administrador. Esas credenciales son las que se usan en `/login`.
 
 ### 5.4 Levantar el servidor de desarrollo
 
@@ -189,6 +194,7 @@ npm run dev
 
 Abre **http://localhost:5173** (Vite cambia a `5174`, `5175`… si el puerto está ocupado).
 Inicia sesión y navega por **Resumen**, **Predicción**, **Mapa de riesgo** e **Importar datos**.
+Las cuentas con claim `admin` ven además **Usuarios** para crear nuevas cuentas.
 
 ### 5.5 Otros comandos del frontend
 
@@ -233,6 +239,12 @@ python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024
 python scripts/pipeline/train.py --split random
 python scripts/pipeline/train.py --split temporal
 python scripts/pipeline/train.py --split district
+
+# Serie mensual real (SIDPOL/MININTER) para la tendencia del panel (Oleada 1):
+python scripts/pipeline/ingest_sidpol.py --refresh --upload
+
+# Incidentes desde el CSV con IDs deterministas (idempotente, sin duplicados):
+python scripts/pipeline/upload_incidents.py --replace --verify
 ```
 
 Salidas: `data/processed/incidents_lima.csv` (no versionado, regenerable), muestra versionable de
@@ -261,6 +273,7 @@ Todas las rutas (salvo `prediction_health`) exigen `Authorization: Bearer <Fireb
 | `publish_model` | POST | Publica un `.joblib` entrenado offline (ver `scripts/publish_model.py`). Requiere claim `admin`. |
 | `import_incidents` | POST | Inserta filas (`rows`) validadas por fila. Requiere claim `admin`. |
 | `import_csv_dataset` | POST | Importa CSV (`csv_text`) validado por fila. Requiere claim `admin`. |
+| `create_user` | POST | Crea una cuenta de Firebase Auth (`email`, `password`, `displayName`). Requiere claim `admin`. |
 | `inei_datacrim_aggregate` / `inei_arcgis_points` | GET | Proxies del INEI (series anuales y puntos ArcGIS). |
 
 Configuración por entorno en `functions/.env` (no versionado): `CORS_ORIGINS` (**define tus
@@ -313,7 +326,8 @@ debe apuntar a **`frontend/dist`** (ya está configurado en `firebase.json`).
 
 | Colección | Uso | Acceso |
 |-----------|-----|--------|
-| `crime_incidents` | Filas de delitos (campos del modelo ML). | Lectura: usuarios autenticados. Crear/actualizar/borrar: solo cuentas con claim `admin`, con validación de esquema en las reglas (Fase 1). |
+| `crime_incidents` | Filas de delitos (campos del modelo ML). | Lectura: usuarios autenticados. Crear/actualizar/borrar: solo cuentas con claim `admin`, con validación de esquema en las reglas (Fase 1). Reimportar no duplica (ID determinista). |
+| `crime_stats_monthly` | Serie mensual real SIDPOL/MININTER por distrito y año-mes (2018–hoy) con mapa `por_modalidad`; ID `AAAA-MM-UBIGEO`. | Lectura: usuarios autenticados. Escritura: solo el pipeline offline (Admin SDK). |
 | `ml_model_parts` | Modelo `.joblib` **versionado por run**: puntero `_meta`, metadatos en `ml_model_parts/<run>` y trozos en `ml_model_parts/<run>/chunks/<i>`; candado `_training_lock` para entrenamientos concurrentes. | Solo Admin SDK (Cloud Functions). |
 
 Reglas: [`firestore.rules`](firestore.rules) · Índices: [`firestore.indexes.json`](firestore.indexes.json).
@@ -353,9 +367,10 @@ firebase emulators:exec --only auth,firestore,functions --project demo-riskmap "
 ```
 
 Levanta auth + firestore + functions y verifica CORS, permisos admin, entrenamiento inline,
-publicación de artefactos, predicción con probabilidades, importaciones validadas, health y
-`check_revoked` de punta a punta (requiere Java y las dependencias de `functions/` instaladas
-en `functions/venv`; si el puerto 8080 queda ocupado por el emulador anterior, ciérralo antes).
+publicación de artefactos, predicción con probabilidades, importaciones validadas, creación de
+cuentas (solo admin), health y `check_revoked` de punta a punta (requiere Java y las dependencias
+de `functions/` instaladas en `functions/venv`; si el puerto 8080 queda ocupado por el emulador
+anterior, ciérralo antes).
 
 ---
 
@@ -393,8 +408,10 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
   modalidades con probabilidad y la pestaña «Modelo de modalidad» de *Predicción* lo consume;
   requiere Cloud Functions desplegadas). La **estimación local** sigue disponible como respaldo
   heurístico. Métricas y limitaciones medidas: [`MODEL_CARD.md`](MODEL_CARD.md).
-- **La fuente no publica la fecha del hecho:** la resolución temporal real es el año (grupo de
-  capas). Por eso la tendencia del mapa/PDF usa fechas simuladas y lo advierte explícitamente.
+- **La fuente de puntos no publica la fecha del hecho** (en `crime_incidents` la resolución
+  temporal es el año, del grupo de capas). La **tendencia del mapa y del PDF ya no simula fechas**:
+  usa la serie mensual real SIDPOL/MININTER (`crime_stats_monthly`: distrito, mes y modalidad,
+  2018–hoy), actualizable con `python scripts/pipeline/ingest_sidpol.py --refresh --upload`.
 - **La fuente mezcla etiquetas** (nombres de distrito de otras provincias con coordenadas limeñas,
   ubigeos incoherentes con el nombre): la ingesta filtra al ámbito Lima/Callao (ubigeo 1501/0701)
   y canonicaliza el nombre por ubigeo; en el muestreo 2021–2024 se descartaron 262 filas fuera de
@@ -410,10 +427,10 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 | Capa | Herramienta | Comando | Estado |
 |---|---|---|---|
-| API + ML (Python) | pytest · **65 pruebas** | `python -m pytest functions/tests -q` | ✅ |
+| API + ML + pipeline (Python) | pytest · **71 pruebas** | `python -m pytest functions/tests tests/pipeline -q` | ✅ |
 | API end-to-end | emuladores auth+firestore+functions · **17 comprobaciones** | `firebase emulators:exec --only auth,firestore,functions --project demo-riskmap "python tests/functions/e2e_functions.py"` | ✅ |
-| Reglas de Firestore | emulador · **13 pruebas** | `firebase emulators:exec --only firestore --project demo-riskmap "node tests/firestore/firestore.rules.test.mjs"` | ✅ |
-| Frontend | Vitest · **15 pruebas** | `cd frontend && npm test` | ✅ |
+| Reglas de Firestore | emulador · **16 pruebas** | `firebase emulators:exec --only firestore --project demo-riskmap "node tests/firestore/firestore.rules.test.mjs"` | ✅ |
+| Frontend | Vitest · **19 pruebas** | `cd frontend && npm test` | ✅ |
 | Lint y build | ESLint 9 + tsc + Vite | `cd frontend && npm run lint && npm run build` | ✅ |
 | Integración continua | GitHub Actions | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en cada push/PR | configurado |
 

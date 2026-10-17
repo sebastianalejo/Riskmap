@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, getDocs, getFirestore } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, getFirestore, setDoc } from 'firebase/firestore'
 import {
   AlertCircle,
   CheckCircle2,
@@ -19,6 +19,7 @@ import { useToast } from '../components/ui/toast'
 import { useAuth } from '../context/AuthContext'
 import type { CrimeIncident } from '../data/sampleIncidents'
 import { getFirebaseApp } from '../firebase/client'
+import { stableRowId } from '../utils/stableId'
 
 const COLLECTION = 'crime_incidents'
 
@@ -126,11 +127,14 @@ async function writeBatch(
   if (!app) throw new Error('Firebase no inicializado')
   const db = getFirestore(app)
   const col = collection(db, COLLECTION)
+  // ID determinista por contenido (utils/stableId.ts): reimportar el mismo
+  // archivo actualiza los mismos documentos en lugar de duplicarlos.
+  const unique = new Map(rows.map((row) => [stableRowId(row as unknown as Record<string, unknown>), row]))
   let done = 0
-  for (const row of rows) {
-    await addDoc(col, row)
+  for (const [docId, row] of unique) {
+    await setDoc(doc(col, docId), row)
     done++
-    onProgress?.(done, rows.length)
+    onProgress?.(done, unique.size)
   }
   return done
 }
@@ -325,7 +329,8 @@ export function DataPage() {
               crime_type, hour, day_of_week, district, latitude, longitude, historical_frequency,
               risk_level
             </span>
-            .
+            . Reimportar el mismo archivo <strong className="text-content-primary">actualiza</strong> los
+            registros existentes (ID determinista por contenido), nunca los duplica.
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={downloadTemplate}>

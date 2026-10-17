@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-10-17T00:42:59.246654+00:00",
+  "source": "https://www.datosabiertos.gob.pe/sites/default/files/DATASET_Denuncias_Policiales_Ene%202018%20a%20Julio%202026.csv",
+  "scope_prefixes": [
+    "1501",
+    "0701"
+  ],
+  "collection": "crime_stats_monthly",
+  "documents_key": "ID determinista AAAA-MM-UBIGEO (set/upsert, sin duplicados)",
+  "rows_raw": 369100,
+  "rows_scope": 30438,
+  "dropped_invalid": 0,
+  "dropped_negative": 0,
+  "duplicates_dropped": 0,
+  "districts": 50,
+  "months": 103,
+  "documents": 5141,
+  "modalities": [
+    "estafa",
+    "extorsion",
+    "hurto",
+    "otros",
+    "robo",
+    "secuestro",
+    "violencia_mujer"
+  ],
+  "years": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "total_incidents": 2872348
+}

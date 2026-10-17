@@ -1,9 +1,9 @@
 import { Filter, MapPin, RefreshCw, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { MonthlyTrendCard } from '../components/charts/MonthlyTrendCard'
 import { RiskMapGoogle } from '../components/maps/RiskMapGoogle'
 import { RiskMapLeaflet } from '../components/maps/RiskMapLeaflet'
 import { riskVar } from '../components/maps/riskColors'
-import { PdfExportButton } from '../components/PdfExportButton'
 import { PdfExportControls } from '../components/PdfExportControls'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
@@ -11,7 +11,8 @@ import { Select } from '../components/ui/input'
 import { CRIME_TYPES, DISTRICTS } from '../data/sampleIncidents'
 import { getGoogleMapsApiKey } from '../firebase/client'
 import { useCrimeIncidentsForMap, type MapPoint } from '../hooks/useCrimeIncidentsForMap'
-import type { TimeRange } from '../utils/chartData'
+import { useCrimeStatsMonthly } from '../hooks/useCrimeStatsMonthly'
+import { aggregateSeries } from '../utils/monthlyStats'
 
 type RiskLevel = 'bajo' | 'medio' | 'alto'
 export type Stats = Record<RiskLevel, number>
@@ -64,7 +65,8 @@ export function MapPage() {
   const [filtersOpen, setFiltersOpen] = useState(
     () => typeof window === 'undefined' || window.matchMedia('(min-width: 1024px)').matches,
   )
-  const [range, setRange] = useState<TimeRange>('7d')
+  const [months, setMonths] = useState(24)
+  const { rows: monthlyRows, loading: monthlyLoading, error: monthlyError } = useCrimeStatsMonthly()
 
   function toggleRisk(r: RiskLevel) {
     setActiveRisks((prev) => {
@@ -117,6 +119,10 @@ export function MapPage() {
   const hourLabel = HOUR_LABELS[hourRange]
   const crimeLabel = crimeFilter
   const districtLabel = districtFilter
+  const monthlySeries = useMemo(
+    () => aggregateSeries(monthlyRows, { months }),
+    [monthlyRows, months],
+  )
 
   return (
     <div className="flex h-full flex-col lg:flex-row">
@@ -290,8 +296,9 @@ export function MapPage() {
                 districtFilter={districtLabel}
                 hourLabel={hourLabel}
                 riskLabels={riskLabels}
-                range={range}
-                onRangeChange={setRange}
+                months={months}
+                onMonthsChange={setMonths}
+                series={monthlySeries}
               />
             )}
             <span className="font-mono text-xs text-content-secondary">
@@ -324,12 +331,16 @@ export function MapPage() {
           )}
         </div>
 
-        {/* Tendencia + Exportar PDF */}
-        {!loading && points.length > 0 && (
-          <div className="shrink-0 px-4 py-4">
-            <PdfExportButton points={points} range={range} />
-          </div>
-        )}
+        {/* Tendencia real (SIDPOL/MININTER) */}
+        <div className="shrink-0 px-4 py-4">
+          <MonthlyTrendCard
+            rows={monthlyRows}
+            loading={monthlyLoading}
+            error={monthlyError}
+            months={months}
+            onChangeMonths={setMonths}
+          />
+        </div>
       </div>
     </div>
   )

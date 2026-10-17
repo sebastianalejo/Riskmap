@@ -31,7 +31,9 @@ functions/venv/Scripts/pip install -r functions/requirements-dev.txt   # Windows
 | Lint del frontend | `cd frontend && npm run lint` |
 | Pruebas del frontend | `cd frontend && npm test` |
 | Build del frontend | `cd frontend && npm run build` |
-| Pruebas de la API y del ML | `python -m pytest functions/tests -q` |
+| Pruebas de la API y del ML | `python -m pytest functions/tests tests/pipeline -q` |
+| Ingesta de la serie mensual SIDPOL | `python scripts/pipeline/ingest_sidpol.py --refresh --upload` |
+| Subida idempotente de incidentes | `python scripts/pipeline/upload_incidents.py --verify` |
 | Reglas de Firestore (emulador) | `firebase emulators:exec --only firestore --project demo-riskmap "node tests/firestore/firestore.rules.test.mjs"` |
 | API end-to-end (emuladores) | `firebase emulators:exec --only auth,firestore,functions --project demo-riskmap "python tests/functions/e2e_functions.py"` |
 | Pipeline de datos y ML | `python scripts/pipeline/ingest_inei.py` · `python scripts/pipeline/train.py --split temporal` |

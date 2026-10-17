@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  BarChart3,
   Database,
   Layers,
   MapPin,
@@ -9,15 +10,13 @@ import {
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { IncidentTrendChart } from '../components/IncidentTrendChart'
+import { MonthlyTrendCard } from '../components/charts/MonthlyTrendCard'
 import { Card, CardHeader } from '../components/ui/card'
 import { EmptyState } from '../components/ui/empty-state'
 import { Skeleton } from '../components/ui/skeleton'
 import { StatCard } from '../components/ui/stat-card'
 import { useCrimeIncidentsForMap } from '../hooks/useCrimeIncidentsForMap'
-import { RANGE_CONFIG, RANGE_OPTIONS } from '../utils/chartData'
-import type { TimeRange } from '../utils/chartData'
-import { simulateDates } from '../utils/simulateDates'
+import { useCrimeStatsMonthly } from '../hooks/useCrimeStatsMonthly'
 
 const primaryLink =
   'inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent-strong px-4 text-sm font-semibold text-accent-foreground shadow-glow transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0'
@@ -33,12 +32,8 @@ const RISK_ROWS = [
 
 export function HomePage() {
   const { points, loading, error } = useCrimeIncidentsForMap()
-  const [range, setRange] = useState<TimeRange>('7d')
-
-  const datedPoints = useMemo(
-    () => simulateDates(points, RANGE_CONFIG[range].days),
-    [points, range],
-  )
+  const { rows: monthlyRows, loading: monthlyLoading, error: monthlyError } = useCrimeStatsMonthly()
+  const [months, setMonths] = useState(24)
 
   const stats = useMemo(() => {
     const counts = { bajo: 0, medio: 0, alto: 0 }
@@ -87,6 +82,10 @@ export function HomePage() {
           <Link to="/mapa" className={primaryLink}>
             Ver mapa
           </Link>
+          <Link to="/analisis" className={secondaryLink}>
+            <BarChart3 className="size-4" aria-hidden />
+            Ver análisis
+          </Link>
           <Link to="/datos" className={secondaryLink}>
             <Upload className="size-4" aria-hidden />
             Importar datos
@@ -120,17 +119,26 @@ export function HomePage() {
           </div>
         </div>
       ) : points.length === 0 ? (
-        <EmptyState
-          icon={Radar}
-          title="Sin registros todavía"
-          description="Importa un archivo CSV/Excel o pega JSON para ver los KPIs, el mapa de riesgo y la tendencia de incidentes."
-          action={
-            <Link to="/datos" className={primaryLink}>
-              <Upload className="size-4" aria-hidden />
-              Importar datos
-            </Link>
-          }
-        />
+        <>
+          <EmptyState
+            icon={Radar}
+            title="Sin registros todavía"
+            description="Importa un archivo CSV/Excel o pega JSON para ver los KPIs, el mapa de riesgo y la distribución. La tendencia de abajo ya usa datos reales del SIDPOL."
+            action={
+              <Link to="/datos" className={primaryLink}>
+                <Upload className="size-4" aria-hidden />
+                Importar datos
+              </Link>
+            }
+          />
+          <MonthlyTrendCard
+            rows={monthlyRows}
+            loading={monthlyLoading}
+            error={monthlyError}
+            months={months}
+            onChangeMonths={setMonths}
+          />
+        </>
       ) : (
         <>
           {/* KPIs */}
@@ -166,42 +174,17 @@ export function HomePage() {
             />
           </div>
 
-          {/* Tendencia + distribución */}
+          {/* Tendencia real (SIDPOL) + distribución */}
           <div className="grid gap-4 lg:grid-cols-3">
-            <Card className="p-5 lg:col-span-2">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <CardHeader
-                  title="Tendencia de incidentes"
-                  description="Incidentes por periodo, apilados por nivel de riesgo."
-                />
-                <div
-                  className="flex flex-wrap gap-1 rounded-xl bg-surface-2 p-1"
-                  role="group"
-                  aria-label="Rango de fechas"
-                >
-                  {RANGE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setRange(opt.value)}
-                      aria-pressed={range === opt.value}
-                      className={[
-                        'rounded-lg px-2.5 py-1 text-xs font-medium transition',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-                        range === opt.value
-                          ? 'bg-surface-1 text-accent shadow-sm ring-1 ring-line-subtle'
-                          : 'text-content-secondary hover:text-content-primary',
-                      ].join(' ')}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-4">
-                <IncidentTrendChart points={datedPoints} range={range} />
-              </div>
-            </Card>
+            <div className="lg:col-span-2">
+              <MonthlyTrendCard
+                rows={monthlyRows}
+                loading={monthlyLoading}
+                error={monthlyError}
+                months={months}
+                onChangeMonths={setMonths}
+              />
+            </div>
 
             <div className="space-y-4">
               <Card className="p-5">
