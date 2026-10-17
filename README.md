@@ -21,7 +21,7 @@ Todo el estado compartido vive en **Firestore** (base de datos NoSQL de Firebase
 | **TypeScript** | Tipado estático de todo el frontend. |
 | **Vite** | Servidor de desarrollo y build (`tsc -b && vite build`). |
 | **Tailwind CSS 4** (plugin `@tailwindcss/vite`) | Estilos utilitarios. |
-| **React Router 7** | Rutas: `/login`, `/` (resumen), `/analisis` (analista), `/prediccion`, `/mapa`, `/datos`. |
+| **React Router 7** | Rutas: `/login`, `/` (resumen), `/analisis` (analista), `/prediccion`, `/mapa`, `/datos`, `/usuarios` (admin). |
 | **Firebase JS SDK 11** | `Auth` (login), `Firestore` (lectura/escritura de incidentes). |
 | **Leaflet + react-leaflet** | Mapa de riesgo por defecto (no requiere API key). |
 | **@react-google-maps/api** | Mapa alternativo si se define una Google Maps API key. |
@@ -105,7 +105,7 @@ Tesis-main/
 │   │   ├── firebase/client.ts     # Inicialización del SDK (env o JSON)
 │   │   ├── hooks/                 # Lectura de incidentes (mapa y análisis) y serie SIDPOL
 │   │   ├── ml/localPredict.ts     # Predicción local (Firestore + heurística)
-│   │   ├── pages/                 # Login, Home, Análisis, Predict, Map, Data
+│   │   ├── pages/                 # Login, Home, Análisis, Predict, Map, Data, Users
 │   │   └── utils/                 # Errores de Auth, serie mensual, IDs estables, análisis
 │   ├── .env.example
 │   └── package.json
@@ -183,9 +183,10 @@ cp firebase-config.example.json firebase-config.json
 
 En la Consola Firebase → **Authentication** → activa **Correo electrónico/Contraseña** y crea el
 primer usuario (administrador). Ese usuario necesita el claim `admin` (ver §9.1) para poder crear
-más cuentas desde la app en la sección **Usuarios** (`/usuarios`), que llama a la Cloud Function
-`create_user` (nombre, correo y contraseña temporal). No hay registro público: todas las cuentas
-las crea un administrador. Esas credenciales son las que se usan en `/login`.
+más cuentas y ver las existentes desde la app en la sección **Usuarios** (`/usuarios`), que llama a
+las Cloud Functions `create_user` (nombre, correo y contraseña temporal) y `list_users` (rol,
+estado y actividad de cada cuenta). No hay registro público: todas las cuentas las crea un
+administrador. Esas credenciales son las que se usan en `/login`.
 
 ### 5.4 Levantar el servidor de desarrollo
 
@@ -276,6 +277,7 @@ Todas las rutas (salvo `prediction_health`) exigen `Authorization: Bearer <Fireb
 | `import_incidents` | POST | Inserta filas (`rows`) validadas por fila. Requiere claim `admin`. |
 | `import_csv_dataset` | POST | Importa CSV (`csv_text`) validado por fila. Requiere claim `admin`. |
 | `create_user` | POST | Crea una cuenta de Firebase Auth (`email`, `password`, `displayName`). Requiere claim `admin`. |
+| `list_users` | GET | Lista cuentas con rol (claim `admin`), estado, último acceso y fecha de creación. Requiere claim `admin`. |
 | `inei_datacrim_aggregate` / `inei_arcgis_points` | GET | Proxies del INEI (series anuales y puntos ArcGIS). |
 
 Configuración por entorno en `functions/.env` (no versionado): `CORS_ORIGINS` (**define tus

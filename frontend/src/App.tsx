@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { AdminRoute } from './components/AdminRoute'
 import { AppShell } from './components/AppShell'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Skeleton } from './components/ui/skeleton'
@@ -8,6 +9,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { MapPage } from './pages/MapPage'
 import { PredictPage } from './pages/PredictPage'
+import { UsersPage } from './pages/UsersPage'
 
 // El módulo de Análisis carga Recharts: se separa en su propio chunk para no
 // engordar la carga inicial del resto de la app.
@@ -47,6 +49,10 @@ export default function App() {
           <Route path="prediccion" element={<PredictPage />} />
           <Route path="mapa" element={<MapPage />} />
           <Route path="datos" element={<DataPage />} />
+
+          <Route element={<AdminRoute />}>
+            <Route path="usuarios" element={<UsersPage />} />
+          </Route>
         </Route>
       </Route>
 

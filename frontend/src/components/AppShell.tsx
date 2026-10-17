@@ -1,4 +1,16 @@
-import { BarChart3, Database, LayoutDashboard, LogOut, Map, Menu, Radar, Sparkles, X } from 'lucide-react'
+import {
+  BarChart3,
+  Database,
+  LayoutDashboard,
+  LogOut,
+  Map,
+  Menu,
+  Radar,
+  Sparkles,
+  Users,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -13,8 +25,52 @@ const items = [
   { to: '/datos', label: 'Importar datos', icon: Database },
 ] as const
 
+const adminItems = [{ to: '/usuarios', label: 'Usuarios', icon: Users }] as const
+
+function NavItem({
+  to,
+  label,
+  icon: Icon,
+  onNavigate,
+}: {
+  to: string
+  label: string
+  icon: LucideIcon
+  onNavigate: () => void
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={to === '/'}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        [
+          'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+          isActive
+            ? 'bg-accent-soft text-accent'
+            : 'text-content-secondary hover:bg-surface-2 hover:text-content-primary',
+        ].join(' ')
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <span
+              className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent"
+              aria-hidden
+            />
+          )}
+          <Icon className="size-4 shrink-0 opacity-90" aria-hidden />
+          {label}
+        </>
+      )}
+    </NavLink>
+  )
+}
+
 export function AppShell({ children }: { children?: ReactNode }) {
-  const { username, logout } = useAuth()
+  const { isAdmin, username, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -45,36 +101,20 @@ export function AppShell({ children }: { children?: ReactNode }) {
         <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-content-muted">
           Operaciones
         </p>
-        {items.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            onClick={() => setMobileOpen(false)}
-            className={({ isActive }) =>
-              [
-                'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-                isActive
-                  ? 'bg-accent-soft text-accent'
-                  : 'text-content-secondary hover:bg-surface-2 hover:text-content-primary',
-              ].join(' ')
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <span
-                    className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent"
-                    aria-hidden
-                  />
-                )}
-                <Icon className="size-4 shrink-0 opacity-90" aria-hidden />
-                {label}
-              </>
-            )}
-          </NavLink>
+        {items.map((item) => (
+          <NavItem key={item.to} {...item} onNavigate={() => setMobileOpen(false)} />
         ))}
+
+        {isAdmin && (
+          <>
+            <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-content-muted">
+              Administración
+            </p>
+            {adminItems.map((item) => (
+              <NavItem key={item.to} {...item} onNavigate={() => setMobileOpen(false)} />
+            ))}
+          </>
+        )}
       </nav>
 
       {/* Usuario */}
