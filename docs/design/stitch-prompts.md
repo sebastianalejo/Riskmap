@@ -79,7 +79,7 @@ Dashboard principal de RiskMap (panel oscuro tipo centro de operaciones).
 - Header: título "Resumen" + fecha del día; a la derecha botones "Ver mapa" (primario)
   e "Importar datos" (secundario).
 - Fila de 4 tarjetas KPI (fondo #0C1425, radio 16px):
-  1) "Incidentes cargados" — cifra grande en JetBrains Mono (ej. 1 234) con chip "Firestore".
+  1) "Incidentes cargados" — cifra grande en JetBrains Mono (ej. 1 234) con chip "Base de datos".
   2) "Riesgo alto" — 42 % con conteo "520 puntos", icono en caja roja translúcida.
   3) "Distrito más crítico" — "LA VICTORIA" + conteo.
   4) "Tendencia 7 días" — chip ↑ +12 % en naranja con cifra en mono.
@@ -89,8 +89,8 @@ Dashboard principal de RiskMap (panel oscuro tipo centro de operaciones).
   - "Distribución por riesgo": barras horizontales finas (Bajo/Medio/Alto) con porcentajes en mono,
     + lista "Top distritos" (5 filas: nombre, conteo, mini-barra).
 - Fila inferior:
-  - "Estado del sistema" (secundario, colapsado): Firestore conectado (punto verde),
-    API Functions no desplegadas (punto ámbar), versión.
+  - "Estado del sistema" (secundario, colapsado): base de datos conectada (punto verde),
+    servicio de predicción no disponible (punto ámbar), versión.
   - "Acciones rápidas": 3 tarjetas pequeñas clicables (Predecir riesgo, Ver mapa, Importar datos)
     con icono, título y descripción de una línea.
 - Estado de carga: skeletons con la forma de las tarjetas y del gráfico.
@@ -121,7 +121,7 @@ Pantalla de predicción de riesgo de RiskMap (panel oscuro).
       (aro grueso con glow del color del riesgo, ej. 78 % y etiqueta "confianza").
     - "Distribución en 120 registros": barras horizontales Alto/Medio/Bajo con porcentajes en mono.
     - "Factores detectados": lista con viñetas e icono chevron (3-4 ítems).
-    - Nota al pie pequeña: método usado (Firestore o heurística).
+    - Nota al pie pequeña: método usado (base de datos o estimación aproximada).
 - Estado de carga: skeleton del panel de resultado.
 ```
 
@@ -142,7 +142,7 @@ Pantalla "Mapa de riesgo" de RiskMap (panel oscuro, ocupa el alto completo).
   - Botón "Limpiar filtros" (fantasma).
   - Leyenda al pie: puntos de color con conteos por nivel + "Visibles 320 / Total 1 000" en mono.
 - Mapa oscuro (estilo nocturno) ocupando el resto: marcadores circulares con borde claro,
-  colores de riesgo; marcadores azules para datos INEI; popup con tarjeta oscura
+  colores de riesgo; marcadores azules para los datos con año; popup con tarjeta oscura
   (tipo de delito, distrito, coordenadas en mono, riesgo).
 - Panel inferior colapsable "Tendencia de incidentes": gráfico de barras apiladas
   + botón "Exportar reporte PDF" con icono de descarga.
@@ -154,18 +154,19 @@ Pantalla "Mapa de riesgo" de RiskMap (panel oscuro, ocupa el alto completo).
 ## Pantalla 5 — Importar datos (`/datos`)
 
 ```
-Pantalla "Datos en Firestore" de RiskMap (panel oscuro).
+Pantalla "Datos importados" de RiskMap (panel oscuro).
 
-- Header: "Datos en Firestore" + esquema requerido en mono (crime_type, hour, day_of_week,
-  district, latitude, longitude, historical_frequency, risk_level).
-- Aviso si el usuario no es admin: caja ámbar translúcida con icono de escudo:
-  "Tu cuenta no tiene permiso admin para importar datos".
+- Header: "Datos importados" + columnas requeridas descritas en texto simple
+  (tipo de delito, hora, día de la semana, distrito, latitud, longitud, frecuencia histórica y
+  nivel de riesgo; los nombres exactos están en la plantilla descargable).
+- Aviso si el usuario no es administrador: caja ámbar translúcida con icono de escudo:
+  "Tu cuenta no tiene permiso de administrador para importar datos".
 - Fila superior (2 columnas):
-  1) Tarjeta "Subir archivo": dropzone punteada con icono de subida, "Arrastra tu CSV o Excel aquí
-     o haz clic para elegirlo", formatos admitidos en micro-texto; estado de progreso con barra
-     determinada y "Importando 120/300 registros"; al terminar, toast de éxito.
-  2) Tarjeta "Pegar JSON": textarea monoespaciada con placeholder de ejemplo, botón
-     "Importar JSON" (primario).
+  1) Tarjeta "Subir archivo de datos": dropzone punteada con icono de subida, "Arrastra tu archivo
+     aquí o haz clic para elegirlo", formatos admitidos en micro-texto; estado de progreso con
+     barra determinada y "Importando 120/300 registros"; al terminar, toast de éxito.
+  2) Tarjeta "Importar datos pegando texto": textarea monoespaciada con placeholder de ejemplo,
+     botón "Guardar" (primario).
 - Tarjeta "Previsualización": tabla con las primeras filas parseadas antes de confirmar —
   columnas requeridas, filas con error resaltadas en rojo translúcido con mensaje por fila
   (ej. "Fila 12: hour debe ser un entero entre 0 y 23"), y pie con "298 válidas / 2 con error"

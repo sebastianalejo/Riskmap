@@ -25,7 +25,7 @@ import {
   useChartTheme,
 } from './chartTheme'
 
-/** Ranking de frecuencia histórica promedio (`historical_frequency`) por distrito. */
+/** Ranking de frecuencia histórica promedio por distrito. */
 export function FrequencyRankingChart({ incidents }: { incidents: AnalysisIncident[] }) {
   const theme = useChartTheme()
   const rows = useMemo(() => frequencyByDistrict(incidents, 15), [incidents])
@@ -35,7 +35,7 @@ export function FrequencyRankingChart({ incidents }: { incidents: AnalysisIncide
     <Card className="p-5">
       <CardHeader
         title="Frecuencia histórica por distrito"
-        description="Promedio del campo historical_frequency de cada distrito (top 15). Es la intensidad base que trae el dataset, no un conteo en tiempo real."
+        description="Promedio de frecuencia histórica de cada distrito (top 15). Es la intensidad base de los datos, no un conteo en tiempo real."
       />
       {rows.length === 0 ? (
         <p className="mt-6 text-sm text-content-muted">

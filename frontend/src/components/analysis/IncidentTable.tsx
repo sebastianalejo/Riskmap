@@ -25,16 +25,16 @@ const COLUMNS: Column[] = [
     key: 'eventTime',
     label: 'Fecha y hora',
     numeric: false,
-    title: 'Año (INEI), día de la semana y hora del hecho según los campos del dataset',
+    title: 'Año, día de la semana y hora del hecho',
   },
   { key: 'riskLevel', label: 'Riesgo', numeric: false, title: 'Nivel de riesgo del registro' },
   {
     key: 'historicalFrequency',
     label: 'Frecuencia',
     numeric: true,
-    title: 'Campo historical_frequency del registro',
+    title: 'Frecuencia histórica del registro',
   },
-  { key: 'source', label: 'Fuente', numeric: false, title: 'Origen del registro (INEI 2021-2024 o modalidad 2022)' },
+  { key: 'source', label: 'Fuente', numeric: false, title: 'Origen del registro' },
 ]
 
 const RISK_RANK: Record<RiskLevel, number> = { bajo: 0, medio: 1, alto: 2 }

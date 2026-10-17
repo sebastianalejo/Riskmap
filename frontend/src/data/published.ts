@@ -1,9 +1,9 @@
 /**
- * Lectura del dataset estático publicado en Firebase Hosting (`/data`).
+ * Lectura de los datos estáticos publicados.
  *
- * El frontend ya no consulta `crime_incidents` en cada visita: descarga los JSON
- * una vez, los cachea en memoria y filtra en el navegador. Así no se consumen las
- * 50 000 lecturas diarias de Firestore del plan Spark.
+ * El frontend ya no consulta la base de datos en cada visita: descarga los datos
+ * una vez, los cachea en memoria y filtra en el navegador. Así se evitan consultas
+ * repetidas.
  *
  * El `manifest.json` es la única petición que no se cachea (para detectar una
  * publicación nueva); los archivos con hash se cachean de forma agresiva.

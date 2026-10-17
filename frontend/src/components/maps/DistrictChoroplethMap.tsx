@@ -38,7 +38,7 @@ interface Props {
   months: number
 }
 
-/** Capa coroplética: denuncias SIDPOL por distrito (últimos `months` meses). */
+/** Capa coroplética: denuncias oficiales por distrito (últimos `months` meses). */
 export function DistrictChoroplethMap({ districts, months }: Props) {
   const [collection, setCollection] = useState<DistrictCollection | null>(null)
   const [error, setError] = useState<string | null>(null)

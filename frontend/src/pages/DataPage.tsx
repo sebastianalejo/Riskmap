@@ -33,8 +33,8 @@ const REQUIRED = [
 const DAYS_OF_WEEK = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'] as const
 const RISK_LEVELS = ['bajo', 'medio', 'alto'] as const
 
-// Bbox de Lima Metropolitana — debe coincidir con firestore.rules y
-// functions/crime_ml/validation.py.
+// Bbox de Lima Metropolitana — debe coincidir con las reglas de validación
+// del backend.
 const LAT_MIN = -12.7
 const LAT_MAX = -11.5
 const LON_MIN = -77.5
@@ -154,11 +154,11 @@ async function writeBatch(
   onProgress?: (done: number, total: number) => void,
 ): Promise<number> {
   const app = getFirebaseApp()
-  if (!app) throw new Error('Firebase no inicializado')
+  if (!app) throw new Error('La aplicación no está inicializada')
   const db = getFirestore(app)
   const col = collection(db, COLLECTION)
-  // ID determinista por contenido (utils/stableId.ts): reimportar el mismo
-  // archivo actualiza los mismos documentos en lugar de duplicarlos.
+  // Identificador único por registro (utils/stableId.ts): reimportar el mismo
+  // archivo actualiza los mismos registros en lugar de duplicarlos.
   const unique = new Map(rows.map((row) => [stableRowId(row as unknown as Record<string, unknown>), row]))
   let done = 0
   for (const [docId, row] of unique) {
@@ -171,7 +171,7 @@ async function writeBatch(
 
 async function deleteAll(): Promise<number> {
   const app = getFirebaseApp()
-  if (!app) throw new Error('Firebase no inicializado')
+  if (!app) throw new Error('La aplicación no está inicializada')
   const db = getFirestore(app)
   const snap = await getDocs(collection(db, COLLECTION))
   await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)))
@@ -268,7 +268,7 @@ export function DataPage() {
       toast({
         variant: 'success',
         title: `${n} registro(s) importados`,
-        description: `Guardados en Firestore desde «${preview.name}».`,
+        description: `Guardados en la base de datos desde «${preview.name}».`,
       })
       setPreview(null)
     } catch (e) {
@@ -281,7 +281,7 @@ export function DataPage() {
     }
   }
 
-  /* ── JSON manual ── */
+  /* ── Importar datos pegando texto ── */
   const onImportRows = async (e: React.FormEvent) => {
     e.preventDefault()
     reset()
@@ -295,9 +295,9 @@ export function DataPage() {
       try {
         parsed = JSON.parse(rowsJson)
       } catch {
-        throw new Error('JSON inválido')
+        throw new Error('Los datos no tienen un formato válido')
       }
-      if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Debe ser un array no vacío')
+      if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Debes incluir al menos un registro')
       const rows = parsed as Record<string, unknown>[]
       for (const row of rows) {
         const err = validateRow(row)
@@ -306,12 +306,12 @@ export function DataPage() {
       const incidents = rows.map(toIncident)
       setProgress({ done: 0, total: incidents.length })
       const n = await writeBatch(incidents, (done, total) => setProgress({ done, total }))
-      toast({ variant: 'success', title: `${n} registro(s) guardados en Firestore` })
+      toast({ variant: 'success', title: `${n} registro(s) guardados en la base de datos` })
       setRowsJson('')
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al guardar'
       setError(msg)
-      toast({ variant: 'error', title: 'No se pudo importar el JSON', description: msg })
+      toast({ variant: 'error', title: 'No se pudieron importar los datos', description: msg })
     } finally {
       setJsonLoading(false)
       setProgress(null)
@@ -327,7 +327,7 @@ export function DataPage() {
     setDeleteLoading(true)
     try {
       const n = await deleteAll()
-      toast({ variant: 'success', title: `${n} registro(s) eliminados de Firestore` })
+      toast({ variant: 'success', title: `${n} registro(s) eliminados de la base de datos` })
       setDeleteOpen(false)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al borrar'
@@ -350,34 +350,29 @@ export function DataPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-content-primary">
-            Datos en Firestore
+            Datos importados
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-            Colección <code className="rounded bg-surface-2 px-1 font-mono text-xs">crime_incidents</code>.
-            Columnas requeridas:{' '}
-            <span className="font-mono text-xs">
-              crime_type, hour, day_of_week, district, latitude, longitude, historical_frequency,
-              risk_level
-            </span>
-            . Reimportar el mismo archivo <strong className="text-content-primary">actualiza</strong> los
-            registros existentes (ID determinista por contenido), nunca los duplica.
+            Registros de incidentes. Tu archivo debe traer las columnas de tipo de delito, hora,
+            día de la semana, distrito, latitud, longitud, frecuencia histórica y nivel de riesgo
+            (los nombres exactos de las columnas están en la plantilla descargable). Si vuelves a
+            subir el mismo archivo, los registros se{' '}
+            <strong className="text-content-primary">actualizan</strong> en lugar de duplicarse.
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={downloadTemplate}>
           <FileSpreadsheet className="size-3.5" aria-hidden />
-          Descargar plantilla CSV
+          Descargar plantilla
         </Button>
       </div>
 
-      {/* Aviso de solo lectura para cuentas sin claim admin */}
+      {/* Aviso de solo lectura para cuentas sin permiso de administrador */}
       {!isAdmin && (
         <div className="flex gap-2 rounded-2xl border border-risk-medio/30 bg-risk-medio-soft px-4 py-3 text-sm text-risk-medio">
           <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
           <p>
-            Modo lectura: tu cuenta no tiene el permiso{' '}
-            <code className="font-mono text-xs">admin</code> que exigen las reglas de Firestore
-            para importar o borrar registros. Pide a un administrador que asigne el claim (ver{' '}
-            <span className="font-mono text-xs">scripts/set-admin-claim.py</span>).
+            Modo lectura: tu cuenta no tiene permiso de administrador para importar o borrar
+            registros. Pide a un administrador que te lo asigne.
           </p>
         </div>
       )}
@@ -386,13 +381,9 @@ export function DataPage() {
       <div className="flex gap-2 rounded-2xl border border-info/30 bg-info-soft px-4 py-3 text-sm text-info">
         <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
         <p>
-          Esta pantalla escribe en Firestore como <strong>borrador</strong>. El Resumen, el Mapa y el
-          Análisis leen el dataset publicado en{' '}
-          <code className="font-mono text-xs">/data</code>; para publicar lo importado ejecuta{' '}
-          <code className="font-mono text-xs">
-            python scripts/pipeline/export_web_data.py --from-firestore
-          </code>{' '}
-          y despliega Hosting (<code className="font-mono text-xs">firebase deploy --only hosting</code>).
+          Lo que importes aquí queda como <strong>borrador</strong>. El Resumen, el Mapa y el
+          Análisis muestran los datos ya publicados; los cambios aparecerán cuando un
+          administrador publique la información actualizada.
         </p>
       </div>
 
@@ -412,8 +403,8 @@ export function DataPage() {
           {/* Subir archivo */}
           <Card className="p-6">
             <CardHeader
-              title="Subir Excel o CSV"
-              description="Acepta .xlsx, .xls y .csv. La primera fila debe tener los encabezados exactos."
+              title="Subir archivo de datos"
+              description="Acepta archivos de Excel (.xlsx, .xls) y CSV. La primera fila debe tener los encabezados exactos."
             />
             <input
               ref={fileRef}
@@ -457,7 +448,7 @@ export function DataPage() {
               <p className="text-sm font-medium text-content-primary">
                 {fileLoading
                   ? 'Procesando archivo…'
-                  : 'Arrastra tu CSV o Excel aquí, o haz clic para elegirlo'}
+                  : 'Arrastra tu archivo aquí, o haz clic para elegirlo'}
               </p>
               <p className="text-xs text-content-muted">.xlsx · .xls · .csv</p>
             </div>
@@ -595,9 +586,8 @@ export function DataPage() {
                     Borrar todos los registros
                   </h2>
                   <p className="mt-1 max-w-xl text-[13px] text-content-secondary">
-                    Elimina <strong>todos</strong> los documentos de{' '}
-                    <code className="font-mono text-[11px]">crime_incidents</code> en Firestore.
-                    Esta acción no se puede deshacer.
+                    Elimina <strong>todos</strong> los registros de incidentes. Esta acción no se
+                    puede deshacer.
                   </p>
                 </div>
               </div>
@@ -608,14 +598,14 @@ export function DataPage() {
             </div>
           </div>
 
-          {/* JSON manual */}
+          {/* Importar pegando texto */}
           <Card className="p-6">
             <CardHeader
-              title="Importar filas JSON manualmente"
-              description="Pega un array JSON con los campos requeridos y guárdalo en Firestore."
+              title="Importar datos pegando texto"
+              description="Pega los registros en formato JSON con las columnas requeridas y guárdalos en la base de datos."
             />
             <form onSubmit={onImportRows} className="mt-4 space-y-3">
-              <Label htmlFor="json-rows">Array JSON de filas</Label>
+              <Label htmlFor="json-rows">Registros (formato JSON)</Label>
               <Textarea
                 id="json-rows"
                 rows={8}
@@ -624,7 +614,7 @@ export function DataPage() {
                 placeholder={`[\n  {\n    "crime_type": "robo agravado",\n    "hour": 22,\n    "day_of_week": "viernes",\n    "district": "MIRAFLORES",\n    "latitude": -12.1219,\n    "longitude": -77.0297,\n    "historical_frequency": 140,\n    "risk_level": "alto"\n  }\n]`}
               />
               <Button type="submit" loading={jsonLoading} disabled={!rowsJson.trim()}>
-                {jsonLoading ? 'Guardando…' : 'Guardar en Firestore'}
+                {jsonLoading ? 'Guardando…' : 'Guardar'}
               </Button>
             </form>
           </Card>
@@ -662,9 +652,8 @@ export function DataPage() {
         }
       >
         <p className="text-sm text-content-secondary">
-          Se eliminarán todos los documentos de la colección{' '}
-          <code className="rounded bg-surface-2 px-1 font-mono text-xs">crime_incidents</code> en
-          Firestore. Si tu cuenta no tiene el claim admin, la operación fallará.
+          Se eliminarán todos los registros de incidentes. Si tu cuenta no tiene permiso de
+          administrador, la operación fallará.
         </p>
       </Modal>
     </div>

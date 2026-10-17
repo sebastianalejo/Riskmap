@@ -7,7 +7,7 @@ export type CrimeIncident = {
   longitude: number
   historical_frequency: number
   risk_level: 'bajo' | 'medio' | 'alto'
-  /** Campos opcionales del esquema unificado (INEI 2021-2024). */
+  /** Campos opcionales del esquema unificado (datos oficiales 2021-2024). */
   occurred_year?: number
   macro_category?: string
   ubigeo?: string

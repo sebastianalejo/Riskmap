@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const auth = getFirebaseAuth()
     if (!auth)
       throw new Error(
-        'Firebase no está configurado. En frontend/public/ crea firebase-config.json con el objeto de tu app web (Consola Firebase) o usa .env.local con VITE_FIREBASE_*; luego npm run build y despliega de nuevo.'
+        'La aplicación aún no está configurada. Un administrador debe completar la configuración y volver a publicarla.'
       )
     noticeRef.current = null
     setSessionNotice(null)

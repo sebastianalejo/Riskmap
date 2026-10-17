@@ -13,11 +13,11 @@ export type MapPoint = {
   dayOfWeek?: string
 }
 
-/** Fuentes conocidas de `crime_incidents` (para el filtro del mapa). */
+/** Fuentes conocidas de incidentes (para el filtro del mapa). */
 export const SOURCE_OPTIONS = [
   { value: '', label: 'Todas las fuentes' },
-  { value: 'inei', label: 'INEI 2021-2024 (con año)' },
-  { value: 'modalidad', label: 'INEI 2022 (modalidad)' },
+  { value: 'inei', label: 'Denuncias 2021-2024 (con año)' },
+  { value: 'modalidad', label: 'Denuncias 2022 (modalidad)' },
 ] as const
 
 export function sourceLabel(source?: string): string {
@@ -32,7 +32,7 @@ function num(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-/** Convierte la severidad declarada (dataset INEI, esquema v2) al nivel de riesgo del mapa. */
+/** Convierte la severidad declarada (datos oficiales, esquema v2) al nivel de riesgo del mapa. */
 export function severityToRisk(value: unknown): RiskLevel | undefined {
   if (typeof value !== 'string') return undefined
   return SEVERITY_TO_RISK[value.trim().toLowerCase()]
@@ -47,7 +47,7 @@ export function riskFromIncident(data: Record<string, unknown>): RiskLevel | und
   return severityToRisk(data.severity_level)
 }
 
-/** Mapea un documento de `crime_incidents` a un punto del mapa (o null sin coordenadas). */
+/** Mapea un registro de incidente a un punto del mapa (o null sin coordenadas). */
 export function mapIncidentToPoint(id: string, data: Record<string, unknown>): MapPoint | null {
   const lat = num(data.latitude)
   const lng = num(data.longitude)

@@ -5,30 +5,30 @@ import { Card, CardHeader } from '../ui/card'
 const METRICS: { term: string; definition: ReactNode }[] = [
   {
     term: 'Incidentes',
-    definition: 'Registros que cumplen los filtros activos. Cada registro equivale a una denuncia del dataset.',
+    definition: 'Registros que cumplen los filtros activos. Cada registro equivale a una denuncia.',
   },
   {
     term: '% riesgo alto',
     definition:
-      'Porcentaje de registros con risk_level = alto. Se calcula solo sobre registros con nivel de riesgo válido.',
+      'Porcentaje de registros con nivel de riesgo alto. Se calcula solo sobre registros con nivel de riesgo válido.',
   },
   {
-    term: 'Frecuencia histórica (historical_frequency)',
+    term: 'Frecuencia histórica',
     definition:
-      'Valor base de incidencia histórica que trae el dataset para cada registro; el promedio por distrito resume su intensidad relativa.',
+      'Valor base de incidencia histórica de cada registro; el promedio por distrito resume su intensidad relativa.',
   },
   {
     term: '% nocturno',
-    definition: 'Porcentaje de registros ocurridos entre las 22:00 y las 05:59, según el campo hour.',
+    definition: 'Porcentaje de registros ocurridos entre las 22:00 y las 05:59.',
   },
   {
     term: 'Delito principal',
-    definition: 'Tipo de delito con más registros en el distrito (moda del campo crime_type).',
+    definition: 'Tipo de delito con más registros en el distrito.',
   },
   {
     term: 'Fecha y hora',
     definition:
-      'Combina los campos temporales disponibles de cada registro: año (occurred_year, esquema INEI), día de la semana (day_of_week) y hora (hour). No es una fecha exacta.',
+      'Combina los datos temporales disponibles de cada registro: año, día de la semana y hora. No es una fecha exacta.',
   },
   {
     term: 'Distrito más crítico',
@@ -38,10 +38,10 @@ const METRICS: { term: string; definition: ReactNode }[] = [
 
 const CAVEATS = [
   'Los datos provienen de denuncias registradas: existe subregistro y sesgo territorial. No equivalen a la criminalidad real de una zona.',
-  'El dataset no incluye la fecha exacta del hecho: solo el año (INEI), el día de la semana y la hora cuando están disponibles. Este módulo analiza esas variables y la frecuencia histórica; no series temporales (la tendencia mensual real vive en Resumen, con datos SIDPOL).',
-  'Se analiza el dataset publicado completo (`crime_incidents`: INEI 2021-2024 + puntos 2022, IDs deterministas y sin duplicados).',
-  'Los distritos se canonicalizan en la ingesta (ámbito Lima/Callao); los registros incompletos aparecen como «Sin distrito» o «Sin tipo».',
-  'Las exportaciones (CSV/PDF) respetan los filtros activos en el momento de la descarga.',
+  'Los datos no incluyen la fecha exacta del hecho: solo el año, el día de la semana y la hora cuando están disponibles. Este módulo analiza esas variables y la frecuencia histórica; la tendencia mensual está en Resumen, con denuncias oficiales.',
+  'Se analizan todos los datos publicados (años 2021-2024 y modalidades 2022), sin duplicados.',
+  'Los distritos se agrupan al cargar los datos; los registros incompletos aparecen como «Sin distrito» o «Sin tipo».',
+  'Las exportaciones respetan los filtros activos en el momento de la descarga.',
 ]
 
 /** Bloque metodológico: definiciones y advertencias del módulo. */

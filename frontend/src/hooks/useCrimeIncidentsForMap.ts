@@ -11,8 +11,8 @@ export function filterPointsBySource(points: MapPoint[], source?: string): MapPo
 }
 
 /**
- * Puntos del mapa desde el dataset publicado (`/data`). Se descarga una sola vez
- * y el filtro por fuente se aplica en el navegador: no hay lecturas de Firestore.
+ * Puntos del mapa desde los datos publicados. Se descargan una sola vez
+ * y el filtro por fuente se aplica en el navegador: no hay consultas a la base de datos.
  */
 export function useCrimeIncidentsForMap(source?: string) {
   const [allPoints, setAllPoints] = useState<MapPoint[]>([])

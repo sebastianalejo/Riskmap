@@ -66,7 +66,7 @@ describe('mapIncidentToPoint', () => {
 
 describe('SOURCE_OPTIONS y sourceLabel', () => {
   it('etiqueta las fuentes conocidas y el resto como Otros', () => {
-    expect(sourceLabel('inei')).toContain('INEI')
+    expect(sourceLabel('inei')).toContain('Denuncias')
     expect(sourceLabel('modalidad')).toContain('modalidad')
     expect(sourceLabel('otra-cosa')).toBe('Otros')
     expect(sourceLabel(undefined)).toBe('Otros')

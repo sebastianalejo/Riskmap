@@ -248,7 +248,7 @@ export function UsersPage() {
     if (confirmAction.kind === 'disable') {
       return {
         title: 'Deshabilitar cuenta',
-        description: `${who} no podrá volver a leer ni escribir datos hasta que la habilites. La cuenta de Firebase Authentication sigue existiendo.`,
+        description: `${who} no podrá volver a leer ni escribir datos hasta que la habilites. La cuenta seguirá existiendo.`,
         label: 'Deshabilitar',
         variant: 'danger' as const,
         run: () => applyDisabled(confirmAction.user, true),
@@ -265,7 +265,7 @@ export function UsersPage() {
     }
     return {
       title: 'Quitar rol de administrador',
-      description: `${who} dejará de ver la sección Administración. Para borrar la cuenta definitivamente, usa Firebase Console → Authentication.`,
+      description: `${who} dejará de ver la sección Administración. Para borrar la cuenta definitivamente, hazlo desde la consola de administración.`,
       label: 'Quitar admin',
       variant: 'danger' as const,
       run: () => commitRole(confirmAction.user, 'user'),
@@ -318,9 +318,8 @@ export function UsersPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-content-primary">Usuarios</h1>
         <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-          Crea cuentas y gestiona roles y estado. Los roles se guardan en Firestore (
-          <code className="rounded bg-surface-2 px-1 font-mono text-xs">users</code>) y se aplican al
-          instante; las credenciales se administran en Firebase Authentication.
+          Crea cuentas y gestiona roles y estado. Los roles se guardan en la base de datos y se
+          aplican al instante; las contraseñas se gestionan en el sistema de cuentas.
         </p>
       </div>
 
@@ -469,15 +468,15 @@ export function UsersPage() {
 
           <p className="mt-4 text-xs text-content-muted">
             La contraseña es temporal: compártela y pide a la persona cambiarla con “Enviar
-            restablecimiento” o desde el login. Para eliminar una cuenta por completo, usa Firebase
-            Console → Authentication.
+            restablecimiento” o desde el inicio de sesión. Para eliminar una cuenta por completo,
+            usa la consola de administración.
           </p>
         </Card>
 
         <Card className="p-4 sm:p-6">
           <CardHeader
             title="Cuentas registradas"
-            description="Rol y estado según la colección users de Firestore."
+            description="Rol y estado de cada cuenta."
             action={
               <Button variant="ghost" size="sm" loading={listLoading} onClick={refreshUsers}>
                 <RefreshCw className="size-3.5" aria-hidden />
@@ -611,7 +610,7 @@ export function UsersPage() {
 
           <p className="mt-3 text-[11px] text-content-muted">
             {users.length} cuenta(s). No puedes cambiar tu propio rol ni deshabilitar tu cuenta. El
-            borrado definitivo se hace en Firebase Console → Authentication.
+            borrado definitivo se hace desde la consola de administración.
           </p>
         </Card>
       </div>

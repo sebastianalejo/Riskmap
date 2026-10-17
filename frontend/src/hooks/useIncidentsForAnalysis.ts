@@ -4,10 +4,10 @@ import { loadAnalysisIncidents, type AnalysisIncident } from '../data/published'
 export type { AnalysisIncident, AnalysisRiskLevel } from '../data/published'
 
 /**
- * Filas del módulo Análisis desde el dataset publicado (`/data`).
+ * Filas del módulo Análisis desde los datos publicados.
  *
- * A diferencia de la versión anterior (que paginaba Firestore), aquí se cargan
- * todos los registros publicados: sin tope de 5 000 ni lecturas por visita.
+ * Aquí se cargan todos los registros publicados: sin tope de registros ni
+ * consultas por visita.
  */
 export function useIncidentsForAnalysis() {
   const [incidents, setIncidents] = useState<AnalysisIncident[]>([])

@@ -55,7 +55,7 @@ function buildPdf(incidents: AnalysisIncident[], filters: AnalysisFilters): jsPD
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100)
   doc.text(
-    `Lima Metropolitana — ${new Date().toLocaleDateString('es-PE')} · Firestore crime_incidents`,
+    `Lima Metropolitana — ${new Date().toLocaleDateString('es-PE')}`,
     pw / 2,
     y,
     { align: 'center' },
@@ -209,7 +209,7 @@ function buildPdf(incidents: AnalysisIncident[], filters: AnalysisFilters): jsPD
   doc.setTextColor(120)
   const footer = [
     'Los registros corresponden a denuncias (subregistro y sesgo territorial).',
-    'El dataset no incluye la fecha del hecho: este reporte analiza hora, día de la semana y frecuencia histórica.',
+    'Los datos no incluyen la fecha del hecho: este reporte analiza hora, día de la semana y frecuencia histórica.',
     `Generado con RiskMap · ${new Date().toLocaleString('es-PE')}`,
   ]
   footer.forEach((line, index) => {

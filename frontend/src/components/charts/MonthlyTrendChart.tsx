@@ -8,7 +8,7 @@ interface Props {
 
 const numberFormat = new Intl.NumberFormat('es-PE')
 
-/** Barras mensuales apiladas por modalidad (serie real SIDPOL/MININTER). */
+/** Barras mensuales apiladas por modalidad (serie real de denuncias oficiales). */
 export function MonthlyTrendChart({ points, height = 240 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)

@@ -1,7 +1,7 @@
 /**
- * Agregaciones del módulo «Análisis»: filtros + estadísticas sobre
- * `crime_incidents`. Todas las funciones son puras y trabajan con los campos
- * reales del esquema (sin fechas simuladas).
+ * Agregaciones del módulo «Análisis»: filtros + estadísticas sobre los
+ * incidentes. Todas las funciones son puras y trabajan con los datos
+ * reales (sin fechas simuladas).
  */
 import Papa from 'papaparse'
 import type { AnalysisIncident, AnalysisRiskLevel } from '../hooks/useIncidentsForAnalysis'

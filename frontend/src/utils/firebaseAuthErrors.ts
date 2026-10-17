@@ -23,7 +23,7 @@ export function friendlyFirebaseLoginError(err: unknown): string {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
     case 'auth/user-not-found':
-      return 'Correo o contraseña incorrectos, o no existe un usuario con ese correo en este proyecto. En Firebase Console → Authentication comprueba el usuario y el método «Correo/contraseña», o crea el usuario de nuevo.'
+      return 'Correo o contraseña incorrectos, o no existe una cuenta con ese correo.'
     case 'auth/invalid-email':
       return 'El correo electrónico no es válido.'
     case 'auth/user-disabled':
@@ -45,5 +45,5 @@ export function friendlyFirebaseLoginError(err: unknown): string {
     return msg
   }
 
-  return 'No se pudo iniciar sesión. Revisa correo y contraseña en Firebase Console → Authentication.'
+  return 'No se pudo iniciar sesión. Revisa tu correo y contraseña.'
 }

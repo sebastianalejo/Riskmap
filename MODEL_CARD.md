@@ -10,43 +10,45 @@
 **Es:** un clasificador supervisado que estima, dado un *contexto espacial* (distrito y
 coordenadas), cuál es la **modalidad delictiva observada más probable** entre 15 categorías
 (robo agravado, hurto, estafa, homicidio por PAF, microcomercialización de drogas, …), a partir
-de denuncias reales registradas por el INEI (2021–2024).
+de denuncias reales de los datos oficiales (2021–2024).
 
 **No es:** una medición del riesgo real de una zona, ni una probabilidad de victimización, ni una
 herramienta para evaluar personas, viviendas o barrios. Tampoco sirve para comparar "peligrosidad"
 entre distritos: los registros policiales dependen del subregistro de denuncias, de la densidad
 de comisarías y de la actividad policial, no solo de la delincuencia.
 
-**Relación con lo desplegado en la app:** la pantalla *Predicción* del frontend usa una heurística
-en el navegador (`frontend/src/ml/localPredict.ts`) y las Cloud Functions conservan la tarea
-heredada (`risk_level` derivado por reglas del tipo de delito, ver §7). Este model card documenta
-el modelo nuevo del pipeline offline; su conexión a la API y la UI es trabajo de la Fase 4.
+**Relación con lo desplegado en la app:** la pantalla *Predicción* es **una sola pestaña y 100 %
+local** (`frontend/src/ml/localPredict.ts`): estima el nivel de riesgo con una **estimación aproximada ponderada**
+y muestra las «modalidades más probables» como **composición histórica del distrito** (la proporción
+habitual en los datos publicados). No sirve el clasificador de este model card: exponerlo en la UI requeriría
+desplegar `predict_crime` con el plan Blaze (opcional). Este model card documenta el clasificador
+entrenado sin conexión; su servicio en la nube es trabajo de la Fase 4.
 
 ## 2. Datos
 
 | Aspecto | Detalle |
 |---|---|
-| Fuente | MapServer público del INEI DataCrime (`arcgis3.inei.gob.pe`, capas "Modalidad de delito YYYY") |
+| Fuente | Servidor de mapas público de DataCrime (`arcgis3.inei.gob.pe`, capas "Modalidad de delito YYYY") |
 | Años | 2021, 2022, 2023, 2024 (la fuente no publica fecha del hecho; la resolución temporal real es el año) |
 | Muestreo | Ventanas aleatorias con semilla sobre el total disponible de cada combinación (año, modalidad); máximo 120 filas por combinación |
 | Tamaño final | 5 977 filas · 49 distritos (Lima Metropolitana + Callao) · 15 modalidades |
 | Cobertura por año | 2021: 1 584 · 2022: 1 594 · 2023: 1 158 · 2024: 1 641 |
-| Deduplicación | 401 duplicados retirados (clave: id de denuncia o tupla geográfica) |
-| Filtro de ámbito | 262 filas descartadas: la fuente mezcla nombres de distrito de otras provincias con coordenadas limeñas y ubigeos incoherentes; se conservan filas con ubigeo 1501/0701 o con nombre canónico, y el nombre se normaliza al más frecuente por ubigeo |
+| Deduplicación | 401 duplicados retirados (clave: identificador de denuncia o combinación de coordenadas) |
+| Filtro de ámbito | 262 filas descartadas: la fuente mezcla nombres de distrito de otras provincias con coordenadas limeñas y ubigeos incoherentes; se conservan filas con ubigeo 1501/0701 o con nombre oficial, y el nombre se normaliza al más frecuente por ubigeo |
 | Reporte completo | `data/processed/quality_report.json` |
 
-**Fuente complementaria (Oleada 1):** serie mensual SIDPOL/MININTER por distrito y modalidad
-(2018–hoy) en `crime_stats_monthly`, usada para la **tendencia real** del panel y el PDF. No es
-una feature del modelo todavía (ver `data/README.md`).
+**Fuente complementaria (Oleada 1):** serie mensual de denuncias oficiales por distrito y modalidad
+(2018–hoy) guardada en la base de datos, usada para la **tendencia real** del panel y el PDF. No es
+una variable del modelo todavía (ver `data/README.md`).
 
-**Esquema unificado en la app:** además del esquema clásico, `crime_incidents` convive con puntos
-INEI 2021-2024 (`occurred_year`, `severity_level`, `macro_category`, `source="inei"`). Ambas
-fuentes exponen las mismas columnas: a los puntos INEI se les derivan **hora, día y frecuencia
-histórica** (ver `scripts/pipeline/derive.py`) porque la fuente no las publica; `risk_level` sale
-de la severidad declarada de la taxonomía. La hora/día derivados y la frecuencia (media SIDPOL)
-son **estimaciones, no mediciones**. El mapa colorea todos los puntos por riesgo (los INEI llevan
-un borde azul), y se puede filtrar por año, tipo, distrito, hora y fuente. Siguen sin ser features
-del modelo.
+**Esquema unificado en la app:** además del esquema clásico, los incidentes conviven con los
+puntos de datos oficiales 2021-2024 (año, severidad, macro-categoría y fuente «inei»). Ambas
+fuentes exponen las mismas columnas: a los puntos oficiales se les derivan **hora, día y frecuencia
+histórica** (ver `scripts/pipeline/derive.py`) porque la fuente no las publica; el nivel de riesgo sale
+de la severidad declarada de la taxonomía. La hora y el día derivados y la frecuencia (media de
+denuncias oficiales) son **estimaciones, no mediciones**. El mapa colorea todos los puntos por riesgo
+(los puntos oficiales llevan un borde azul), y se puede filtrar por año, tipo, distrito, hora y fuente.
+Siguen sin ser variables del modelo.
 
 **Limitaciones de los datos:** subregistro de denuncias (cifra negra), posible doble conteo
 residual, muestreo por ventanas (no es un censo), geocodificación y etiquetas de la fuente con
@@ -54,12 +56,12 @@ inconsistencias (mitigadas, no eliminadas), ausencia de hora/día y de població
 
 ## 3. Variable objetivo y etiqueta declarada
 
-- **Objetivo del modelo:** `crime_type` (modalidad observada, tal como la reporta la fuente,
+- **Objetivo del modelo:** el tipo de delito (modalidad observada, tal como la reporta la fuente,
   normalizada). Es una variable **real**, no derivada por reglas.
-- **`severity_level` (baja/media/alta)** es una **taxonomía declarada** en
+- **El nivel de severidad (baja/media/alta)** es una **taxonomía declarada** en
   `data/taxonomy/crime_taxonomy.json` (con justificación por modalidad). Se usa como atributo
   descriptivo, **no como etiqueta de entrenamiento**, precisamente para evitar la circularidad
-  de la tarea heredada (donde `risk_level` se calculaba a partir de `crime_type`).
+  de la tarea heredada (donde el nivel de riesgo se calculaba a partir del tipo de delito).
 
 ## 4. Modelo
 
@@ -74,23 +76,23 @@ inconsistencias (mitigadas, no eliminadas), ausencia de hora/día y de població
 Tres regímenes de partición (los resultados salen de `models/reports/metrics_*.json`, ejecución
 del 2026-10-16):
 
-| Régimen | Train | Test | Accuracy | F1 macro | Baseline (clase mayoritaria) | Interpretación |
+| Régimen | Entrenamiento | Prueba | Exactitud | F1 macro | Referencia (clase más frecuente) | Interpretación |
 |---|---:|---:|---:|---:|---:|---|
-| Aleatorio estratificado | 4 482 | 1 495 | **0.213** | 0.202 | 0.078 | Aprende señal real: 2.7× el baseline |
-| Temporal (2021–23 → 2024) | 4 336 | 1 641 | **0.149** | 0.145 | 0.073 | Generaliza al año siguiente: 2.0× el baseline |
-| Geográfico (distritos no vistos) | 4 411 | 1 566 | **0.097** | 0.061 | 0.102 | **No supera el baseline** |
+| Aleatorio estratificado | 4 482 | 1 495 | **0.213** | 0.202 | 0.078 | Aprende señal real: 2.7× la referencia |
+| Temporal (2021–23 → 2024) | 4 336 | 1 641 | **0.149** | 0.145 | 0.073 | Generaliza al año siguiente: 2.0× la referencia |
+| Geográfico (distritos no vistos) | 4 411 | 1 566 | **0.097** | 0.061 | 0.102 | **No supera la referencia** |
 
 Matriz de confusión, métricas por clase e importancias están en los JSON citados. Hallazgos:
 
-- `latitude` y `longitude` concentran ~91 % de la importancia; los indicadores de distrito apenas
+- La latitud y la longitud concentran ~91 % de la importancia; los indicadores de distrito apenas
   aportan (≤0.8 % cada uno).
-- En la partición geográfica el modelo falla en clases frecuentes (`robo`, `homicidio calificado`
-  con recall ≈ 0): **la componente principal del aprendizaje es la memorización del distrito**,
+- En la partición geográfica el modelo falla en clases frecuentes (`robo`, `homicidio calificado`,
+  con muy pocos aciertos): **la componente principal del aprendizaje es la memorización del distrito**,
   que no generaliza a zonas nuevas.
-- La caída temporal (~30 % respecto al split aleatorio) sugiere deriva entre años (cambios de
+- La caída temporal (~30 % respecto a la partición aleatoria) sugiere deriva entre años (cambios de
   registro y de patrones).
-- Clases con mejor recall (aleatorio): `robo` 0.31, `homicidio por paf` 0.29,
-  `asalto y robo de vehículos` 0.26. Peores: `robo frustrado` 0.05 (soporte bajo), `estafa` 0.17.
+- Clases mejor detectadas (partición aleatoria): `robo` 0.31, `homicidio por paf` 0.29,
+  `asalto y robo de vehículos` 0.26. Peores: `robo frustrado` 0.05 (pocos ejemplos), `estafa` 0.17.
 
 ## 6. Uso responsable
 
@@ -100,16 +102,16 @@ Matriz de confusión, métricas por clase e importancias están en los JSON cita
   patrullaje sin revisión humana y estudios complementarios.
 - Acompañar las visualizaciones con el tamaño de muestra, intervalo de confianza o nota de
   incertidumbre, y con el aviso de sesgo de denuncia.
-- Evitar estética alarmista (rojo = peligro) aplicada a heurísticas o a modelos con accuracy ~0.2.
+- Evitar estética alarmista (rojo = peligro) aplicada a estimaciones aproximadas o a modelos con exactitud ~0.2.
 
 ## 7. Relación con el modelo heredado
 
-El pipeline de las Cloud Functions (`functions/crime_ml/pipeline.py`) sigue soportando la tarea
-heredada con `FEATURES`/`TARGET` por defecto, cuyas etiquetas eran una función determinista de
-`crime_type` (circularidad detectada en la auditoría). Ese camino queda como compatibilidad
-histórica; **este model card y el pipeline offline son la referencia metodológica del proyecto**.
-Desde la Fase 4, el clasificador de modalidad se sirve a través de `predict_crime` (top-5 con
-probabilidad) y la pestaña «Modelo de modalidad» de la UI; que funcione en la nube depende del
+El proceso del servicio de predicción (`functions/crime_ml/pipeline.py`) sigue soportando la tarea
+heredada con `FEATURES`/`TARGET` por defecto, cuyas etiquetas eran una función determinista del
+tipo de delito (circularidad detectada en la auditoría). Ese camino queda como compatibilidad
+histórica; **este model card y el proceso de datos offline son la referencia metodológica del proyecto**.
+Desde la Fase 4, el clasificador de modalidad se sirve a través de `predict_crime` (las 5 clases más
+probables) y la pestaña «Modelo de modalidad» de la UI; que funcione en la nube depende del
 despliegue (ver `docs/DEPLOY.md`).
 
 ## 8. Reproducibilidad
@@ -121,10 +123,10 @@ python scripts/pipeline/train.py --split temporal
 python scripts/pipeline/train.py --split district
 ```
 
-Cada JSON de métricas incluye fecha, hash SHA-256 del dataset, versiones de Python/pandas/
-scikit-learn y la configuración del split. El dataset completo (`data/processed/incidents_lima.csv`)
-es regenerable y no se versiona; sí se versionan la muestra de 500 filas, el reporte de calidad y
-las métricas. Pruebas automáticas del pipeline: `python -m pytest functions/tests`.
+Cada JSON de métricas incluye fecha, hash SHA-256 de los datos, versiones de Python/pandas/
+scikit-learn y la configuración de la partición. Los datos completos (`data/processed/incidents_lima.csv`)
+son regenerables y no se versionan; sí se versionan la muestra de 500 filas, el reporte de calidad y
+las métricas. Pruebas automáticas del proceso de datos: `python -m pytest functions/tests`.
 
 ## 9. Próximos pasos
 
@@ -134,4 +136,4 @@ las métricas. Pruebas automáticas del pipeline: `python -m pytest functions/te
    generalización geográfica antes de cualquier uso territorial.
 3. Conectar el modelo a `predict_crime` (Fase 4) con contrato validado y mostrar probabilidades
    calibradas, no solo la clase.
-4. Reentrenar periódicamente y registrar la deriva temporal observada en el split 2021–23 → 2024.
+4. Reentrenar periódicamente y registrar la deriva temporal observada en la partición 2021–23 → 2024.

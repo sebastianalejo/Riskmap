@@ -75,9 +75,8 @@ export function HomePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-content-primary">Resumen</h1>
           <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-            Panel operativo sobre el dataset publicado (
-            <span className="font-mono text-xs">crime_incidents</span>). Incidentes cargados,
-            niveles de riesgo y tendencia de Lima Metropolitana.
+            Panel operativo con los incidentes publicados: registros cargados, niveles de
+            riesgo y tendencia de Lima Metropolitana.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -129,8 +128,8 @@ export function HomePage() {
             title="Sin registros todavía"
             description={
               isAdmin
-                ? 'Importa un archivo CSV/Excel o pega JSON para ver los KPIs, el mapa de riesgo y la distribución. La tendencia de abajo ya usa datos reales del SIDPOL.'
-                : 'Aún no hay datos cargados. Pide a un administrador que importe los registros para ver los KPIs, el mapa de riesgo y la distribución. La tendencia de abajo ya usa datos reales del SIDPOL.'
+                ? 'Importa un archivo de datos para ver los indicadores, el mapa de riesgo y la distribución. La tendencia de abajo ya usa denuncias oficiales.'
+                : 'Aún no hay datos cargados. Pide a un administrador que importe los registros para ver los indicadores, el mapa de riesgo y la distribución. La tendencia de abajo ya usa denuncias oficiales.'
             }
             action={
               isAdmin ? (
@@ -184,7 +183,7 @@ export function HomePage() {
             />
           </div>
 
-          {/* Tendencia real (SIDPOL) + distribución */}
+          {/* Tendencia de denuncias oficiales + distribución */}
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <MonthlyTrendCard
@@ -259,20 +258,20 @@ export function HomePage() {
             <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
               <div className="flex items-center gap-2.5 rounded-xl bg-surface-2 px-3 py-2.5">
                 <span className="size-2 rounded-full bg-risk-bajo" aria-hidden />
-                <span className="text-content-secondary">Firestore</span>
+                <span className="text-content-secondary">Base de datos</span>
                 <span className="ml-auto font-mono text-xs text-content-primary">
-                  {stats.total.toLocaleString('es-PE')} docs
+                  {stats.total.toLocaleString('es-PE')} registros
                 </span>
               </div>
               <div className="flex items-center gap-2.5 rounded-xl bg-surface-2 px-3 py-2.5">
                 <span className="size-2 rounded-full bg-risk-medio" aria-hidden />
-                <span className="text-content-secondary">Cloud Functions</span>
-                <span className="ml-auto text-xs text-content-muted">no desplegadas</span>
+                <span className="text-content-secondary">Servicio de predicción</span>
+                <span className="ml-auto text-xs text-content-muted">no disponible</span>
               </div>
               <div className="flex items-center gap-2.5 rounded-xl bg-surface-2 px-3 py-2.5">
                 <span className="size-2 rounded-full bg-info" aria-hidden />
                 <span className="text-content-secondary">Predicción</span>
-                <span className="ml-auto text-xs text-content-muted">local + heurística</span>
+                <span className="ml-auto text-xs text-content-muted">estimación local</span>
               </div>
             </div>
           </Card>

@@ -95,7 +95,7 @@ export function MapPage() {
     yearFilter > 0 ||
     sourceFilter !== ''
 
-  // ── Años disponibles (documentos del esquema v2 con occurred_year) ──
+  // ── Años disponibles (registros con año) ──
   const years = useMemo(
     () =>
       [...new Set(allPoints.map((p) => p.year).filter((y): y is number => typeof y === 'number'))].sort(
@@ -104,7 +104,7 @@ export function MapPage() {
     [allPoints],
   )
 
-  // ── Catálogos de filtros derivados del dataset (ambas fuentes) ────
+  // ── Catálogos de filtros derivados de los datos (ambas fuentes) ────
   const crimeLabels = useMemo(
     () =>
       [...new Set(allPoints.map((p) => p.crimeType).filter((t): t is string => Boolean(t)))].sort(
@@ -149,7 +149,7 @@ export function MapPage() {
     return s
   }, [points])
 
-  // ── Serie SIDPOL agregada por distrito (capa coroplética) ──────
+  // ── Serie de denuncias oficiales agregada por distrito (capa coroplética) ──────
   const districtTotals = useMemo(
     () => aggregateByDistrict(monthlyRows, months),
     [monthlyRows, months],
@@ -230,8 +230,8 @@ export function MapPage() {
                 ))}
               </Select>
               <p className="mt-1 text-[10px] leading-snug text-content-muted">
-                El filtro se aplica en el navegador sobre el dataset publicado: no hay consultas
-                adicionales ni límite de 10 000.
+                El filtro se aplica en el navegador sobre los datos publicados: no hay consultas
+                adicionales ni límite de registros.
               </p>
             </div>
 
@@ -275,11 +275,11 @@ export function MapPage() {
               </Select>
             </div>
 
-            {/* Año (solo si hay documentos del esquema v2 con occurred_year) */}
+            {/* Año (solo si hay registros con año) */}
             {years.length > 0 && (
               <div>
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-content-muted">
-                  Año del hecho (INEI)
+                  Año del hecho
                 </p>
                 <Select
                   className="py-1.5 text-xs"
@@ -395,7 +395,7 @@ export function MapPage() {
           </div>
         )}
 
-        {/* Sin datos (solo capa de puntos: la coropleta usa la serie SIDPOL) */}
+        {/* Sin datos (solo capa de puntos: la coropleta usa la serie de denuncias) */}
         {layer === 'puntos' && !loading && !error && allPoints.length === 0 && (
           <div className="m-4 rounded-xl border border-risk-medio/30 bg-risk-medio-soft px-4 py-3 text-sm text-risk-medio">
             {sourceFilter ? (
@@ -431,7 +431,7 @@ export function MapPage() {
           <div className="shrink-0 space-y-2 px-4 pb-4">
             <DistrictLegend districts={districtTotals} />
             <p className="text-[11px] leading-snug text-content-muted">
-              Serie mensual SIDPOL/MININTER por distrito (
+              Serie mensual de denuncias oficiales por distrito (
               {months === 0 ? 'todo el histórico disponible' : `últimos ${months} meses`}). Denuncias
               registradas en términos absolutos, todavía sin normalizar por población; el detalle por
               modalidad está en el tooltip de cada distrito.

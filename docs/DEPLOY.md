@@ -1,6 +1,6 @@
 # Guía de despliegue (proyecto Firebase nuevo)
 
-Runbook para desplegar Riskmap en un proyecto Firebase propio. La Fase 4 dejó
+Guía paso a paso para desplegar Riskmap en un proyecto Firebase propio. La Fase 4 dejó
 todo el backend y el frontend listos para producción; esta guía cubre solo la
 puesta en marcha (nada de esto se ejecuta automáticamente).
 
@@ -19,11 +19,11 @@ desplegar Hosting → verificar
 
 1. Crea el proyecto en <https://console.firebase.google.com> (p. ej. `riskmap-tu-nombre`).
 2. **Firestore Database → crear base de datos** en modo producción (región `us-central1` o la
-   más cercana). Necesario antes de desplegar reglas o Functions.
+   más cercana). Necesario antes de desplegar reglas o el servicio de predicción.
 3. **Authentication → activar Correo electrónico/contraseña**. Crea el usuario administrador
    inicial desde la consola (no hay registro público: las demás cuentas se crean desde la app,
-   sección **Usuarios**, con una cuenta que tenga el claim `admin`).
-4. Acepta el plan **Blaze** (necesario para Functions) y configura una **alerta de presupuesto**
+   sección **Usuarios**, con una cuenta que tenga permiso de administrador).
+4. Acepta el plan **Blaze** (necesario para el servicio de predicción) y configura una **alerta de presupuesto**
    en Google Cloud → Facturación → Presupuestos (p. ej. 5 USD).
 5. Inicia sesión en el CLI **con la cuenta dueña del proyecto nuevo**. Si ya tienes otra cuenta
    logueada (p. ej. la del proyecto anterior), usa:
@@ -60,11 +60,11 @@ Alternativa sin variables: `frontend/public/firebase-config.json` (está en `.gi
 Restringe la apiKey web por dominio (HTTP referrers: todo `*.web.app`, `*.firebaseapp.com`
 y `localhost`) y rota la clave antigua.
 
-## 3. Rol admin (antes de las reglas)
+## 3. Permiso de administrador (antes de las reglas)
 
-La fuente de verdad de los roles es la colección `users` de Firestore (`users/{uid}.role`), que se
+La fuente de verdad de los roles es la colección `users` de la base de datos (`users/{uid}.role`), que se
 gestiona desde la sección **Usuarios** del panel (**no requiere Blaze**). Para el **primer**
-administrador hace falta el script, que escribe el claim y `users/{uid}.role = 'admin'`. Opción A
+administrador hace falta el script, que escribe el permiso y `users/{uid}.role = 'admin'`. Opción A
 (recomendada si tienes `gcloud`):
 
 ```bash
@@ -86,16 +86,17 @@ firebase deploy --only firestore:rules
 
 > No subas la clave al repositorio. Bórrala cuando termines.
 
-El rol en Firestore surte efecto al instante. Para ver los roles actuales:
+El rol en la base de datos surte efecto al instante. Para ver los roles actuales:
 `python scripts/set-admin-claim.py --list`. Las reglas mantienen un **puente temporal** que también
-acepta el claim `admin` heredado; se puede quitar cuando no queden cuentas solo-claim.
+acepta el permiso de administrador heredado; se puede quitar cuando no queden cuentas con solo ese permiso.
 
-## 4. Cloud Functions
+## 4. Servicio de predicción
 
-> **Ya no son necesarias para gestionar usuarios.** Las secciones **Usuarios** e **Importar datos**
-> funcionan solo con Firestore + reglas. Las Functions (y el plan Blaze) se necesitan únicamente
-> para la **predicción con modelo** (`predict_crime`, `prediction_health`) y para entrenar/publicar
-> desde la nube.
+> **Ya no es necesario ni para usuarios ni para la predicción.** Las secciones **Usuarios** e
+> **Importar datos** funcionan solo con la base de datos + reglas, y la pantalla **Predicción** es 100 %
+> local (riesgo + composición histórica del distrito desde los datos publicados). El servicio de predicción
+> (y el plan Blaze) queda como **opción futura** para servir el clasificador de modalidad de ML
+> (`predict_crime`, `prediction_health`) o para entrenar/publicar desde la nube.
 
 Opciones de entorno (se leen de `functions/.env` en el deploy; ese archivo no se versiona —
 hay una plantilla en `functions/.env.example`):
@@ -109,7 +110,7 @@ CORS_ORIGINS=https://TU_PROYECTO.web.app,https://TU_PROYECTO.firebaseapp.com,htt
 ```
 
 > **Importante:** el valor por defecto de `CORS_ORIGINS` solo permite desarrollo local.
-> Si despliegas Functions sin definir tus dominios de Hosting aquí, el navegador bloqueará
+> Si despliegas el servicio de predicción sin definir tus dominios de Hosting aquí, el navegador bloqueará
 > las llamadas a la API (la app mostrará el modo de estimación local).
 
 ```bash
@@ -120,22 +121,22 @@ El runtime es `python311` (definido en `firebase.json`) y el CLI no sube `functi
 (está en `.gitignore`), por lo que el despliegue es ligero.
 
 Endpoints expuestos (todos usan el ID token de Firebase; `train_model` y `publish_model`
-requieren además el claim admin):
+requieren además permiso de administrador):
 
 | Endpoint | Descripción |
 |---|---|
 | `GET prediction_health` | Estado del modelo publicado (público). |
-| `POST predict_crime` | Top-5 de modalidades con probabilidad (modelo de la Fase 3). |
-| `POST train_model` | Entrena en la nube (dataset inline o colección). Solo admin. |
-| `POST publish_model` | Publica un `.joblib` del pipeline offline. Solo admin. |
-| `POST import_incidents` / `import_csv_dataset` | Ingesta validada. Solo admin. |
-| `POST create_user` | Crea cuentas de Firebase Auth (nombre, correo y contraseña temporal). Solo admin. **Opcional:** el panel ya no la usa. |
-| `GET list_users` | Lista cuentas con rol, estado y actividad. Solo admin. **Opcional:** el panel ya no la usa. |
-| `GET inei_datacrim_aggregate` / `inei_arcgis_points` | Proxies INEI (CORS). |
+| `POST predict_crime` | Las 5 modalidades más probables (modelo de la Fase 3). |
+| `POST train_model` | Entrena en la nube (datos incluidos en la petición o desde la base de datos). Solo administradores. |
+| `POST publish_model` | Publica un `.joblib` del proceso offline. Solo administradores. |
+| `POST import_incidents` / `import_csv_dataset` | Carga de datos validada. Solo administradores. |
+| `POST create_user` | Crea cuentas de Firebase Auth (nombre, correo y contraseña temporal). Solo administradores. **Opcional:** el panel ya no la usa. |
+| `GET list_users` | Lista cuentas con rol, estado y actividad. Solo administradores. **Opcional:** el panel ya no la usa. |
+| `GET inei_datacrim_aggregate` / `inei_arcgis_points` | Intermediarios con los datos oficiales (CORS). |
 
 ## 5. Modelo de predicción
 
-Recomendado (pipeline offline de la Fase 3, artefacto con verificación local):
+Recomendado (proceso offline de la Fase 3, con verificación local):
 
 ```bash
 python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024   # si no lo hiciste
@@ -147,7 +148,7 @@ python scripts/publish_model.py ^
   --metrics models/reports/metrics_temporal.json
 ```
 
-Alternativa en la nube: `POST train_model` (solo admin) con `dataset` inline y
+Alternativa en la nube: `POST train_model` (solo administradores) con los datos incluidos en la petición y
 `task = {features, target, split}` (ver el GET del endpoint para el contrato).
 
 Verificación: `GET .../prediction_health` debe devolver `status: "ok"` con `model_run`.
@@ -157,13 +158,13 @@ Verificación: `GET .../prediction_health` debe devolver `status: "ok"` con `mod
 1. Consola → **App Check** → registra la app web con **reCAPTCHA v3** (obtén la site key).
 2. Frontend: define `VITE_FIREBASE_APPCHECK_SITE_KEY` (o `appCheckSiteKey` en el JSON) y
    recompila.
-3. `functions/.env`: añade `ENFORCE_APP_CHECK=true` y vuelve a desplegar Functions.
+3. `functions/.env`: añade `ENFORCE_APP_CHECK=true` y vuelve a desplegar el servicio de predicción.
 4. Verifica que un cliente sin token de App Check recibe 401 en los endpoints.
 
 ## 7. Hosting
 
-Antes de compilar, publica el dataset estático (mapa, análisis, serie mensual y conteos de
-predicción local); es lo que consumen esas pantallas en lugar de Firestore:
+Antes de compilar, publica los datos estáticos (mapa, análisis, serie mensual y conteos de
+estimación local); es lo que consumen esas pantallas en lugar de la base de datos:
 
 ```bash
 python scripts/pipeline/export_web_data.py
@@ -175,7 +176,7 @@ cd ..
 firebase deploy --only hosting
 ```
 
-> Si importaste datos desde `/datos` (Firestore), repite el export con
+> Si importaste datos desde `/datos` (base de datos), repite el export con
 > `python scripts/pipeline/export_web_data.py --from-firestore` para que aparezcan en la app.
 
 ## 8. Verificación rápida (con un usuario autenticado)
@@ -190,14 +191,16 @@ curl -X POST https://us-central1-TU_PROYECTO.cloudfunctions.net/predict_crime ^
   -d "{\"district\":\"LA VICTORIA\",\"latitude\":-12.071,\"longitude\":-77.02}"
 ```
 
-En la web: pestaña **Predicción → Modelo de modalidad** (ranking con probabilidades) y
-**Estimación local** como respaldo. La primera solo funciona con Functions desplegadas.
+En la web: **Predicción** es una sola pantalla y funciona **sin el servicio de predicción**: el nivel de
+riesgo se estima en el navegador (estimación ponderada) y las «modalidades más probables» son la
+composición histórica del distrito (datos oficiales publicados). El endpoint `predict_crime` (modelo de
+ML) solo se usa si en el futuro se despliega el servicio de predicción con Blaze.
 
-## 9. Ratios de seguridad ya activos (Fase 1–4)
+## 9. Medidas de seguridad ya activas (Fase 1–4)
 
-- Reglas Firestore: lectura autenticada; escritura/borrado solo admin con validación de esquema.
+- Reglas de la base de datos: lectura autenticada; escritura/borrado solo para administradores con validación de esquema.
 - ID tokens verificados con `check_revoked=True`.
 - CORS con allowlist (`CORS_ORIGINS`), sin comodín por defecto.
-- Validación de payloads en todos los endpoints (tipos, rangos, tamaños).
-- Artefacto ML versionado por run con swap atómico y candado de entrenamiento.
+- Validación de los datos de entrada en todos los endpoints (tipos, rangos, tamaños).
+- Modelo de aprendizaje automático versionado por ejecución con reemplazo atómico y candado de entrenamiento.
 - Logs con `request_id`, estado y duración por petición (Cloud Logging).

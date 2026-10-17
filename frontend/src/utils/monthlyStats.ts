@@ -1,5 +1,5 @@
 /**
- * Agregación de la serie mensual real (SIDPOL / MININTER) y catálogo de
+ * Agregación de la serie mensual real de denuncias oficiales y catálogo de
  * modalidades para los gráficos y el PDF.
  */
 

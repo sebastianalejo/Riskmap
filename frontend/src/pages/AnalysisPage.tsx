@@ -77,10 +77,9 @@ export function AnalysisPage() {
             Análisis de datos
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-content-secondary">
-            Vista analista del dataset publicado (
-            <span className="font-mono text-xs">crime_incidents</span>):
-            composición por distrito, patrones por hora y día de la semana, y frecuencia histórica.
-            Solo campos reales del dataset, sin fechas simuladas.
+            Vista de analista con los datos publicados: composición por distrito, patrones por
+            hora y día de la semana, y frecuencia histórica. Solo datos reales, sin fechas
+            simuladas.
           </p>
         </div>
         {!loading && !error && incidents.length > 0 && (
@@ -118,7 +117,7 @@ export function AnalysisPage() {
             title="Sin datos para analizar"
             description={
               isAdmin
-                ? 'Importa un archivo CSV/Excel o pega JSON en «Importar datos» para explorar la composición por distrito, los patrones horarios y la frecuencia histórica.'
+                ? 'Importa un archivo de datos en «Importar datos» para explorar la composición por distrito, los patrones horarios y la frecuencia histórica.'
                 : 'Aún no hay datos cargados. Pide a un administrador que importe los registros para explorar la composición por distrito, los patrones horarios y la frecuencia histórica.'
             }
             action={
@@ -175,7 +174,7 @@ export function AnalysisPage() {
                   value={formatInt(overview.districts)}
                   icon={Building2}
                   tone="info"
-                  hint={`de ${formatInt(districts.length)} distrito(s) presentes en el dataset`}
+                  hint={`de ${formatInt(districts.length)} distrito(s) con datos`}
                 />
                 <StatCard
                   label="Riesgo alto"

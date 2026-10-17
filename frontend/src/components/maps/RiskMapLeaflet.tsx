@@ -59,7 +59,7 @@ export function RiskMapLeaflet({ points }: Props) {
             radius={9}
             pathOptions={{
               // Color de relleno = nivel de riesgo para todas las fuentes; el
-              // borde azul distingue visualmente los puntos INEI.
+              // borde azul distingue visualmente los puntos con año.
               color: p.source === 'inei' ? colors.info : '#ffffff',
               weight: p.source === 'inei' ? 2.5 : 2,
               fillColor: riskDotColor(p.riskLevel, colors),

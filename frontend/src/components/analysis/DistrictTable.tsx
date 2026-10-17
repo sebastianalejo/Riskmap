@@ -25,7 +25,7 @@ const COLUMNS: Column[] = [
   { key: 'incidents', label: 'Incidentes', numeric: true, title: 'Registros del distrito tras aplicar los filtros' },
   { key: 'pctAlto', label: '% alto', numeric: true, title: 'Porcentaje de registros con nivel de riesgo alto' },
   { key: 'pctNight', label: '% nocturno', numeric: true, title: 'Porcentaje de registros entre 22:00 y 05:59' },
-  { key: 'avgFrequency', label: 'Frec. promedio', numeric: true, title: 'Promedio del campo historical_frequency' },
+  { key: 'avgFrequency', label: 'Frec. promedio', numeric: true, title: 'Promedio de frecuencia histórica' },
   { key: 'topCrime', label: 'Delito principal', numeric: false, title: 'Tipo de delito más registrado en el distrito' },
 ]
 
@@ -140,8 +140,8 @@ export function DistrictTable({ incidents }: { incidents: AnalysisIncident[] }) 
 
       <p className="mt-3 text-xs leading-relaxed text-content-muted">
         «% alto» se calcula sobre registros con nivel de riesgo; «% nocturno», entre 22:00 y 05:59;
-        la frecuencia promedio usa <span className="font-mono">historical_frequency</span>. Cada
-        columna está definida en «Cómo leer este panel», al final de la página.
+        la frecuencia promedio resume la intensidad histórica de cada distrito. Cada columna está
+        definida en «Cómo leer este panel», al final de la página.
       </p>
     </Card>
   )

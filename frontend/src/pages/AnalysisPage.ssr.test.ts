@@ -98,7 +98,7 @@ describe('AnalysisPage (estructura SSR)', () => {
     expect(html).toContain('CSV')
     expect(html).toContain('PDF')
     expect(html).toContain('Cómo leer este panel')
-    expect(html).toContain('historical_frequency')
+    expect(html).toContain('Valor base de incidencia histórica')
   })
 
   it('muestra el estado vacío (sin registros) manteniendo la metodología', () => {

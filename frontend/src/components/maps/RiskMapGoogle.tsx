@@ -81,7 +81,7 @@ export function RiskMapGoogle({ apiKey, points }: Props) {
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 9,
-          // Relleno = riesgo (igual para ambas fuentes); borde azul para INEI.
+          // Relleno = riesgo (igual para ambas fuentes); borde azul para los puntos con año.
           fillColor: riskDotColor(point.riskLevel, colors),
           fillOpacity: 0.95,
           strokeColor: point.source === 'inei' ? colors.info : '#ffffff',

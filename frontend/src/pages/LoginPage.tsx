@@ -60,7 +60,7 @@ export function LoginPage() {
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-content-primary">Acceso al panel</h1>
           <p className="mt-2 text-sm text-content-secondary">
-            Usuario de Firebase Authentication (correo y contraseña).
+            Accede con tu correo y contraseña.
           </p>
         </div>
 
@@ -153,12 +153,8 @@ export function LoginPage() {
 
         {!firebaseConfigured && (
           <p className="mt-6 text-center text-xs text-content-muted">
-            Falta la configuración web del SDK. Copia{' '}
-            <span className="font-mono text-content-secondary">firebase-config.example.json</span> a{' '}
-            <span className="font-mono text-content-secondary">firebase-config.json</span> en{' '}
-            <span className="font-mono text-content-secondary">frontend/public/</span> con los datos de
-            la Consola Firebase (app web), luego{' '}
-            <span className="font-mono text-content-secondary">npm run build</span> y despliega.
+            La aplicación aún no está configurada. Un administrador debe completarla para poder
+            iniciar sesión.
           </p>
         )}
       </div>

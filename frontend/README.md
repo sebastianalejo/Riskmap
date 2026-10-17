@@ -1,12 +1,12 @@
 # Frontend — Riskmap (React + TypeScript + Vite)
 
-SPA del panel de **predicción de riesgo criminal (Lima)**. Para la guía completa del proyecto
-(arquitectura, Cloud Functions, Firestore y despliegue) consulta el
+Aplicación web del panel de **predicción de riesgo criminal (Lima)**. Para la guía completa del proyecto
+(arquitectura, el servicio de predicción, la base de datos y despliegue) consulta el
 [`README.md` de la raíz](../README.md).
 
 ## Stack
 
-React 19 · TypeScript · Vite · Tailwind CSS 4 · React Router 7 · Firebase JS SDK 11 (Auth + Firestore)
+React 19 · TypeScript · Vite · Tailwind CSS 4 · React Router 7 · Firebase JS SDK 11 (autenticación y base de datos)
 · Leaflet / react-leaflet · @react-google-maps/api · xlsx · jsPDF · lucide-react.
 
 ## Puesta en marcha
@@ -53,9 +53,9 @@ Rediseño «centro de operaciones» (tema oscuro por defecto + tema claro con to
 
 ## Notas
 
-- La **Predicción** se resuelve en el cliente (`src/ml/localPredict.ts`): consulta Firestore y,
-  si no hay datos, aplica una heurística. Las Cloud Functions con el modelo Random Forest son
-  opcionales (requieren plan Blaze para desplegarse).
+- La **Predicción** se resuelve en el cliente (`src/ml/localPredict.ts`): consulta la base de datos y,
+  si no hay datos, aplica una estimación aproximada. El servicio de predicción con el modelo Random Forest es
+  opcional (requiere plan Blaze para desplegarse).
 - El mapa usa **Google Maps** si defines `VITE_GOOGLE_MAPS_API_KEY` / `mapsApiKey`; si no, usa
   **Leaflet** (sin API key).
 - En Windows, si PowerShell bloquea `npm`, usa `npm.cmd` o consulta §10 del README raíz.

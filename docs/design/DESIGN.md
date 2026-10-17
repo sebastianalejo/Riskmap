@@ -61,7 +61,7 @@ usan tokens semánticos (`bg-surface-1`, `text-content-secondary`, `bg-risk-alto
 | `risk-medio` | `#FB923C` | Nivel medio |
 | `risk-alto` | `#F87171` | Nivel alto |
 | `risk-*-soft` | `rgb(… / 0.14)` | Chips/fondos de riesgo |
-| `info` | `#38BDF8` | Datos INEI / información |
+| `info` | `#38BDF8` | Datos oficiales / información |
 | `grid-line` | `rgb(148 163 184 / 0.10)` | Rejillas de gráficos |
 
 ### 3.2 Tema claro
@@ -82,7 +82,7 @@ usan tokens semánticos (`bg-surface-1`, `text-content-secondary`, `bg-risk-alto
 | `risk-bajo` | `#16A34A` | Nivel bajo |
 | `risk-medio` | `#EA580C` | Nivel medio |
 | `risk-alto` | `#DC2626` | Nivel alto |
-| `info` | `#0284C7` | INEI |
+| `info` | `#0284C7` | Datos oficiales |
 
 ### 3.3 Reglas de uso del color de riesgo
 
@@ -223,7 +223,7 @@ Etiqueta micro mayúsculas, cifra grande en `font-mono` (Display), variación (c
 
 - Profesional, directo, orientado a la acción: «Ver mapa», «Importar datos», «Predecir riesgo».
 - Números y unidades claros: `1 234 puntos`, `7 días`, `Alto · 42 %`.
-- Errores que explican y proponen: «No se pudo cargar Firestore. Revisa tu conexión e inténtalo de nuevo.»
+- Errores que explican y proponen: «No se pudieron cargar los datos. Revisa tu conexión e inténtalo de nuevo.»
 - Evitar jerga de infraestructura en la vista principal (p. ej. «Blaze», «Cloud Functions» van a
   un panel secundario de "Estado del sistema").
 
@@ -238,5 +238,5 @@ Etiqueta micro mayúsculas, cifra grande en `font-mono` (Display), variación (c
 | `/analisis` | Análisis | Vista analista: filtros, KPIs, composición por distrito, patrones horarios y exportación (CSV/PDF) |
 | `/prediccion` | Predicción | Formulario de escenario + resultado con confianza y factores |
 | `/mapa` | Mapa de riesgo | Mapa + filtros (riesgo, delito, distrito, hora) + tendencia + PDF |
-| `/datos` | Importar datos (admin) | CSV/XLSX con validación y vista previa, JSON, borrado con confirmación; visible solo con claim `admin` |
-| `/usuarios` | Usuarios (admin) | Alta de cuentas vía Cloud Function; visible solo con claim `admin` |
+| `/datos` | Importar datos (admin) | CSV/XLSX con validación y vista previa, JSON, borrado con confirmación; visible solo con permiso de administrador |
+| `/usuarios` | Usuarios (admin) | Alta de cuentas mediante el servicio de predicción; visible solo con permiso de administrador |
