@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-10-17T18:26:15.338531+00:00",
+  "source": "https://www.datosabiertos.gob.pe/sites/default/files/",
+  "note": "Grano = distrito fiscal (no municipal); serie de contexto.",
+  "per_year": {
+    "2020": {
+      "status": "ok",
+      "raw_rows": 8583,
+      "scope_rows": 1817
+    },
+    "2021": {
+      "status": "ok",
+      "raw_rows": 12314,
+      "scope_rows": 2324
+    },
+    "2022": {
+      "status": "ok",
+      "raw_rows": 9152,
+      "scope_rows": 1733
+    },
+    "2023": {
+      "status": "ok",
+      "raw_rows": 9032,
+      "scope_rows": 1807
+    },
+    "2024": {
+      "status": "ok",
+      "raw_rows": 8906,
+      "scope_rows": 1809
+    },
+    "2025": {
+      "status": "ok",
+      "raw_rows": 8884,
+      "scope_rows": 1801
+    },
+    "2026": {
+      "status": "ok",
+      "raw_rows": 8145,
+      "scope_rows": 1774
+    }
+  },
+  "errors": [],
+  "totals": {
+    "rows": 993,
+    "years": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "fiscal_districts": 7,
+    "crimes": 28,
+    "cantidad": 2504161
+  },
+  "by_year": {
+    "2020": 234359,
+    "2021": 336982,
+    "2022": 390339,
+    "2023": 416293,
+    "2024": 413846,
+    "2025": 424345,
+    "2026": 287997
+  }
+}

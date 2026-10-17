@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { MonthlyStat } from './monthlyStats'
-import { aggregateByDistrict, choroplethColor, legendBuckets } from './districtStats'
+import {
+  aggregateByDistrict,
+  choroplethColor,
+  districtMetricValue,
+  legendBuckets,
+  ratePer100k,
+} from './districtStats'
 
 function stat(year: number, month: number, ubigeo: string, district: string, total: number, porModalidad: Record<string, number>): MonthlyStat {
   return { year, month, ubigeo, district, total, porModalidad }
@@ -30,6 +36,48 @@ describe('aggregateByDistrict', () => {
 
   it('devuelve vacío sin filas', () => {
     expect(aggregateByDistrict([], 12)).toEqual([])
+  })
+
+  it('calcula la tasa por 100 000 con la población del contexto', () => {
+    const context = new Map([
+      ['150122', { population: 100000, stationsCount: 4 }],
+      ['150131', { population: 50000, stationsCount: 2 }],
+    ])
+    const totals = aggregateByDistrict(ROWS, 0, context)
+    const miraflores = totals.find((item) => item.ubigeo === '150122')!
+    expect(miraflores.population).toBe(100000)
+    expect(miraflores.rate).toBeCloseTo(30, 6) // 30 / 100000 * 100000
+    expect(miraflores.stationsCount).toBe(4)
+    const sanIsidro = totals.find((item) => item.ubigeo === '150131')!
+    expect(sanIsidro.rate).toBeCloseTo(24, 6) // 12 / 50000 * 100000
+  })
+
+  it('deja la tasa en null sin población', () => {
+    const totals = aggregateByDistrict(ROWS, 0)
+    expect(totals.find((item) => item.ubigeo === '150122')!.rate).toBeNull()
+  })
+})
+
+describe('ratePer100k y districtMetricValue', () => {
+  it('ratePer100k evita división por cero', () => {
+    expect(ratePer100k(10, 0)).toBeNull()
+    expect(ratePer100k(10, null)).toBeNull()
+    expect(ratePer100k(50, 100000)).toBeCloseTo(50, 6)
+  })
+
+  it('districtMetricValue alterna entre conteo y tasa', () => {
+    const item = {
+      ubigeo: 'x',
+      district: 'X',
+      total: 30,
+      topModality: null,
+      population: 100000,
+      rate: 30,
+      stationsCount: 0,
+    }
+    expect(districtMetricValue(item, 'conteo')).toBe(30)
+    expect(districtMetricValue(item, 'tasa')).toBe(30)
+    expect(districtMetricValue({ ...item, rate: null }, 'tasa')).toBe(0)
   })
 })
 

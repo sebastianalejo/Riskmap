@@ -373,3 +373,54 @@ def test_bbox_invalido(validation):
     ):
         with pytest.raises(validation.ValidationError):
             validation.validate_bbox(*args)
+
+
+# ── esquema Callao: fecha y hora observadas ──────────────────────────────────
+
+
+def _callao_row(**overrides):
+    row = {
+        "crime_type": "Robo Agravado",
+        "district": "callao",
+        "latitude": "-12.05",
+        "longitude": "-77.10",
+        "occurred_year": "2024",
+        "severity_level": "ALTA",
+        "hour": "20",
+        "day_of_week": "Viernes",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_callao_row_valida_y_normaliza(validation):
+    cleaned = validation.validate_callao_incident_row(_callao_row())
+    assert cleaned["crime_type"] == "robo agravado"
+    assert cleaned["district"] == "CALLAO"
+    assert cleaned["occurred_year"] == 2024
+    assert cleaned["hour"] == 20
+    assert cleaned["day_of_week"] == "viernes"
+    assert cleaned["severity_level"] == "alta"
+    assert cleaned["macro_category"] == "otros"
+
+
+def test_callao_row_exige_hora_y_dia(validation):
+    for field in ("hour", "day_of_week"):
+        with pytest.raises(validation.ValidationError, match="Faltan campos"):
+            validation.validate_callao_incident_row(_callao_row(**{field: ""}))
+
+
+def test_callao_row_hora_y_dia_invalidos(validation):
+    with pytest.raises(validation.ValidationError, match="hour"):
+        validation.validate_callao_incident_row(_callao_row(hour="25"))
+    with pytest.raises(validation.ValidationError, match="day_of_week"):
+        validation.validate_callao_incident_row(_callao_row(day_of_week="lunex"))
+
+
+def test_callao_row_conserva_riesgo_frecuencia_y_ubigeo(validation):
+    cleaned = validation.validate_callao_incident_row(
+        _callao_row(risk_level="alto", historical_frequency="120", ubigeo="70101")
+    )
+    assert cleaned["risk_level"] == "alto"
+    assert cleaned["historical_frequency"] == 120
+    assert cleaned["ubigeo"] == "070101"

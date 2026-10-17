@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-10-17T18:27:24.165347+00:00",
+  "source": "https://cdn.www.gob.pe/uploads/document/file/8261096/6894980-peru-poblacion-total-proyectada-al-30-de-junio-de-cada-ano-segun-departamento-provincia-y-distrito-2018-2026.xlsx?v=1768402069",
+  "scope_prefixes": [
+    "1501",
+    "0701"
+  ],
+  "rows": 450,
+  "districts": 50,
+  "years": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "latest_year_population": 11817321,
+  "rows_raw": 2138,
+  "fuera_de_ambito": 2086,
+  "no_distrito": 2
+}

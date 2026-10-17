@@ -159,6 +159,20 @@ ARCGIS_REQUIRED_FIELDS = ("crime_type", "district", "latitude", "longitude", "oc
 ARCGIS_SEVERITY_LEVELS = ("baja", "media", "alta")
 MAX_STR_MACRO = 80
 
+# Esquema Callao (GORE Callao / SIDPOL georreferenciado): a diferencia del INEI,
+# la fuente SÍ publica la fecha y la hora del hecho, así que el día de la semana
+# y la hora son reales (no derivados) y son obligatorios.
+CALLAO_REQUIRED_FIELDS = (
+    "crime_type",
+    "district",
+    "latitude",
+    "longitude",
+    "occurred_year",
+    "severity_level",
+    "hour",
+    "day_of_week",
+)
+
 
 def _coerce_number(value: Any, field: str) -> float:
     """Convierte números o cadenas numéricas (los CSV llegan como texto)."""
@@ -221,6 +235,74 @@ def validate_arcgis_incident_row(row: Any) -> dict[str, Any]:
     ubigeo = row.get("ubigeo")
     if ubigeo not in (None, ""):
         cleaned["ubigeo"] = str(ubigeo).strip().zfill(6)
+    return cleaned
+
+
+def validate_callao_incident_row(row: Any) -> dict[str, Any]:
+    """Valida una fila del dataset del Callao (esquema con fecha y hora reales).
+
+    A diferencia del esquema v2 del INEI, esta fuente **sí publica** la fecha y la
+    hora del hecho: `hour` y `day_of_week` son observados (no derivados) y por eso
+    son obligatorios. Acepta valores nativos o en texto (formato CSV). Devuelve la
+    fila normalizada con las columnas del esquema unificado (sin `source`, que
+    añade el pipeline; sin `denuncia_id`, que sube el extractor para el ID estable).
+    """
+    if not isinstance(row, dict):
+        raise ValidationError("La fila debe ser un objeto.")
+
+    missing = [field for field in CALLAO_REQUIRED_FIELDS if row.get(field) in (None, "")]
+    if missing:
+        raise ValidationError(f"Faltan campos obligatorios: {missing}")
+
+    cleaned: dict[str, Any] = {
+        "crime_type": _clean_field("crime_type", row["crime_type"]),
+        "district": _clean_field("district", row["district"]),
+        "latitude": _require_number(
+            _coerce_number(row["latitude"], "latitude"), "latitude", minimum=LAT_MIN, maximum=LAT_MAX
+        ),
+        "longitude": _require_number(
+            _coerce_number(row["longitude"], "longitude"), "longitude", minimum=LON_MIN, maximum=LON_MAX
+        ),
+        "occurred_year": _require_int(
+            _coerce_int(row["occurred_year"], "occurred_year"),
+            "occurred_year",
+            minimum=MIN_YEAR,
+            maximum=MAX_YEAR,
+        ),
+        "hour": _require_int(_coerce_int(row["hour"], "hour"), "hour", minimum=0, maximum=MAX_HOUR),
+        "day_of_week": _clean_field("day_of_week", row["day_of_week"]),
+    }
+
+    severity = row.get("severity_level")
+    severity = severity.strip().lower() if isinstance(severity, str) else severity
+    if severity not in ARCGIS_SEVERITY_LEVELS:
+        raise ValidationError(f"'severity_level' debe ser uno de: {', '.join(ARCGIS_SEVERITY_LEVELS)}.")
+    cleaned["severity_level"] = severity
+
+    macro = row.get("macro_category")
+    cleaned["macro_category"] = (
+        _require_str(macro, "macro_category", max_length=MAX_STR_MACRO) if macro else "otros"
+    )
+
+    # `ubigeo` es opcional: se conserva como texto de 6 dígitos (ceros a la izquierda).
+    ubigeo = row.get("ubigeo")
+    if ubigeo not in (None, ""):
+        cleaned["ubigeo"] = str(ubigeo).strip().zfill(6)
+
+    # `historical_frequency` y `risk_level` son opcionales: si faltan, el pipeline
+    # los deriva (frecuencia de SIDPOL; riesgo de la severidad declarada).
+    if row.get("historical_frequency") not in (None, ""):
+        cleaned["historical_frequency"] = _require_int(
+            _coerce_int(row["historical_frequency"], "historical_frequency"),
+            "historical_frequency",
+            minimum=1,
+            maximum=MAX_FREQUENCY,
+        )
+    if row.get("risk_level") not in (None, ""):
+        risk = row["risk_level"].strip().lower() if isinstance(row["risk_level"], str) else row["risk_level"]
+        if risk not in RISK_LEVELS:
+            raise ValidationError(f"'risk_level' debe ser uno de: {', '.join(RISK_LEVELS)}.")
+        cleaned["risk_level"] = risk
     return cleaned
 
 

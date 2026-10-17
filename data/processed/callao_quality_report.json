@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-10-17T18:13:49.077837+00:00",
+  "source": "https://www.datosabiertos.gob.pe/sites/default/files/DATASET_SEGURIDAD_CALLAO_FEBRERO2024_0.csv",
+  "scope_prefix": "0701",
+  "schema": "callao (fecha y hora observadas)",
+  "documents_key": "ID = ID_DOC_DENUNCIA de la fuente (hash FNV-1a, 'cal_<hex>')",
+  "columns": [
+    "crime_type",
+    "hour",
+    "day_of_week",
+    "district",
+    "latitude",
+    "longitude",
+    "historical_frequency",
+    "risk_level",
+    "occurred_year",
+    "macro_category",
+    "ubigeo",
+    "severity_level",
+    "source",
+    "denuncia_id"
+  ],
+  "rows_raw": 2643,
+  "rows_kept": 2635,
+  "dropped": {
+    "validacion": 4,
+    "anio_anterior": 4
+  },
+  "errors": [
+    "Fila 121: 'latitude' debe ser un número finito.",
+    "Fila 685: 'latitude' debe ser un número finito.",
+    "Fila 1469: 'latitude' debe ser un número finito.",
+    "Fila 2498: 'latitude' debe ser un número finito."
+  ],
+  "districts": 7,
+  "modalities": 90,
+  "min_year": 2018,
+  "by_year": {
+    "2021": 3,
+    "2022": 4,
+    "2023": 92,
+    "2024": 2536
+  },
+  "by_severity": {
+    "alta": 705,
+    "baja": 583,
+    "media": 1347
+  },
+  "by_district": {
+    "BELLAVISTA": 207,
+    "CALLAO": 1534,
+    "CARMEN DE LA LEGUA REYNOSO": 66,
+    "LA PERLA": 178,
+    "LA PUNTA": 13,
+    "MI PERU": 78,
+    "VENTANILLA": 559
+  },
+  "unmapped_modalities": [],
+  "completeness": {
+    "crime_type": 2635,
+    "hour": 2635,
+    "day_of_week": 2635,
+    "district": 2635,
+    "latitude": 2635,
+    "longitude": 2635,
+    "historical_frequency": 2635,
+    "risk_level": 2635,
+    "occurred_year": 2635,
+    "macro_category": 2635,
+    "ubigeo": 2635,
+    "severity_level": 2635,
+    "source": 2635,
+    "denuncia_id": 2635
+  }
+}

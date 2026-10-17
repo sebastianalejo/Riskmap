@@ -5,10 +5,40 @@ export type DistrictTotals = {
   district: string
   total: number
   topModality: string | null
+  /** Población proyectada del distrito (si el contexto está publicado). */
+  population: number | null
+  /** Denuncias por 100 000 habitantes dentro de la ventana (o `null` sin población). */
+  rate: number | null
+  /** Comisarías del distrito (contexto policial; 0 si no se conoce). */
+  stationsCount: number
+}
+
+/** Contexto mínimo por distrito que consume la coropleta. */
+export type DistrictContextInput = {
+  population: number | null
+  stationsCount?: number
+}
+
+/** Denuncias por 100 000 habitantes (o `null` si no hay población válida). */
+export function ratePer100k(total: number, population: number | null | undefined): number | null {
+  if (!population || population <= 0) return null
+  return (total / population) * 100000
+}
+
+/** Métrica de la capa coroplética. */
+export type ChoroplethMetric = 'conteo' | 'tasa'
+
+/** Valor de un distrito según la métrica elegida. */
+export function districtMetricValue(item: DistrictTotals, metric: ChoroplethMetric): number {
+  return metric === 'tasa' ? item.rate ?? 0 : item.total
 }
 
 /** Suma la serie mensual por distrito dentro de la ventana de meses (0 = todo). */
-export function aggregateByDistrict(rows: MonthlyStat[], months: number): DistrictTotals[] {
+export function aggregateByDistrict(
+  rows: MonthlyStat[],
+  months: number,
+  contextByUbigeo?: Map<string, DistrictContextInput>,
+): DistrictTotals[] {
   if (rows.length === 0) return []
 
   const periods = [...new Set(rows.map((row) => row.year * 100 + row.month))].sort((a, b) => a - b)
@@ -29,7 +59,17 @@ export function aggregateByDistrict(rows: MonthlyStat[], months: number): Distri
   return [...bucket.entries()]
     .map(([ubigeo, entry]) => {
       const top = Object.entries(entry.byModality).sort((a, b) => b[1] - a[1])[0]
-      return { ubigeo, district: entry.district, total: entry.total, topModality: top ? top[0] : null }
+      const context = contextByUbigeo?.get(ubigeo)
+      const population = context?.population ?? null
+      return {
+        ubigeo,
+        district: entry.district,
+        total: entry.total,
+        topModality: top ? top[0] : null,
+        population,
+        rate: ratePer100k(entry.total, population),
+        stationsCount: context?.stationsCount ?? 0,
+      }
     })
     .sort((a, b) => b.total - a.total)
 }

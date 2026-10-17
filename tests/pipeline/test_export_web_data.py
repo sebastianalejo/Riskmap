@@ -31,6 +31,14 @@ MONTHLY_CSV = (
     "2024,2,150103,ATE,LIMA,LIMA METROPOLITANA,1255,12,2,212,340,158,1,530\n"
 )
 
+# Esquema Callao: fecha/hora observadas (no derivadas) + denuncia_id.
+CALLAO_CSV = (
+    "crime_type,hour,day_of_week,district,latitude,longitude,historical_frequency,risk_level,"
+    "occurred_year,macro_category,ubigeo,severity_level,source,denuncia_id\n"
+    "hurto,20,viernes,BELLAVISTA,-12.062,-77.118,10,medio,2024,delitos contra el patrimonio,070102,media,callao,abc123\n"
+    "robo agravado,2,martes,CALLAO,-12.05,-77.1,10,alto,2024,delitos contra el patrimonio,070101,alta,callao,def456\n"
+)
+
 
 def _write_inputs(tmp_path: Path) -> tuple[Path, Path, Path]:
     legacy = tmp_path / "legacy.csv"
@@ -52,6 +60,8 @@ def test_exporta_manifest_json_y_reporte(tmp_path):
             str(legacy),
             "--incidents",
             str(incidents),
+            "--callao",
+            str(tmp_path / "sin_callao.csv"),
             "--monthly",
             str(monthly),
             "--out",
@@ -107,6 +117,39 @@ def test_exporta_manifest_json_y_reporte(tmp_path):
     assert report["sources"]["legacy"]["duplicates_or_invalid"] == 1
 
 
+def test_exporta_incluye_callao(tmp_path):
+    legacy, incidents, monthly = _write_inputs(tmp_path)
+    callao = tmp_path / "callao.csv"
+    callao.write_text(CALLAO_CSV, encoding="utf-8")
+    out = tmp_path / "data"
+
+    code = main(
+        [
+            "--legacy",
+            str(legacy),
+            "--incidents",
+            str(incidents),
+            "--callao",
+            str(callao),
+            "--monthly",
+            str(monthly),
+            "--out",
+            str(out),
+        ]
+    )
+    assert code == 0
+
+    manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["counts"]["sources"] == {"modalidad": 2, "inei": 2, "callao": 2}
+
+    map_payload = json.loads((out / manifest["files"]["map"]["name"]).read_text(encoding="utf-8"))
+    callao_points = [row for row in map_payload["points"] if row[6] == "callao"]
+    assert len(callao_points) == 2
+    # La hora y el día son observados en la fuente (no derivados).
+    assert sorted(row[8] for row in callao_points) == [2, 20]
+    assert {row[9] for row in callao_points} == {"martes", "viernes"}
+
+
 def test_payload_from_firestore_normaliza_y_detecta_fuente():
     v2 = payload_from_firestore(
         {
@@ -152,6 +195,8 @@ def test_check_valida_los_archivos_publicados(tmp_path):
                 str(legacy),
                 "--incidents",
                 str(incidents),
+                "--callao",
+                str(tmp_path / "sin_callao.csv"),
                 "--monthly",
                 str(monthly),
                 "--out",

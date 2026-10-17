@@ -49,6 +49,8 @@ export type PublishedManifest = {
     mapPoints: number
     analysisRows: number
     monthlyRows: number
+    contextRows?: number
+    seriesRows?: number
     sources: Record<string, number>
   }
   files: {
@@ -56,7 +58,29 @@ export type PublishedManifest = {
     analysis: PublishedFile
     monthly: PublishedFile
     predict: PublishedFile
+    context?: PublishedFile
+    series?: PublishedFile
   }
+}
+
+/** Contexto por distrito: población proyectada y oferta policial (dato publicado). */
+export type DistrictContext = {
+  ubigeo: string
+  district: string
+  population: number | null
+  popYear: number | null
+  stationsCount: number
+  serviciosOk2022: number
+  infraOk2022: number
+}
+
+/** Fila de las series de contexto (INEI / MPFN). */
+export type ContextSeriesRow = {
+  category: string
+  dimension: string
+  year: number | null
+  value: number | null
+  unit: string | null
 }
 
 export type PredictStats = {
@@ -71,6 +95,8 @@ type MapPayload = { points?: unknown[] }
 type AnalysisPayload = { incidents?: unknown[] }
 type MonthlyPayload = { modalities?: string[]; rows?: unknown[] }
 type PredictPayload = Partial<PredictStats>
+type ContextPayload = { rows?: unknown[] }
+type SeriesPayload = { rows?: unknown[] }
 
 function asNumber(value: unknown): number | null {
   const parsed = typeof value === 'number' ? value : Number(value)
@@ -151,6 +177,36 @@ export function toMonthlyStat(row: unknown, modalities: string[]): MonthlyStat |
   }
 }
 
+/** Convierte una fila compacta de contexto por distrito en `DistrictContext`. */
+export function toDistrictContext(row: unknown): DistrictContext | null {
+  if (!Array.isArray(row) || row.length < 7) return null
+  const [ubigeo, district, population, popYear, stationsCount, serviciosOk2022, infraOk2022] = row
+  const code = asString(ubigeo)
+  if (!code) return null
+  return {
+    ubigeo: code,
+    district: asString(district) ?? '',
+    population: asNumber(population),
+    popYear: asNumber(popYear),
+    stationsCount: asNumber(stationsCount) ?? 0,
+    serviciosOk2022: asNumber(serviciosOk2022) ?? 0,
+    infraOk2022: asNumber(infraOk2022) ?? 0,
+  }
+}
+
+/** Convierte una fila compacta de series de contexto. */
+export function toContextSeriesRow(row: unknown): ContextSeriesRow | null {
+  if (!Array.isArray(row) || row.length < 5) return null
+  const [category, dimension, year, value, unit] = row
+  return {
+    category: asString(category) ?? '',
+    dimension: asString(dimension) ?? '',
+    year: asNumber(year),
+    value: asNumber(value),
+    unit: asString(unit),
+  }
+}
+
 async function fetchJson<T>(path: string, cache: RequestCache): Promise<T> {
   const response = await fetch(`${DATA_BASE}/${path}`, { cache })
   if (!response.ok) {
@@ -223,6 +279,26 @@ export async function loadMonthlyStats(): Promise<MonthlyStat[]> {
   return (payload.rows ?? [])
     .map((row) => toMonthlyStat(row, modalities))
     .filter((row): row is MonthlyStat => row !== null)
+}
+
+/** Contexto por distrito publicado (población proyectada y oferta policial). */
+export async function loadDistrictContext(): Promise<DistrictContext[]> {
+  const manifest = await loadPublishedManifest()
+  if (!manifest.files.context?.name) return []
+  const payload = (await loadDataset('context')) as ContextPayload
+  return (payload.rows ?? [])
+    .map(toDistrictContext)
+    .filter((row): row is DistrictContext => row !== null)
+}
+
+/** Series de contexto publicadas (INEI / MPFN). */
+export async function loadContextSeries(): Promise<ContextSeriesRow[]> {
+  const manifest = await loadPublishedManifest()
+  if (!manifest.files.series?.name) return []
+  const payload = (await loadDataset('series')) as SeriesPayload
+  return (payload.rows ?? [])
+    .map(toContextSeriesRow)
+    .filter((row): row is ContextSeriesRow => row !== null)
 }
 
 /** Conteos precalculados para la estimación local de riesgo. */

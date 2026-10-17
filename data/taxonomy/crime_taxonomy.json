@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-16",
+  "updated": "2026-10-17",
   "disclaimer": "Taxonomía declarada con fines analíticos. 'severity_level' clasifica la gravedad típica de cada modalidad según el marco penal/taxonomía INEI-PNP; NO es una medición observada de riesgo ni una probabilidad, y no debe usarse para tomar decisiones sobre personas o zonas.",
   "severity_levels": {
     "alta": "Delitos violentos o de alto impacto (vida, integridad, armas, drogas, robo con agravantes).",
@@ -118,6 +118,371 @@
       "severity": "alta",
       "macro": "delitos contra la libertad personal",
       "rationale": "Privación ilegal de la libertad."
+    },
+    "violencia psicologica": {
+      "severity": "media",
+      "macro": "violencia contra la mujer y grupo familiar",
+      "rationale": "Violencia psicológica (Ley 30364)."
+    },
+    "violencia fisica": {
+      "severity": "alta",
+      "macro": "violencia contra la mujer y grupo familiar",
+      "rationale": "Violencia física (Ley 30364)."
+    },
+    "violencia economica o patrimonial": {
+      "severity": "media",
+      "macro": "violencia contra la mujer y grupo familiar",
+      "rationale": "Violencia económica o patrimonial (Ley 30364)."
+    },
+    "violencia sexual": {
+      "severity": "alta",
+      "macro": "violencia contra la mujer y grupo familiar",
+      "rationale": "Violencia sexual."
+    },
+    "conduccion en estado de ebriedad o drogadiccion": {
+      "severity": "media",
+      "macro": "delitos contra la seguridad publica",
+      "rationale": "Conducción en estado de ebriedad o drogadicción."
+    },
+    "receptacion": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Receptación (encubrimiento patrimonial)."
+    },
+    "falsificacion de documentos": {
+      "severity": "baja",
+      "macro": "delitos contra la fe publica",
+      "rationale": "Falsificación de documentos."
+    },
+    "fraude informatico": {
+      "severity": "baja",
+      "macro": "delitos informaticos",
+      "rationale": "Fraude informático (Ley 30096)."
+    },
+    "fraude informatico agravado": {
+      "severity": "media",
+      "macro": "delitos informaticos",
+      "rationale": "Fraude informático agravado."
+    },
+    "lesiones": {
+      "severity": "media",
+      "macro": "delitos contra la vida",
+      "rationale": "Lesiones (integridad física)."
+    },
+    "lesiones leves": {
+      "severity": "baja",
+      "macro": "delitos contra la vida",
+      "rationale": "Lesiones leves."
+    },
+    "lesiones graves": {
+      "severity": "alta",
+      "macro": "delitos contra la vida",
+      "rationale": "Lesiones graves."
+    },
+    "lesiones culposas": {
+      "severity": "baja",
+      "macro": "delitos contra la vida",
+      "rationale": "Lesiones por culpa."
+    },
+    "falsedad generica": {
+      "severity": "baja",
+      "macro": "delitos contra la fe publica",
+      "rationale": "Falsedad genérica."
+    },
+    "falsedad ideologica": {
+      "severity": "baja",
+      "macro": "delitos contra la fe publica",
+      "rationale": "Falsedad ideológica."
+    },
+    "desobediencia o resistencia a la autoridad": {
+      "severity": "media",
+      "macro": "delitos contra la administracion publica",
+      "rationale": "Desobediencia o resistencia a la autoridad."
+    },
+    "coaccion": {
+      "severity": "media",
+      "macro": "delitos contra la libertad personal",
+      "rationale": "Coacción."
+    },
+    "hurto de celular": {
+      "severity": "baja",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Hurto de teléfono celular."
+    },
+    "robo de celular": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Robo de teléfono celular."
+    },
+    "hurto de accesorios y autopartes de vehiculos": {
+      "severity": "baja",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Hurto de accesorios/autopartes."
+    },
+    "hurto agravado durante la noche": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Hurto agravado por nocturnidad."
+    },
+    "actos contra el pudor de menores": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Actos contra el pudor de menores."
+    },
+    "actos contra el pudor": {
+      "severity": "media",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Actos contra el pudor."
+    },
+    "acoso": {
+      "severity": "media",
+      "macro": "delitos contra la libertad personal",
+      "rationale": "Acoso."
+    },
+    "acoso sexual": {
+      "severity": "media",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Acoso sexual."
+    },
+    "acoso agravado": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Acoso agravado."
+    },
+    "suplantacion de identidad": {
+      "severity": "baja",
+      "macro": "delitos contra la fe publica",
+      "rationale": "Suplantación de identidad."
+    },
+    "violacion sexual": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Violación sexual."
+    },
+    "violacion sexual de menor de 14 anos": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Violación sexual de menor de 14 años."
+    },
+    "tentativa de violacion sexual": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Tentativa de violación sexual."
+    },
+    "dano simple": {
+      "severity": "baja",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Daño simple a la propiedad."
+    },
+    "dano agravado": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Daño agravado a la propiedad."
+    },
+    "tentativa de homicidio": {
+      "severity": "alta",
+      "macro": "delitos contra la vida",
+      "rationale": "Tentativa de homicidio."
+    },
+    "homicidio simple": {
+      "severity": "alta",
+      "macro": "delitos contra la vida",
+      "rationale": "Homicidio simple."
+    },
+    "usurpacion": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Usurpación de inmueble."
+    },
+    "usurpacion agravada": {
+      "severity": "alta",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Usurpación agravada."
+    },
+    "promocion o favorecimiento al trafico ilicito de drogas": {
+      "severity": "alta",
+      "macro": "trafico ilicito de drogas",
+      "rationale": "Favorecimiento al TID."
+    },
+    "fabricacion comercializacion uso o porte de armas": {
+      "severity": "alta",
+      "macro": "delitos contra la seguridad publica",
+      "rationale": "Armas."
+    },
+    "abuso de autoridad": {
+      "severity": "media",
+      "macro": "delitos contra la administracion publica",
+      "rationale": "Abuso de autoridad."
+    },
+    "apropiacion ilicita comun": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Apropiación ilícita."
+    },
+    "apropiacion irregular": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Apropiación irregular."
+    },
+    "apropiacion de prenda": {
+      "severity": "baja",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Apropiación de prenda."
+    },
+    "sustraccion de menor": {
+      "severity": "alta",
+      "macro": "delitos contra la familia",
+      "rationale": "Sustracción de menor."
+    },
+    "uso de armas en estado de ebriedad o drogadiccion": {
+      "severity": "alta",
+      "macro": "delitos contra la seguridad publica",
+      "rationale": "Uso de armas bajo influencia."
+    },
+    "violacion de domicilio": {
+      "severity": "media",
+      "macro": "delitos contra la libertad personal",
+      "rationale": "Violación de domicilio."
+    },
+    "estafa agravada": {
+      "severity": "media",
+      "macro": "delitos contra la fe publica",
+      "rationale": "Estafa agravada."
+    },
+    "discriminacion por identidad de genero u orientacion sexual": {
+      "severity": "media",
+      "macro": "otros",
+      "rationale": "Discriminación por identidad de género."
+    },
+    "induccion a la fuga de menor": {
+      "severity": "media",
+      "macro": "delitos contra la familia",
+      "rationale": "Inducción a la fuga de menor."
+    },
+    "marcaje o reglaje": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Marcaje o reglaje (preparación de robo)."
+    },
+    "tentativa de robo": {
+      "severity": "media",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Tentativa de robo."
+    },
+    "violacion de la intimidad": {
+      "severity": "media",
+      "macro": "otros",
+      "rationale": "Violación de la intimidad."
+    },
+    "abuso de mecanismos y dispositivos informaticos": {
+      "severity": "baja",
+      "macro": "delitos informaticos",
+      "rationale": "Abuso de dispositivos informáticos."
+    },
+    "chantaje": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad personal",
+      "rationale": "Chantaje (coacción con amenaza)."
+    },
+    "chantaje sexual": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad sexual",
+      "rationale": "Chantaje sexual."
+    },
+    "peligro por medio de incendio o explosion": {
+      "severity": "alta",
+      "macro": "delitos contra la seguridad publica",
+      "rationale": "Peligro por incendio o explosión."
+    },
+    "robo agravado en banda": {
+      "severity": "alta",
+      "macro": "delitos contra el patrimonio",
+      "rationale": "Robo agravado en banda."
+    },
+    "atentado contra la conservacion e identidad de objeto": {
+      "severity": "baja",
+      "macro": "otros",
+      "rationale": "Atentado contra la conservación de objeto."
+    },
+    "autoaborto": {
+      "severity": "media",
+      "macro": "delitos contra la vida",
+      "rationale": "Autoaborto."
+    },
+    "denegacion o deficiente apoyo policial": {
+      "severity": "baja",
+      "macro": "delitos contra la administracion publica",
+      "rationale": "Deficiente apoyo policial."
+    },
+    "discriminacion e incitacion a la discriminacion": {
+      "severity": "media",
+      "macro": "otros",
+      "rationale": "Discriminación e incitación."
+    },
+    "entorpecimiento al funcionamiento de servicios publicos": {
+      "severity": "media",
+      "macro": "delitos contra la seguridad publica",
+      "rationale": "Entorpecimiento de servicios públicos."
+    },
+    "exposicion o abandono peligroso": {
+      "severity": "media",
+      "macro": "delitos contra la vida",
+      "rationale": "Exposición o abandono peligroso."
+    },
+    "fabricacion o falsificacion de sellos o timbres oficiales": {
+      "severity": "baja",
+      "macro": "delitos contra la fe publica",
+      "rationale": "Falsificación de sellos o timbres."
+    },
+    "interceptacion de datos informaticos": {
+      "severity": "baja",
+      "macro": "delitos informaticos",
+      "rationale": "Interceptación de datos informáticos."
+    },
+    "tentativa de secuestro": {
+      "severity": "alta",
+      "macro": "delitos contra la libertad personal",
+      "rationale": "Tentativa de secuestro."
+    },
+    "trafico de influencias": {
+      "severity": "media",
+      "macro": "delitos contra la administracion publica",
+      "rationale": "Tráfico de influencias."
+    },
+    "peligro en transporte publico de pasajeros": {
+      "severity": "media",
+      "macro": "delitos contra la seguridad publica",
+      "rationale": "Peligro en transporte público."
+    },
+    "clonacion o adulteracion de terminales": {
+      "severity": "baja",
+      "macro": "delitos informaticos",
+      "rationale": "Clonación/adulteración de terminales."
+    },
+    "agresiones a la mujer o grupo familiar": {
+      "severity": "alta",
+      "macro": "violencia contra la mujer y grupo familiar",
+      "rationale": "Agresiones (Ley 30364)."
+    },
+    "materiales peligrosos (armas o explosivos)": {
+      "severity": "alta",
+      "macro": "delitos contra la seguridad publica",
+      "rationale": "Materiales peligrosos (armas/explosivos)."
+    },
+    "maltrato animal": {
+      "severity": "baja",
+      "macro": "otros",
+      "rationale": "Maltrato animal."
+    },
+    "violencia contra la autoridad": {
+      "severity": "media",
+      "macro": "delitos contra la administracion publica",
+      "rationale": "Violencia contra la autoridad."
+    },
+    "contaminacion o adulteracion de alimentos": {
+      "severity": "media",
+      "macro": "otros",
+      "rationale": "Contaminación/adulteración de alimentos."
     }
   }
 }

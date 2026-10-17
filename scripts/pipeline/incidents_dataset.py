@@ -25,6 +25,7 @@ from crime_ml.pipeline import FEATURES, TARGET  # noqa: E402
 from crime_ml.validation import (  # noqa: E402
     ValidationError,
     validate_arcgis_incident_row,
+    validate_callao_incident_row,
     validate_incident_row,
 )
 
@@ -80,6 +81,8 @@ UNIFIED_KEYS = [
 
 ARCGIS_SOURCE = "inei"
 LEGACY_SOURCE = "modalidad"
+# Fuente Callao (GORE Callao / SIDPOL georreferenciado): trae fecha y hora reales.
+CALLAO_SOURCE = "callao"
 # Los puntos del esquema clásico se descargaron del grupo de capas "2022" del
 # INEI (data/raw/inei/points_2022_legacy.csv); el año no venía en el CSV.
 LEGACY_YEAR = 2022
@@ -128,9 +131,29 @@ def stable_arcgis_row_id(row: dict) -> str:
     return f"arc_{fnv1a64_hex(payload)}"
 
 
+def stable_callao_row_id(denuncia_id: object, row: dict) -> str:
+    """ID determinista para filas del esquema Callao.
+
+    Usa el identificador de denuncia de la fuente cuando existe (estable frente a
+    reejecuciones) y, si no, el contenido normalizado del registro.
+    """
+    if denuncia_id not in (None, ""):
+        key = str(denuncia_id).strip()
+    else:
+        key = json.dumps(
+            {name: row.get(name) for name in UNIFIED_KEYS},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+    return f"cal_{fnv1a64_hex(key)}"
+
+
 def detect_schema(columns) -> str:
-    """Detecta el esquema del CSV: 'arcgis' (v2) o 'legacy'."""
-    return "arcgis" if {"occurred_year", "severity_level"} <= set(columns) else "legacy"
+    """Detecta el esquema del CSV: 'callao' (fecha/hora reales), 'arcgis' (v2) o 'legacy'."""
+    available = set(columns)
+    if {"occurred_year", "severity_level", "hour", "day_of_week", "denuncia_id"} <= available:
+        return "callao"
+    return "arcgis" if {"occurred_year", "severity_level"} <= available else "legacy"
 
 
 def normalize_row(raw: dict) -> dict:
@@ -191,6 +214,18 @@ def normalize_arcgis_row(raw: dict) -> dict:
     return complete_arcgis_fields(cleaned)
 
 
+def normalize_callao_row(raw: dict) -> dict:
+    """Esquema Callao: valida (hora/día reales), añade la fuente y completa.
+
+    `risk_level` se toma de la severidad declarada y `historical_frequency` de la
+    serie SIDPOL si la fuente no los trae; `hour`/`day_of_week` se conservan tal
+    cual (son observados, no derivados).
+    """
+    cleaned = validate_callao_incident_row(raw)
+    cleaned["source"] = CALLAO_SOURCE
+    return complete_arcgis_fields(cleaned)
+
+
 def load_rows(csv_path: Path) -> tuple[list[tuple[str, dict]], list[str], str]:
     """Devuelve ([[doc_id, fila]], errores, esquema) deduplicando por ID."""
     frame = pd.read_csv(csv_path, dtype=str, encoding="utf-8-sig")
@@ -201,7 +236,10 @@ def load_rows(csv_path: Path) -> tuple[list[tuple[str, dict]], list[str], str]:
 
     for index, raw in enumerate(frame.to_dict(orient="records"), start=2):
         try:
-            if schema == "arcgis":
+            if schema == "callao":
+                normalized = normalize_callao_row(raw)
+                doc_id = stable_callao_row_id(raw.get("denuncia_id"), normalized)
+            elif schema == "arcgis":
                 normalized = normalize_arcgis_row(raw)
                 doc_id = stable_arcgis_row_id(normalized)
             else:

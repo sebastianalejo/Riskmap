@@ -14,7 +14,9 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnalysisExportButtons } from '../components/analysis/AnalysisExportButtons'
 import { AnalysisFiltersPanel } from '../components/analysis/AnalysisFiltersPanel'
+import { ContextSeriesPanel } from '../components/analysis/ContextSeriesPanel'
 import { CrimeTypeChart } from '../components/analysis/CrimeTypeChart'
+import { DistrictContextTable } from '../components/analysis/DistrictContextTable'
 import { DistrictTable } from '../components/analysis/DistrictTable'
 import { FrequencyRankingChart } from '../components/analysis/FrequencyRankingChart'
 import { HourPatternChart } from '../components/analysis/HourPatternChart'
@@ -239,6 +241,10 @@ export function AnalysisPage() {
 
               {/* Tabla comparativa */}
               <DistrictTable incidents={filtered} />
+
+              {/* Contexto oficial por distrito (población, comisarías, tasa) y series */}
+              <DistrictContextTable />
+              <ContextSeriesPanel />
 
               {/* Detalle por evento (fecha y hora) */}
               <IncidentTable incidents={filtered} />

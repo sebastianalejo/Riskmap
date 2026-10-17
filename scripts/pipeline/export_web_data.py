@@ -76,8 +76,25 @@ MONTHLY_COLUMNS = ["year", "month", "ubigeo", "district", "total", "porModalidad
 
 DEFAULT_LEGACY = REPO_ROOT / "data" / "raw" / "inei" / "points_2022_legacy.csv"
 DEFAULT_INCIDENTS = REPO_ROOT / "data" / "processed" / "incidents_lima.csv"
+DEFAULT_CALLAO = REPO_ROOT / "data" / "processed" / "callao_incidents_lima.csv"
 DEFAULT_MONTHLY = REPO_ROOT / "data" / "processed" / "sidpol_monthly_lima.csv"
+DEFAULT_POPULATION = REPO_ROOT / "data" / "processed" / "population_lima.csv"
+DEFAULT_POLICE = REPO_ROOT / "data" / "processed" / "police_context_lima.csv"
+DEFAULT_MPFN = REPO_ROOT / "data" / "processed" / "mpfn_delitos_lima.csv"
+DEFAULT_INEI_SERIES = REPO_ROOT / "data" / "processed" / "inei_series_lima.csv"
 DEFAULT_OUT = REPO_ROOT / "frontend" / "public" / "data"
+
+# Contexto por distrito (población + comisarías) y series de contexto (INEI/MPFN).
+CONTEXT_COLUMNS = [
+    "ubigeo",
+    "district",
+    "population",
+    "popYear",
+    "stationsCount",
+    "serviciosOk2022",
+    "infraOk2022",
+]
+SERIES_COLUMNS = ["category", "dimension", "year", "value", "unit"]
 
 
 def _csv_row_count(path: Path) -> int:
@@ -100,15 +117,20 @@ def _source_name(payload: dict) -> str:
 def load_incidents(
     legacy_path: Path,
     incidents_path: Path,
+    callao_path: Path | None = None,
 ) -> tuple[list[tuple[str, dict]], dict]:
     """Normaliza ambas fuentes, deduplica por ID y devuelve filas + reporte."""
     combined: dict[str, dict] = {}
     report: dict = {"inputs": {}, "sources": {}, "errors": []}
 
-    for label, path, forced_source in (
+    entries = [
         ("legacy", legacy_path, LEGACY_SOURCE),
         ("inei", incidents_path, None),
-    ):
+    ]
+    if callao_path is not None:
+        entries.append(("callao", callao_path, None))
+
+    for label, path, forced_source in entries:
         rows, errors, schema = load_rows(path)
         raw_rows = _csv_row_count(path)
         if forced_source:
@@ -209,6 +231,105 @@ def load_monthly(monthly_path: Path) -> tuple[list[list], dict]:
         "errors": len(errors),
     }
     return rows, {"report": report, "errors": errors}
+
+
+def load_context(
+    population_path: Path | None,
+    police_path: Path | None,
+) -> tuple[list[list], dict]:
+    """Contexto por distrito: población proyectada (último año) + oferta policial."""
+    errors: list[str] = []
+    population: dict[str, dict] = {}
+    pop_year: int | None = None
+
+    if population_path and population_path.exists():
+        frame = pd.read_csv(population_path, dtype=str, encoding="utf-8-sig")
+        frame["year"] = pd.to_numeric(frame["year"], errors="coerce")
+        frame["population"] = pd.to_numeric(frame["population"], errors="coerce")
+        frame = frame.dropna(subset=["year", "population"])
+        if not frame.empty:
+            pop_year = int(frame["year"].max())
+            for raw in frame[frame["year"] == pop_year].to_dict("records"):
+                ubigeo = str(raw["ubigeo"]).strip().zfill(6)
+                population[ubigeo] = {
+                    "district": str(raw.get("district") or "").strip().upper(),
+                    "population": int(raw["population"]),
+                }
+    else:
+        errors.append("falta population_lima.csv")
+
+    police: dict[str, dict] = {}
+    if police_path and police_path.exists():
+        frame = pd.read_csv(police_path, dtype=str, encoding="utf-8-sig")
+        for raw in frame.to_dict("records"):
+            ubigeo = str(raw["ubigeo"]).strip().zfill(6)
+            police[ubigeo] = {
+                "district": str(raw.get("district") or "").strip().upper(),
+                "stationsCount": int_or_none(raw.get("stations_count")) or 0,
+                "serviciosOk2022": int_or_none(raw.get("servicios_ok_2022")) or 0,
+                "infraOk2022": int_or_none(raw.get("infra_ok_2022")) or 0,
+            }
+    else:
+        errors.append("falta police_context_lima.csv")
+
+    rows: list[list] = []
+    for ubigeo in sorted(set(population) | set(police)):
+        pop = population.get(ubigeo, {})
+        pol = police.get(ubigeo, {})
+        rows.append(
+            [
+                ubigeo,
+                pol.get("district") or pop.get("district") or None,
+                pop.get("population"),
+                pop_year,
+                pol.get("stationsCount", 0),
+                pol.get("serviciosOk2022", 0),
+                pol.get("infraOk2022", 0),
+            ]
+        )
+    report = {
+        "rows": len(rows),
+        "popYear": pop_year,
+        "districts_with_population": len(population),
+        "districts_with_police": len(police),
+        "errors": errors,
+    }
+    return rows, report
+
+
+def load_series(mpfn_path: Path | None, inei_path: Path | None) -> tuple[list[list], dict]:
+    """Series de contexto: INEI (Lima Metropolitana) y MPFN (por distrito fiscal)."""
+    rows: list[list] = []
+    errors: list[str] = []
+
+    if inei_path and inei_path.exists():
+        frame = pd.read_csv(inei_path, dtype=str, encoding="utf-8-sig")
+        for raw in frame.to_dict("records"):
+            year = int_or_none(raw.get("year"))
+            value = raw.get("value")
+            try:
+                number = round(float(value), 4)
+            except (TypeError, ValueError):
+                continue
+            if year is None:
+                continue
+            rows.append(["inei", str(raw.get("serie") or ""), year, number, str(raw.get("unit") or "")])
+    else:
+        errors.append("falta inei_series_lima.csv")
+
+    if mpfn_path and mpfn_path.exists():
+        frame = pd.read_csv(mpfn_path, dtype=str, encoding="utf-8-sig")
+        frame["year"] = pd.to_numeric(frame["year"], errors="coerce")
+        frame["cantidad"] = pd.to_numeric(frame["cantidad"], errors="coerce")
+        frame = frame.dropna(subset=["year", "cantidad"])
+        grouped = frame.groupby(["year", "distrito_fiscal"], as_index=False)["cantidad"].sum()
+        for raw in grouped.to_dict("records"):
+            rows.append(["mpfn", str(raw["distrito_fiscal"]), int(raw["year"]), int(raw["cantidad"]), "casos"])
+    else:
+        errors.append("falta mpfn_delitos_lima.csv")
+
+    rows.sort(key=lambda row: (row[0], row[1], row[2]))
+    return rows, {"rows": len(rows), "errors": errors}
 
 
 def payload_from_firestore(data: dict) -> dict | None:
@@ -380,15 +501,26 @@ def write_outputs(
     analysis_payload: dict,
     monthly_payload: dict,
     predict_payload: dict,
+    context_payload: dict,
+    series_payload: dict,
     dataset_report: dict,
     monthly_report: dict,
+    context_report: dict,
+    series_report: dict,
     generated_at: str,
 ) -> dict:
     files_dir = out_dir / "files"
     files_dir.mkdir(parents=True, exist_ok=True)
 
     # Elimina versiones anteriores para no acumular archivos con hash.
-    for base in ("incidents-map", "incidents-analysis", "crime-monthly", "predict-stats"):
+    for base in (
+        "incidents-map",
+        "incidents-analysis",
+        "crime-monthly",
+        "predict-stats",
+        "district-context",
+        "context-series",
+    ):
         for old in files_dir.glob(f"{base}.*.json"):
             old.unlink()
 
@@ -397,6 +529,8 @@ def write_outputs(
         "analysis": _write_data_file(files_dir, "incidents-analysis", analysis_payload),
         "monthly": _write_data_file(files_dir, "crime-monthly", monthly_payload),
         "predict": _write_data_file(files_dir, "predict-stats", predict_payload),
+        "context": _write_data_file(files_dir, "district-context", context_payload),
+        "series": _write_data_file(files_dir, "context-series", series_payload),
     }
 
     counts = {
@@ -404,6 +538,8 @@ def write_outputs(
         "mapPoints": len(map_payload["points"]),
         "analysisRows": len(analysis_payload["incidents"]),
         "monthlyRows": len(monthly_payload["rows"]),
+        "contextRows": len(context_payload["rows"]),
+        "seriesRows": len(series_payload["rows"]),
         "sources": {},
     }
     for point in map_payload["points"]:
@@ -413,7 +549,7 @@ def write_outputs(
     manifest = {
         "schemaVersion": SCHEMA_VERSION,
         "generatedAt": generated_at,
-        "dataset": "INEI DataCrime 2021-2024 + puntos 2022 (IDs deterministas, sin duplicados)",
+        "dataset": "INEI DataCrime 2021-2024 + puntos 2022 + Callao georreferenciado (IDs deterministas, sin duplicados)",
         "counts": counts,
         "files": files,
     }
@@ -428,11 +564,20 @@ def write_outputs(
         "inputs": dataset_report["inputs"],
         "sources": dataset_report["sources"],
         "monthly": monthly_report,
+        "context": context_report,
+        "series": series_report,
         "valid": {
             "incidents": counts["incidents"],
             "monthly": counts["monthlyRows"],
+            "context": counts["contextRows"],
+            "series": counts["seriesRows"],
         },
-        "errors": dataset_report["errors"] + monthly_report["errors"],
+        "errors": (
+            dataset_report["errors"]
+            + monthly_report["errors"]
+            + context_report.get("errors", [])
+            + series_report.get("errors", [])
+        ),
         "outputs": {key: value for key, value in files.items()},
     }
     (out_dir / "export_report.json").write_text(
@@ -464,8 +609,10 @@ def check_outputs(out_dir: Path) -> list[str]:
         "map": ("points", manifest.get("counts", {}).get("mapPoints")),
         "analysis": ("incidents", manifest.get("counts", {}).get("analysisRows")),
         "monthly": ("rows", manifest.get("counts", {}).get("monthlyRows")),
+        "context": ("rows", manifest.get("counts", {}).get("contextRows")),
+        "series": ("rows", manifest.get("counts", {}).get("seriesRows")),
     }
-    for key in ("map", "analysis", "monthly", "predict"):
+    for key in ("map", "analysis", "monthly", "predict", "context", "series"):
         info = files.get(key) or {}
         name = info.get("name")
         if not name:
@@ -506,7 +653,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--legacy", type=Path, default=DEFAULT_LEGACY)
     parser.add_argument("--incidents", type=Path, default=DEFAULT_INCIDENTS)
+    parser.add_argument("--callao", type=Path, default=DEFAULT_CALLAO)
     parser.add_argument("--monthly", type=Path, default=DEFAULT_MONTHLY)
+    parser.add_argument("--population", type=Path, default=DEFAULT_POPULATION)
+    parser.add_argument("--police", type=Path, default=DEFAULT_POLICE)
+    parser.add_argument("--mpfn", type=Path, default=DEFAULT_MPFN)
+    parser.add_argument("--inei-series", type=Path, default=DEFAULT_INEI_SERIES)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument(
         "--from-firestore",
@@ -539,9 +691,19 @@ def main(argv: list[str] | None = None) -> int:
             if not path.exists():
                 print(f"No existe el CSV: {path}", file=sys.stderr)
                 return 1
-        rows, dataset_report = load_incidents(args.legacy.resolve(), args.incidents.resolve())
+        callao = args.callao.resolve() if args.callao and args.callao.exists() else None
+        rows, dataset_report = load_incidents(args.legacy.resolve(), args.incidents.resolve(), callao)
         monthly_rows, monthly_result = load_monthly(args.monthly.resolve())
         monthly_report = {**monthly_result["report"], "errors": monthly_result["errors"]}
+
+    context_rows, context_report = load_context(
+        args.population.resolve() if args.population and args.population.exists() else None,
+        args.police.resolve() if args.police and args.police.exists() else None,
+    )
+    series_rows, series_report = load_series(
+        args.mpfn.resolve() if args.mpfn and args.mpfn.exists() else None,
+        args.inei_series.resolve() if args.inei_series and args.inei_series.exists() else None,
+    )
 
     map_payload = {
         "schemaVersion": SCHEMA_VERSION,
@@ -563,6 +725,16 @@ def main(argv: list[str] | None = None) -> int:
         "schemaVersion": SCHEMA_VERSION,
         **build_predict_stats(rows),
     }
+    context_payload = {
+        "schemaVersion": SCHEMA_VERSION,
+        "columns": CONTEXT_COLUMNS,
+        "rows": context_rows,
+    }
+    series_payload = {
+        "schemaVersion": SCHEMA_VERSION,
+        "columns": SERIES_COLUMNS,
+        "rows": series_rows,
+    }
 
     manifest = write_outputs(
         out_dir,
@@ -570,8 +742,12 @@ def main(argv: list[str] | None = None) -> int:
         analysis_payload=analysis_payload,
         monthly_payload=monthly_payload,
         predict_payload=predict_payload,
+        context_payload=context_payload,
+        series_payload=series_payload,
         dataset_report=dataset_report,
         monthly_report=monthly_report,
+        context_report=context_report,
+        series_report=series_report,
         generated_at=generated_at,
     )
 

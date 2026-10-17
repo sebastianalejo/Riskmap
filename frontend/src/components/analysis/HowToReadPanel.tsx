@@ -34,6 +34,11 @@ const METRICS: { term: string; definition: ReactNode }[] = [
     term: 'Distrito más crítico',
     definition: 'Distrito con más registros tras aplicar los filtros.',
   },
+  {
+    term: 'Tasa por 100 000 hab.',
+    definition:
+      'Denuncias oficiales del periodo divididas por la población proyectada del distrito (INEI) y multiplicadas por 100 000. Permite comparar distritos de tamaños muy distintos.',
+  },
 ]
 
 const CAVEATS = [
@@ -41,6 +46,7 @@ const CAVEATS = [
   'Los datos no incluyen la fecha exacta del hecho: solo el año, el día de la semana y la hora cuando están disponibles. Este módulo analiza esas variables y la frecuencia histórica; la tendencia mensual está en Resumen, con denuncias oficiales.',
   'Se analizan todos los datos publicados (años 2021-2024 y modalidades 2022), sin duplicados.',
   'Los distritos se agrupan al cargar los datos; los registros incompletos aparecen como «Sin distrito» o «Sin tipo».',
+  'El «Contexto por distrito» y las «Series de contexto» usan otras fuentes oficiales (población proyectada del INEI, denuncias SIDPOL y delitos del MPFN); son cifras agregadas de contraste, no registros individuales.',
   'Las exportaciones respetan los filtros activos en el momento de la descarga.',
 ]
 

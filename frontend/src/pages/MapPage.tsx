@@ -11,7 +11,8 @@ import { useAuth } from '../context/AuthContext'
 import { getGoogleMapsApiKey } from '../firebase/client'
 import { useCrimeIncidentsForMap, type MapPoint } from '../hooks/useCrimeIncidentsForMap'
 import { useCrimeStatsMonthly } from '../hooks/useCrimeStatsMonthly'
-import { aggregateByDistrict } from '../utils/districtStats'
+import { useDistrictContext } from '../hooks/useDistrictContext'
+import { aggregateByDistrict, type ChoroplethMetric } from '../utils/districtStats'
 import { SOURCE_OPTIONS } from '../utils/incidentRows'
 
 type RiskLevel = 'bajo' | 'medio' | 'alto'
@@ -67,7 +68,9 @@ export function MapPage() {
   )
   const [months] = useState(24)
   const [layer, setLayer] = useState<'puntos' | 'distritos'>('puntos')
+  const [metric, setMetric] = useState<ChoroplethMetric>('conteo')
   const { rows: monthlyRows } = useCrimeStatsMonthly()
+  const { rows: contextRows } = useDistrictContext()
 
   function toggleRisk(r: RiskLevel) {
     setActiveRisks((prev) => {
@@ -150,9 +153,20 @@ export function MapPage() {
   }, [points])
 
   // ── Serie de denuncias oficiales agregada por distrito (capa coroplética) ──────
+  const contextByUbigeo = useMemo(
+    () =>
+      new Map(
+        contextRows.map((item) => [
+          item.ubigeo,
+          { population: item.population, stationsCount: item.stationsCount },
+        ]),
+      ),
+    [contextRows],
+  )
+
   const districtTotals = useMemo(
-    () => aggregateByDistrict(monthlyRows, months),
-    [monthlyRows, months],
+    () => aggregateByDistrict(monthlyRows, months, contextByUbigeo),
+    [monthlyRows, months, contextByUbigeo],
   )
 
   return (
@@ -380,6 +394,34 @@ export function MapPage() {
               </button>
             ))}
           </div>
+          {layer === 'distritos' && (
+            <div
+              className="flex rounded-xl border border-line-subtle bg-surface-2 p-0.5"
+              role="group"
+              aria-label="Métrica de la coropleta"
+            >
+              {([
+                { value: 'conteo', label: 'Conteo' },
+                { value: 'tasa', label: 'Tasa /100k' },
+              ] as const).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setMetric(option.value)}
+                  aria-pressed={metric === option.value}
+                  className={[
+                    'rounded-lg px-2.5 py-1 text-xs font-medium transition',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                    metric === option.value
+                      ? 'bg-surface-1 text-accent shadow-sm ring-1 ring-line-subtle'
+                      : 'text-content-secondary hover:text-content-primary',
+                  ].join(' ')}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
           {hasFilters && <Badge tone="accent">Filtros activos</Badge>}
           <div className="ml-auto flex items-center gap-3">
             <span className="font-mono text-xs text-content-secondary">
@@ -423,18 +465,19 @@ export function MapPage() {
               <RiskMapLeaflet points={points} />
             )
           ) : (
-            <DistrictChoroplethMap districts={districtTotals} months={months} />
+            <DistrictChoroplethMap districts={districtTotals} months={months} metric={metric} />
           )}
         </div>
 
         {layer === 'distritos' && (
           <div className="shrink-0 space-y-2 px-4 pb-4">
-            <DistrictLegend districts={districtTotals} />
+            <DistrictLegend districts={districtTotals} metric={metric} />
             <p className="text-[11px] leading-snug text-content-muted">
               Serie mensual de denuncias oficiales por distrito (
-              {months === 0 ? 'todo el histórico disponible' : `últimos ${months} meses`}). Denuncias
-              registradas en términos absolutos, todavía sin normalizar por población; el detalle por
-              modalidad está en el tooltip de cada distrito.
+              {months === 0 ? 'todo el histórico disponible' : `últimos ${months} meses`}). Puedes ver el
+              conteo absoluto o la <strong>tasa por 100 000 habitantes</strong> (con la población
+              proyectada del INEI); el tooltip de cada distrito muestra denuncias, tasa, población y
+              comisarías.
             </p>
           </div>
         )}

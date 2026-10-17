@@ -1,9 +1,10 @@
 {
-  "generated_at": "2026-10-17T17:09:53.712618+00:00",
+  "generated_at": "2026-10-17T18:34:18.572881+00:00",
   "schema_version": 2,
   "inputs": {
     "legacy": "data\\raw\\inei\\points_2022_legacy.csv",
-    "inei": "data\\processed\\incidents_lima.csv"
+    "inei": "data\\processed\\incidents_lima.csv",
+    "callao": "data\\processed\\callao_incidents_lima.csv"
   },
   "sources": {
     "legacy": {
@@ -21,6 +22,14 @@
       "added_rows": 5724,
       "duplicates_or_invalid": 253,
       "errors": 0
+    },
+    "callao": {
+      "schema": "callao",
+      "raw_rows": 2635,
+      "valid_rows": 2635,
+      "added_rows": 2635,
+      "duplicates_or_invalid": 0,
+      "errors": 0
     }
   },
   "monthly": {
@@ -29,23 +38,36 @@
     "valid_rows": 5141,
     "errors": []
   },
+  "context": {
+    "rows": 50,
+    "popYear": 2026,
+    "districts_with_population": 50,
+    "districts_with_police": 49,
+    "errors": []
+  },
+  "series": {
+    "rows": 75,
+    "errors": []
+  },
   "valid": {
-    "incidents": 9904,
-    "monthly": 5141
+    "incidents": 12539,
+    "monthly": 5141,
+    "context": 50,
+    "series": 75
   },
   "errors": [],
   "outputs": {
     "map": {
-      "name": "files/incidents-map.28f46db3f358.json",
-      "bytes": 1150227,
-      "sha256": "28f46db3f3589a49e37c4a9653d173c93163ca356025f0ccfbf820118cad9e94",
-      "count": 9904
+      "name": "files/incidents-map.61cd39fe859b.json",
+      "bytes": 1447778,
+      "sha256": "61cd39fe859bc04c0ee43fd0a2c06e22509dc04f372cb61b84e3525aa4f3d4d1",
+      "count": 12539
     },
     "analysis": {
-      "name": "files/incidents-analysis.18d5d5db1da6.json",
-      "bytes": 991062,
-      "sha256": "18d5d5db1da668dbf854a22bf66959db0e241d99bf971a0f3b4ca21a8e0c8e40",
-      "count": 9904
+      "name": "files/incidents-analysis.f5281052d7fe.json",
+      "bytes": 1246159,
+      "sha256": "f5281052d7fede6067ba03b13b0cb5ca67c065b0c96f17919396db0f97343809",
+      "count": 12539
     },
     "monthly": {
       "name": "files/crime-monthly.a29464453034.json",
@@ -54,10 +76,22 @@
       "count": 5141
     },
     "predict": {
-      "name": "files/predict-stats.46fd303c2e6a.json",
-      "bytes": 29482,
-      "sha256": "46fd303c2e6af0a572b7b9389facc2389cbb64a981810d2880949291e2f44a82",
+      "name": "files/predict-stats.f20e3279fe2f.json",
+      "bytes": 44614,
+      "sha256": "f20e3279fe2fe1d5aad289be74c820e80bace881b23575e1ad975596bfb3a427",
       "count": 0
+    },
+    "context": {
+      "name": "files/district-context.613988b8dac2.json",
+      "bytes": 2261,
+      "sha256": "613988b8dac2b4b30f62f92dffa43dc0ac4972b94f288dfce0335d0d03f313ed",
+      "count": 50
+    },
+    "series": {
+      "name": "files/context-series.c4c7109bd8f1.json",
+      "bytes": 3270,
+      "sha256": "c4c7109bd8f102bddfd6b24dc4f5aa930561dc78b91c854c7b300e423d879163",
+      "count": 75
     }
   }
 }

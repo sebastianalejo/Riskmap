@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-10-17T18:13:27.112279+00:00",
+  "sources": {
+    "stations": "https://observatorio.mininter.gob.pe/sites/default/files/proyecto/archivos/Relaci%C3%B3n%20de%20comisar%C3%ADas%20b%C3%A1sicas%201318.xlsx",
+    "infra": "https://observatorio.mininter.gob.pe/sites/default/files/proyecto/archivos/Base%20de%20datos%20del%20estado%20de%20infraestructura%20y%20servicios%20basicos%20de%20las%20comisari%CC%81as%20ba%CC%81sicas%202022.xlsx"
+  },
+  "scope_prefixes": [
+    "1501",
+    "0701"
+  ],
+  "stations": {
+    "stats": {
+      "rows_raw": 1318,
+      "fuera_de_lima_callao": 1176,
+      "distrito_sin_ubigeo": 12
+    }
+  },
+  "infra": {
+    "stats": {
+      "rows_raw": 1319
+    }
+  },
+  "totals": {
+    "stations_lima_callao": 130,
+    "districts_with_stations": 49,
+    "context_rows": 49,
+    "districts_matched_2022": 49
+  },
+  "columns": {
+    "stations": [
+      "ubigeo",
+      "district",
+      "station_name",
+      "latitude",
+      "longitude",
+      "police_type",
+      "region",
+      "source",
+      "year"
+    ],
+    "context": [
+      "ubigeo",
+      "district",
+      "stations_count",
+      "stations_2022_count",
+      "servicios_ok_2022",
+      "infra_ok_2022",
+      "source"
+    ]
+  }
+}

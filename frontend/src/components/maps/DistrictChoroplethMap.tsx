@@ -2,13 +2,17 @@ import 'leaflet/dist/leaflet.css'
 import { useEffect, useState } from 'react'
 import { GeoJSON, MapContainer, TileLayer } from 'react-leaflet'
 import type { FeatureCollection, Geometry } from 'geojson'
-import type { DistrictTotals } from '../../utils/districtStats'
-import { choroplethColor, legendBuckets } from '../../utils/districtStats'
+import type { ChoroplethMetric, DistrictTotals } from '../../utils/districtStats'
+import { choroplethColor, districtMetricValue, legendBuckets } from '../../utils/districtStats'
 import { MODALITY_SHORT } from '../../utils/monthlyStats'
 
 const LIMA_CENTER: [number, number] = [-12.0464, -77.0428]
 const GEOJSON_URL = '/geo/lima_distritos.geojson'
 const numberFormat = new Intl.NumberFormat('es-PE')
+const METRIC_LABELS: Record<ChoroplethMetric, string> = {
+  conteo: 'Denuncias en el periodo',
+  tasa: 'Denuncias por 100 000 hab.',
+}
 
 type DistrictProperties = { ubigeo: string; district: string; patch?: string }
 type DistrictCollection = FeatureCollection<Geometry, DistrictProperties>
@@ -26,20 +30,24 @@ function loadDistricts(): Promise<DistrictCollection> {
 }
 
 function tooltipHtml(properties: DistrictProperties, info: DistrictTotals | undefined): string {
-  const top = info?.topModality ? MODALITY_SHORT[info.topModality] ?? info.topModality : null
-  const detail = info
-    ? `${numberFormat.format(info.total)} denuncias${top ? ` · ${top}` : ''}`
-    : 'Sin datos en el periodo'
-  return `<strong>${properties.district}</strong><br/>${detail}`
+  if (!info) return `<strong>${properties.district}</strong><br/>Sin datos en el periodo`
+  const top = info.topModality ? MODALITY_SHORT[info.topModality] ?? info.topModality : null
+  const lines = [`<strong>${properties.district}</strong>`]
+  lines.push(`${numberFormat.format(info.total)} denuncias${top ? ` · ${top}` : ''}`)
+  if (info.rate != null) lines.push(`${info.rate.toFixed(1)} por 100 000 hab.`)
+  if (info.population != null) lines.push(`Población: ${numberFormat.format(info.population)}`)
+  if (info.stationsCount) lines.push(`${info.stationsCount} comisarías`)
+  return lines.join('<br/>')
 }
 
 interface Props {
   districts: DistrictTotals[]
   months: number
+  metric: ChoroplethMetric
 }
 
-/** Capa coroplética: denuncias oficiales por distrito (últimos `months` meses). */
-export function DistrictChoroplethMap({ districts, months }: Props) {
+/** Capa coroplética: denuncias oficiales por distrito (conteo o tasa por 100 000). */
+export function DistrictChoroplethMap({ districts, months, metric }: Props) {
   const [collection, setCollection] = useState<DistrictCollection | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -58,7 +66,7 @@ export function DistrictChoroplethMap({ districts, months }: Props) {
   }, [])
 
   const byUbigeo = new Map(districts.map((item) => [item.ubigeo, item]))
-  const max = Math.max(0, ...districts.map((item) => item.total))
+  const max = Math.max(0, ...districts.map((item) => districtMetricValue(item, metric)))
 
   if (error) {
     return (
@@ -84,15 +92,16 @@ export function DistrictChoroplethMap({ districts, months }: Props) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <GeoJSON
-          key={`${months}-${districts.length}`}
+          key={`${months}-${metric}-${districts.length}`}
           data={collection}
           style={(feature) => {
             const ubigeo = feature?.properties?.ubigeo as string | undefined
-            const total = ubigeo ? byUbigeo.get(ubigeo)?.total ?? 0 : 0
+            const info = ubigeo ? byUbigeo.get(ubigeo) : undefined
+            const value = info ? districtMetricValue(info, metric) : 0
             return {
               color: 'rgb(233 238 248 / 0.35)',
               weight: 0.6,
-              fillColor: choroplethColor(total, max),
+              fillColor: choroplethColor(value, max),
               fillOpacity: 1,
             }
           }}
@@ -107,12 +116,12 @@ export function DistrictChoroplethMap({ districts, months }: Props) {
 }
 
 /** Leyenda HTML de la escala de la coropleta (se renderiza fuera del mapa). */
-export function DistrictLegend({ districts }: { districts: DistrictTotals[] }) {
-  const max = Math.max(0, ...districts.map((item) => item.total))
+export function DistrictLegend({ districts, metric }: { districts: DistrictTotals[]; metric: ChoroplethMetric }) {
+  const max = Math.max(0, ...districts.map((item) => districtMetricValue(item, metric)))
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
       <span className="text-[11px] font-semibold uppercase tracking-wide text-content-muted">
-        Denuncias en el periodo
+        {METRIC_LABELS[metric]}
       </span>
       {legendBuckets(max).map((bucket) => (
         <span key={bucket.from} className="inline-flex items-center gap-1.5 text-[11px] text-content-secondary">

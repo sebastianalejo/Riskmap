@@ -119,6 +119,90 @@ python scripts/pipeline/ingest_sidpol.py --refresh --upload
 - **Limitación**: son denuncias registradas (subregistro y sesgo territorial), no victimización
   real; y al ser agregado distrito-mes no incluye hora ni día.
 
+## Hechos delictivos del Callao (Oleada 2)
+
+Tercera fuente, georreferenciada y con **fecha y hora observadas** (lo que el INEI no publica):
+
+- **Origen**: "Registros de hechos delictivos en la Provincia Constitucional del Callao"
+  (Observatorio Regional de Seguridad Ciudadana, Gobierno Regional del Callao), portal de datos
+  abiertos. Son registros georreferenciados de los 7 distritos del Callao, con fecha, hora,
+  modalidad y características de la persona afectada.
+- **Cobertura procesada**: 2 643 filas (2001–2024); con `--min-year 2018` se conservan **2 635**
+  (2 536 de 2024, 92 de 2023, 7 de 2021–2022) y se descartan 4 filas sin coordenadas y 4 previas a
+  2018. Detalle en `data/processed/callao_quality_report.json`.
+- **Salida**: `data/processed/callao_incidents_lima.csv` (esquema unificado + `denuncia_id`).
+
+```bash
+python scripts/pipeline/ingest_crime_callao.py --refresh
+python scripts/pipeline/upload_incidents.py --csv data/processed/callao_incidents_lima.csv --verify
+python scripts/pipeline/export_web_data.py   # publica con source="callao"
+```
+
+- **Sin duplicados**: el ID se deriva del `ID_DOC_DENUNCIA` de la fuente (`cal_<hex>`, FNV-1a 64):
+  reimportar el mismo archivo actualiza los mismos documentos.
+- **Hora y día reales**: `hour` y `day_of_week` se toman de `FECHA_HECHO`/`HORA_HECHO` (no se
+  derivan); `risk_level` sale de la severidad declarada y `historical_frequency` de la serie
+  mensual oficial.
+- **Calidad de la fuente**: trae un carácter de reemplazo (U+FFFD) donde va una "ñ" (p. ej.
+  "14 AÑOS"); el extractor lo repara. 7 modalidades superan los 60 caracteres de `crime_type`
+  (límite del esquema) y se mapean a un nombre canónico corto en `ingest_crime_callao.py`.
+- **Limitación**: 1 fila = 1 persona afectada (puede repetir el mismo hecho con varias víctimas);
+  solo cubre la Provincia Constitucional del Callao.
+
+## Oferta policial (contexto por distrito)
+
+```bash
+python scripts/pipeline/ingest_police.py --refresh
+```
+
+- **Comisarías básicas 2019** (MININTER/OBNASEC): 1 318 a nivel nacional con `GPS`; al filtrar por
+  el bbox de Lima/Callao quedan **130 comisarías en 49 distritos**. El `ubigeo` se resuelve por
+  **nombre de distrito** con la lista canónica de la serie mensual oficial (ese XLSX no publica
+  ubigeo).
+- **Estado de infraestructura y servicios básicos de comisarías 2022** (MININTER/OBNASEC):
+  indicadores por comisaría (sin coordenadas), unidos por distrito.
+- **Salidas**: `data/processed/police_stations_lima.csv` (comisarías con lat/lon y ubigeo),
+  `data/processed/police_context_lima.csv` (conteo de comisarías y servicios/infraestructura 2022
+  por distrito) y `data/processed/police_quality_report.json`.
+- **Limitación**: fuentes **estáticas** (2019/2022), no series temporales; no incluyen personal.
+
+## Población distrital proyectada (base para tasas)
+
+```bash
+python scripts/pipeline/ingest_population.py --refresh
+```
+
+- **Origen**: "Perú: Población Total Proyectada al 30 de junio de cada año, según Departamento,
+  Provincia y Distrito, 2018-2026" (INEI, XLSX; 1 892 distritos).
+- **Salida**: `data/processed/population_lima.csv` (`ubigeo`, `district`, `year`, `population`) y
+  `data/processed/population_quality_report.json`.
+- **Cobertura**: 50 distritos de Lima Metropolitana + Callao × 9 años (2018–2026). Permite convertir
+  los conteos absolutos en **tasas por 100 000 habitantes** uniendo por `ubigeo`.
+
+## Delitos denunciados ante el Ministerio Público (contexto)
+
+```bash
+python scripts/pipeline/ingest_mpfn.py --refresh
+```
+
+- **Origen**: "Delitos denunciados ante el Ministerio Público" (MPFN), CSV anuales 2020–2026.
+- **Salida**: `data/processed/mpfn_delitos_lima.csv` (`year`, `distrito_fiscal`, `generico`,
+  `cantidad`, `source`) y `data/processed/mpfn_quality_report.json`.
+- **Limitación**: el grano es el **distrito fiscal** (no el distrito municipal), así que sirve de
+  contexto/contraste, no como microdato.
+
+## Series de seguridad ciudadana del INEI (contexto)
+
+```bash
+python scripts/pipeline/ingest_inei_series.py --refresh
+```
+
+- **Origen**: cuadros XLSX del índice temático de Seguridad Ciudadana del INEI (actualizados a 2024).
+- **Salida**: `data/processed/inei_series_lima.csv` (`serie`, `year`, `value`, `unit`) con
+  `delitos`, `tasa_delitos` (por 10 000 hab.), `robo_vehiculos` y `detenidos` para
+  **Lima Metropolitana 1/**.
+- **Limitación**: serie agregada (no distrital); contexto y contraste externo del ámbito del sistema.
+
 ## Incidentes que no se duplican al reimportar
 
 Los incidentes usan un **identificador único por registro** (calculado con FNV-1a de 64 bits sobre la fila normalizada,

@@ -53,6 +53,11 @@ Todo el estado compartido vive en **la base de datos** de Firebase, y la autenti
 | `python scripts/pipeline/ingest_inei.py` | **Proceso de publicación de datos reproducible (Fase 3, recomendado)**: descarga real 2021–2024 con detección dinámica de las capas, filtro Lima/Callao y reporte de calidad → `data/processed/`. |
 | `python scripts/pipeline/train.py --split temporal` | Entrena el clasificador de modalidad (particiones `random`/`temporal`/`district`) y guarda métricas en `models/reports/`. Ver [`MODEL_CARD.md`](MODEL_CARD.md). |
 | `python scripts/pipeline/ingest_sidpol.py --refresh --upload` | **Serie mensual real (Oleada 1)**: denuncias oficiales por distrito y modalidad (2018–hoy) → la serie mensual en la base de datos (identificador único por registro, sin duplicados). |
+| `python scripts/pipeline/ingest_crime_callao.py --refresh` | **Hechos delictivos del Callao (Oleada 2)**: registros georreferenciados con **fecha y hora observadas** (2001–2024) → `data/processed/callao_incidents_lima.csv` (esquema unificado + `denuncia_id`). |
+| `python scripts/pipeline/ingest_police.py --refresh` | **Oferta policial (contexto)**: comisarías básicas 2019 (GPS) + infraestructura 2022 por distrito → `data/processed/police_stations_lima.csv` y `police_context_lima.csv`. |
+| `python scripts/pipeline/ingest_population.py --refresh` | **Población distrital (INEI 2018-2026)**: base para tasas por 100 000 hab. → `data/processed/population_lima.csv`. |
+| `python scripts/pipeline/ingest_mpfn.py --refresh` | **Delitos del Ministerio Público (contexto)**: 2020–2026 por distrito fiscal → `data/processed/mpfn_delitos_lima.csv`. |
+| `python scripts/pipeline/ingest_inei_series.py --refresh` | **Series de seguridad ciudadana del INEI (contexto)**: delitos, tasa, robo de vehículos y detenidos (Lima Metropolitana, 2011–2024) → `data/processed/inei_series_lima.csv`. |
 | `python scripts/pipeline/upload_incidents.py --replace --verify` | Sube incidentes del CSV con **identificador único por registro** (reimportar no duplica; fusiona filas repetidas). |
 
 ---
@@ -297,6 +302,20 @@ python scripts/pipeline/train.py --split district
 # Serie mensual real (SIDPOL/MININTER) para la tendencia del panel (Oleada 1):
 python scripts/pipeline/ingest_sidpol.py --refresh --upload
 
+# Hechos delictivos del Callao con fecha y hora observadas (Oleada 2):
+python scripts/pipeline/ingest_crime_callao.py --refresh
+python scripts/pipeline/upload_incidents.py --csv data/processed/callao_incidents_lima.csv --verify
+
+# Oferta policial (contexto por distrito: comisarías 2019 + infraestructura 2022):
+python scripts/pipeline/ingest_police.py --refresh
+
+# Población distrital (INEI 2018-2026; base para tasas por 100 000 hab.):
+python scripts/pipeline/ingest_population.py --refresh
+
+# Contexto: delitos del MPFN (2020-2026) y series del INEI (Lima Metropolitana):
+python scripts/pipeline/ingest_mpfn.py --refresh
+python scripts/pipeline/ingest_inei_series.py --refresh
+
 # Incidentes desde el CSV con IDs deterministas (idempotente, sin duplicados):
 python scripts/pipeline/upload_incidents.py --replace --verify
 ```
@@ -405,6 +424,10 @@ El modelo ML espera las variables `FEATURES` y el objetivo `TARGET` definidos en
 > `python scripts/pipeline/export_web_data.py --check` (o `npm run data:check`) valida el
 > índice de datos y los archivos. El formato lo consume [`frontend/src/data/published.ts`](frontend/src/data/published.ts)
 > y el reporte de conteos queda en `frontend/public/data/export_report.json`.
+> Además de los incidentes y la serie mensual, se publican **contexto por distrito**
+> (`district-context.*.json`: población proyectada del INEI y comisarías) y **series de contexto**
+> (`context-series.*.json`: INEI y MPFN). Con la población, el Mapa puede mostrar la **tasa por
+> 100 000 habitantes** (conmutador «Conteo | Tasa /100k» en la capa de distritos).
 > Si importaste registros desde `/datos`, publícalos con
 > `python scripts/pipeline/export_web_data.py --from-firestore` (lee la base de datos una vez con el
 > Admin SDK).
