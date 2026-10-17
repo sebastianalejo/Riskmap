@@ -3,6 +3,9 @@ import { getFirebaseAuth } from '../firebase/client'
 
 function formatErrorDetail(body: unknown, fallback: string): string {
   if (typeof body === 'string' && body.trim()) {
+    const trimmed = body.trimStart()
+    // Respuestas HTML (p. ej. un 404 de un origen sin Functions desplegadas): no mostrar el documento.
+    if (trimmed.startsWith('<')) return fallback
     return body.length > 400 ? `${body.slice(0, 400)}…` : body
   }
   if (body && typeof body === 'object' && 'detail' in body) {

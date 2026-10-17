@@ -1,11 +1,18 @@
 import { AlertCircle, Loader2, MapPin, Sparkles } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
+import { ApiError } from '../../api/client'
 import { predictModality, type PredictionsResponse } from '../../api/prediction'
 import { DISTRICTS } from '../../data/sampleIncidents'
 
 const DISTRICT_NAMES = [...DISTRICTS].sort((a, b) => a.name.localeCompare(b.name))
 
 function friendlyPredictError(err: unknown): string {
+  if (err instanceof ApiError && err.status === 404) {
+    return 'Las Cloud Functions no están desplegadas en este proyecto (despliegue gratuito sin Blaze). Usa la pestaña «Estimación local».'
+  }
+  if (err instanceof TypeError) {
+    return 'No se pudo conectar con la API. Revisa tu conexión o usa la pestaña «Estimación local».'
+  }
   const message = err instanceof Error ? err.message : String(err)
   if (message.includes('Cloud Functions no configuradas')) {
     return 'Las Cloud Functions no están configuradas en este build. Usa la pestaña «Estimación local» o define VITE_FIREBASE_FUNCTIONS_ORIGIN.'
