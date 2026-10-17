@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-17T22:50:00.743054+00:00",
-  "dataset": "INEI DataCrime 2021-2024 + puntos 2022 + Callao georreferenciado (IDs deterministas, sin duplicados)",
+  "generatedAt": "2026-10-17T23:00:03.587511+00:00",
+  "dataset": "INEI DataCrime 2021-2025 + puntos 2022 + Callao georreferenciado (IDs deterministas, sin duplicados)",
   "counts": {
     "incidents": 13475,
     "mapPoints": 13475,
