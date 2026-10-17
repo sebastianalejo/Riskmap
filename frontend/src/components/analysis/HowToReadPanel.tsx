@@ -44,7 +44,7 @@ const METRICS: { term: string; definition: ReactNode }[] = [
 const CAVEATS = [
   'Los datos provienen de denuncias registradas: existe subregistro y sesgo territorial. No equivalen a la criminalidad real de una zona.',
   'Los datos no incluyen la fecha exacta del hecho: solo el año, el día de la semana y la hora cuando están disponibles. Este módulo analiza esas variables y la frecuencia histórica; la tendencia mensual está en Resumen, con denuncias oficiales.',
-  'Se analizan todos los datos publicados (años 2021-2024 y modalidades 2022), sin duplicados.',
+  'Se analizan todos los datos publicados (años 2021-2025 y modalidades 2022), sin duplicados.',
   'Los distritos se agrupan al cargar los datos; los registros incompletos aparecen como «Sin distrito» o «Sin tipo».',
   'El «Contexto por distrito» y las «Series de contexto» usan otras fuentes oficiales (población proyectada del INEI, denuncias SIDPOL y delitos del MPFN); son cifras agregadas de contraste, no registros individuales.',
   'Las exportaciones respetan los filtros activos en el momento de la descarga.',

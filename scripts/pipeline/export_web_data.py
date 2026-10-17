@@ -549,7 +549,7 @@ def write_outputs(
     manifest = {
         "schemaVersion": SCHEMA_VERSION,
         "generatedAt": generated_at,
-        "dataset": "INEI DataCrime 2021-2024 + puntos 2022 + Callao georreferenciado (IDs deterministas, sin duplicados)",
+        "dataset": "INEI DataCrime 2021-2025 + puntos 2022 + Callao georreferenciado (IDs deterministas, sin duplicados)",
         "counts": counts,
         "files": files,
     }

@@ -1,11 +1,13 @@
 {
-  "generated_at": "2026-10-16T22:40:28.700439+00:00",
+  "generated_at": "2026-10-17T22:46:44.911668+00:00",
   "service": "https://arcgis3.inei.gob.pe:6443/arcgis/rest/services/Datacrim/DATACRIM005_AGS_PUNTOSDELITOS_CIUDADANO/MapServer",
   "years": [
     2021,
     2022,
     2023,
-    2024
+    2024,
+    2025,
+    2026
   ],
   "method": {
     "sampling": "ventanas aleatorias con semilla sobre el total disponible",
@@ -15,26 +17,26 @@
     "note": "La fuente no publica la fecha del hecho; la resolución temporal es el año (grupo de capa)."
   },
   "totals": {
-    "rows_kept": 5977,
-    "rows_before_dedupe": 6640,
-    "duplicates_dropped": 401,
+    "rows_kept": 6934,
+    "rows_before_dedupe": 7627,
+    "duplicates_dropped": 426,
     "districts": 49,
     "modalities": 15
   },
   "scope_filter": {
     "rule": "conservar ubigeo 1501/0701 o distrito de la lista canónica; nombre canónico por moda de ubigeo",
-    "dropped_out_of_scope": 262,
+    "dropped_out_of_scope": 267,
     "dropped_examples": {
       "CHILCA": 29,
-      "MALA": 22,
-      "CHANCAY": 17,
+      "MALA": 23,
+      "CHANCAY": 20,
       "SAN ANTONIO": 10,
       "CHICLAYO": 10,
-      "RICARDO PALMA": 7,
       "SANTA EULALIA": 7,
+      "RICARDO PALMA": 7,
       "TRUJILLO": 7,
-      "AUCALLAMA": 6,
       "HUARAL": 6,
+      "AUCALLAMA": 6,
       "CALLERIA": 5,
       "CHIMBOTE": 4
     },
@@ -45,17 +47,19 @@
     "2021": 1584,
     "2022": 1594,
     "2023": 1158,
-    "2024": 1641
+    "2024": 1641,
+    "2025": 957
   },
   "by_severity": {
-    "alta": 2744,
-    "baja": 1283,
-    "media": 1950
+    "alta": 3182,
+    "baja": 1479,
+    "media": 2273
   },
   "by_macro": {
-    "delitos contra el patrimonio": 4894,
+    "delitos contra el patrimonio": 5706,
+    "delitos contra la seguridad publica": 6,
     "delitos contra la seguridad pública": 434,
-    "delitos contra la vida, el cuerpo y la salud": 649
+    "delitos contra la vida, el cuerpo y la salud": 788
   },
   "unmapped_modalities": [],
   "coverage": [
@@ -718,7 +722,189 @@
       "missing_fields": [
         "ubigeo"
       ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 1,
+      "modality": "robo agravado",
+      "available": 4575,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 2,
+      "modality": "robo agravado a mano armada",
+      "available": 1505,
+      "fetched": 120,
+      "kept_in_bbox": 80,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 3,
+      "modality": "robo",
+      "available": 5847,
+      "fetched": 120,
+      "kept_in_bbox": 40,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 4,
+      "modality": "hurto",
+      "available": 20519,
+      "fetched": 120,
+      "kept_in_bbox": 80,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 5,
+      "modality": "hurto agravado",
+      "available": 6575,
+      "fetched": 120,
+      "kept_in_bbox": 80,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 6,
+      "modality": "hurto de vehiculo",
+      "available": 4525,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 7,
+      "modality": "asalto y robo de vehiculos",
+      "available": 738,
+      "fetched": 120,
+      "kept_in_bbox": 83,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 8,
+      "modality": "homicidio calificado - asesinato",
+      "available": 42,
+      "fetched": 42,
+      "kept_in_bbox": 22,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 9,
+      "modality": "homicidio por arma de fuego",
+      "available": 280,
+      "fetched": 120,
+      "kept_in_bbox": 120,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 10,
+      "modality": "hurto agravado en casa habitada",
+      "available": 448,
+      "fetched": 120,
+      "kept_in_bbox": 80,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 11,
+      "modality": "robo frustrado",
+      "available": 14,
+      "fetched": 14,
+      "kept_in_bbox": 9,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 12,
+      "modality": "robo agravado durante la noche o en lugar desolado",
+      "available": 52,
+      "fetched": 52,
+      "kept_in_bbox": 30,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 13,
+      "modality": "microcomercializacion de drogas",
+      "available": 7,
+      "fetched": 7,
+      "kept_in_bbox": 6,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 14,
+      "modality": "hurto frustrado",
+      "available": 50,
+      "fetched": 50,
+      "kept_in_bbox": 37,
+      "cap_reached": false,
+      "missing_fields": [
+        "ubigeo"
+      ]
+    },
+    {
+      "year": 2025,
+      "layer_id": 15,
+      "modality": "estafa y otras defraudaciones",
+      "available": 6075,
+      "fetched": 120,
+      "kept_in_bbox": 80,
+      "cap_reached": true,
+      "missing_fields": [
+        "ubigeo"
+      ]
     }
   ],
-  "errors": []
+  "errors": [
+    "Año 2026 no encontrado en el servicio."
+  ]
 }

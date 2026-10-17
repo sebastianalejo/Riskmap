@@ -289,7 +289,7 @@ export function PredictPanel() {
                 Modalidades más probables
               </p>
               <p className="mb-3 text-[11px] text-content-muted">
-                Composición histórica de {district} (datos oficiales 2021–2024).
+                Composición histórica de {district} (datos oficiales 2021–2025).
               </p>
               <div className="space-y-2.5">
                 {result.modalities.map((item) => (

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-17T18:34:18.572881+00:00",
+  "generated_at": "2026-10-17T22:50:00.743054+00:00",
   "schema_version": 2,
   "inputs": {
     "legacy": "data\\raw\\inei\\points_2022_legacy.csv",
@@ -17,10 +17,10 @@
     },
     "inei": {
       "schema": "arcgis",
-      "raw_rows": 5977,
-      "valid_rows": 5724,
-      "added_rows": 5724,
-      "duplicates_or_invalid": 253,
+      "raw_rows": 6934,
+      "valid_rows": 6660,
+      "added_rows": 6660,
+      "duplicates_or_invalid": 274,
       "errors": 0
     },
     "callao": {
@@ -50,7 +50,7 @@
     "errors": []
   },
   "valid": {
-    "incidents": 12539,
+    "incidents": 13475,
     "monthly": 5141,
     "context": 50,
     "series": 75
@@ -58,16 +58,16 @@
   "errors": [],
   "outputs": {
     "map": {
-      "name": "files/incidents-map.61cd39fe859b.json",
-      "bytes": 1447778,
-      "sha256": "61cd39fe859bc04c0ee43fd0a2c06e22509dc04f372cb61b84e3525aa4f3d4d1",
-      "count": 12539
+      "name": "files/incidents-map.1dff34f90ad8.json",
+      "bytes": 1552754,
+      "sha256": "1dff34f90ad83c53a2c5842fc6fe1403e5bffa5a12bbe850956d6d625ff64c57",
+      "count": 13475
     },
     "analysis": {
-      "name": "files/incidents-analysis.f5281052d7fe.json",
-      "bytes": 1246159,
-      "sha256": "f5281052d7fede6067ba03b13b0cb5ca67c065b0c96f17919396db0f97343809",
-      "count": 12539
+      "name": "files/incidents-analysis.7641da702b85.json",
+      "bytes": 1336150,
+      "sha256": "7641da702b850adf0c8d4e871fdca8206dcfc42d07e789bebfd26e7ebc612c17",
+      "count": 13475
     },
     "monthly": {
       "name": "files/crime-monthly.a29464453034.json",
@@ -76,9 +76,9 @@
       "count": 5141
     },
     "predict": {
-      "name": "files/predict-stats.f20e3279fe2f.json",
-      "bytes": 44614,
-      "sha256": "f20e3279fe2fe1d5aad289be74c820e80bace881b23575e1ad975596bfb3a427",
+      "name": "files/predict-stats.64c2dcdbe77a.json",
+      "bytes": 44665,
+      "sha256": "64c2dcdbe77a743860da296bd4caac8394de9e1c3f11ccf07ec455ce52f7b243",
       "count": 0
     },
     "context": {

@@ -50,7 +50,7 @@ Todo el estado compartido vive en **la base de datos** de Firebase, y la autenti
 |--------|----------|
 | `node scripts/generate-csv.js` | [heredado] Genera datos **sintéticos** de 1 900 filas (`crime_incidents_lima_1900.csv`). |
 | `node scripts/fetch-real-data.js` | [heredado] Descarga 1 000 puntos del grupo de datos oficiales de 2022 (identificadores corregidos en la Fase 3). Ubicación y distrito son reales; la hora, el día de la semana, la frecuencia histórica y el nivel de riesgo se derivan por reglas (ver §12). |
-| `python scripts/pipeline/ingest_inei.py` | **Proceso de publicación de datos reproducible (Fase 3, recomendado)**: descarga real 2021–2024 con detección dinámica de las capas, filtro Lima/Callao y reporte de calidad → `data/processed/`. |
+| `python scripts/pipeline/ingest_inei.py` | **Proceso de publicación de datos reproducible (Fase 3, recomendado)**: descarga real 2021–2025 con detección dinámica de las capas, filtro Lima/Callao y reporte de calidad → `data/processed/`. |
 | `python scripts/pipeline/train.py --split temporal` | Entrena el clasificador de modalidad (particiones `random`/`temporal`/`district`) y guarda métricas en `models/reports/`. Ver [`MODEL_CARD.md`](MODEL_CARD.md). |
 | `python scripts/pipeline/ingest_sidpol.py --refresh --upload` | **Serie mensual real (Oleada 1)**: denuncias oficiales por distrito y modalidad (2018–hoy) → la serie mensual en la base de datos (identificador único por registro, sin duplicados). |
 | `python scripts/pipeline/ingest_crime_callao.py --refresh` | **Hechos delictivos del Callao (Oleada 2)**: registros georreferenciados con **fecha y hora observadas** (2001–2024) → `data/processed/callao_incidents_lima.csv` (esquema unificado + `denuncia_id`). |
@@ -294,7 +294,7 @@ node scripts/fetch-real-data.js
 Ingesta real + entrenamiento, sin fabricar campos y con validación temporal y geográfica:
 
 ```bash
-python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024
+python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024 2025
 python scripts/pipeline/train.py --split random
 python scripts/pipeline/train.py --split temporal
 python scripts/pipeline/train.py --split district

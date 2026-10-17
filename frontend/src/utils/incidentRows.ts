@@ -16,7 +16,7 @@ export type MapPoint = {
 /** Fuentes conocidas de incidentes (para el filtro del mapa). */
 export const SOURCE_OPTIONS = [
   { value: '', label: 'Todas las fuentes' },
-  { value: 'inei', label: 'Denuncias 2021-2024 (con año)' },
+  { value: 'inei', label: 'Denuncias 2021-2025 (con año)' },
   { value: 'callao', label: 'Callao georreferenciado (con fecha y hora)' },
   { value: 'modalidad', label: 'Denuncias 2022 (modalidad)' },
 ] as const

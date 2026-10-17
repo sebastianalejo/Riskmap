@@ -10,7 +10,7 @@
 **Es:** un clasificador supervisado que estima, dado un *contexto espacial* (distrito y
 coordenadas), cuál es la **modalidad delictiva observada más probable** entre 15 categorías
 (robo agravado, hurto, estafa, homicidio por PAF, microcomercialización de drogas, …), a partir
-de denuncias reales de los datos oficiales (2021–2024).
+de denuncias reales de los datos oficiales (2021–2025).
 
 **No es:** una medición del riesgo real de una zona, ni una probabilidad de victimización, ni una
 herramienta para evaluar personas, viviendas o barrios. Tampoco sirve para comparar "peligrosidad"
@@ -42,7 +42,7 @@ entrenado sin conexión; su servicio en la nube es trabajo de la Fase 4.
 una variable del modelo todavía (ver `data/README.md`).
 
 **Esquema unificado en la app:** además del esquema clásico, los incidentes conviven con los
-puntos de datos oficiales 2021-2024 (año, severidad, macro-categoría y fuente «inei»). Ambas
+puntos de datos oficiales 2021-2025 (año, severidad, macro-categoría y fuente «inei»). Ambas
 fuentes exponen las mismas columnas: a los puntos oficiales se les derivan **hora, día y frecuencia
 histórica** (ver `scripts/pipeline/derive.py`) porque la fuente no las publica; el nivel de riesgo sale
 de la severidad declarada de la taxonomía. La hora y el día derivados y la frecuencia (media de
@@ -117,7 +117,7 @@ despliegue (ver `docs/DEPLOY.md`).
 ## 8. Reproducibilidad
 
 ```bash
-python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024
+python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024 2025
 python scripts/pipeline/train.py --split random
 python scripts/pipeline/train.py --split temporal
 python scripts/pipeline/train.py --split district

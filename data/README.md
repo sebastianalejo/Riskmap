@@ -31,13 +31,13 @@ data/
 | `severity_level` | str | `baja` / `media` / `alta` — **declarada** en la taxonomía, no observada |
 | `latitude`, `longitude` | float | Coordenadas WGS84 del punto (denuncia geocodificada) |
 
-Cobertura del muestreo 2021–2024: **5 977 filas**, 49 distritos, 15 modalidades
-(2021: 1 584 · 2022: 1 594 · 2023: 1 158 · 2024: 1 641). Detalles completos en
+Cobertura del muestreo 2021–2025: **6 934 filas**, 49 distritos, 15 modalidades
+(2021: 1 584 · 2022: 1 594 · 2023: 1 158 · 2024: 1 641 · 2025: 957). Detalles completos en
 `quality_report.json`.
 
 ### Esquema unificado
 
-Ambas fuentes (los datos oficiales 2021-2024 y los puntos clásicos 2022) comparten las mismas
+Ambas fuentes (los datos oficiales 2021-2025 y los puntos clásicos 2022) comparten las mismas
 columnas en los datos unificados y en los JSON publicados:
 
 ```
@@ -49,7 +49,7 @@ occurred_year, macro_category, ubigeo, severity_level, source   # INEI
 Los campos que la fuente **no publica** se derivan de forma determinista para
 que ambas fuentes se traten igual (ver `scripts/pipeline/derive.py`):
 
-- La hora y el día de la semana de los puntos de datos oficiales 2021-2024: derivados del contenido
+- La hora y el día de la semana de los puntos de datos oficiales 2021-2025: derivados del contenido
   del registro (mismo registro → mismos valores → publicación sin duplicados).
 - La frecuencia histórica: media mensual **real** de denuncias oficiales (últimos 24
   meses) por distrito y modalidad, con respaldo por distrito y global.
@@ -65,7 +65,7 @@ se etiquetan indicando su origen (`source`) y se documentan en `MODEL_CARD.md`.
 Desde la raíz del repositorio:
 
 ```bash
-python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024
+python scripts/pipeline/ingest_inei.py --years 2021 2022 2023 2024 2025
 ```
 
 El script descubre las capas dinámicamente (los identificadores cambian con el tiempo), resuelve los campos
@@ -78,7 +78,7 @@ distrito. Requiere pandas y conexión a internet; verifica el certificado TLS.
 - **Etiquetas inconsistentes en la fuente:** existen filas con coordenadas limeñas y nombres de
   distrito de otras provincias (Chiclayo, Trujillo…), y ubigeos incoherentes con el nombre
   (p. ej. `150113` con "CHILCA"). El proceso las filtra o normaliza; se descartaron 262 filas
-  fuera de ámbito en el muestreo 2021–2024.
+  fuera de ámbito en el muestreo 2021–2025.
 - **Cambios de esquema por año:** 2016–2022 exponen `X`/`Y` y `UBIGEO`; 2023 pierde `UBIGEO`;
   2024 usa `x`/`y` en minúsculas y `ubigeo_hecho` (además, los valores de ubigeo son texto).
 - **Duplicados:** 401 filas retiradas por id de denuncia o coincidencia geográfica.
@@ -245,7 +245,7 @@ python scripts/pipeline/build_geo.py
   No existe un conjunto de datos en el portal de datos abiertos; la vía es el archivo XLSX de proyecciones de los datos oficiales o
   el Censo 2017. Documentar como aproximación si se usa el censo.
 
-## Esquema v2: puntos de datos oficiales 2021-2024 (con año y severidad)
+## Esquema v2: puntos de datos oficiales 2021-2025 (con año y severidad)
 
 ```bash
 python scripts/pipeline/upload_incidents.py --csv data/processed/incidents_lima.csv --verify
