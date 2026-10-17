@@ -1,89 +1,89 @@
 {
-  "generated_at": "2026-10-17T01:14:14.291132+00:00",
+  "generated_at": "2026-10-17T01:16:56.545759+00:00",
   "year": 2022,
-  "rows": 4274,
+  "rows": 4221,
   "duplicates_dropped": 0,
-  "districts": 62,
+  "districts": 49,
   "risk_distribution": {
-    "alto": 1990,
-    "medio": 1418,
-    "bajo": 866
+    "alto": 1959,
+    "medio": 1406,
+    "bajo": 856
   },
   "per_layer": [
     {
       "layer": "Robo agravado",
       "available": 13727,
-      "kept": 350
+      "kept": 343
     },
     {
       "layer": "Robo agravado a mano armada",
       "available": 7375,
-      "kept": 334
+      "kept": 330
     },
     {
       "layer": "Robo",
       "available": 16507,
-      "kept": 350
+      "kept": 349
     },
     {
       "layer": "Hurto",
       "available": 31335,
-      "kept": 350
+      "kept": 347
     },
     {
       "layer": "Hurto agravado",
       "available": 16989,
-      "kept": 350
+      "kept": 345
     },
     {
       "layer": "Hurto de vehiculo",
       "available": 9473,
-      "kept": 350
+      "kept": 348
     },
     {
       "layer": "Asalto y robo de vehiculos",
       "available": 1893,
-      "kept": 323
+      "kept": 316
     },
     {
       "layer": "Homicidio calificado - Asesinato",
       "available": 74,
-      "kept": 74
+      "kept": 72
     },
     {
       "layer": "Homicidio por arma de fuego",
       "available": 517,
-      "kept": 312
+      "kept": 310
     },
     {
       "layer": "Hurto agravado en casa habitada",
       "available": 1624,
-      "kept": 321
+      "kept": 318
     },
     {
       "layer": "Robo frustrado",
       "available": 47,
-      "kept": 47
+      "kept": 46
     },
     {
       "layer": "Robo agravado durante la noche o en lugar desolado",
       "available": 317,
-      "kept": 317
+      "kept": 311
     },
     {
       "layer": "Microcomercializacion de drogas",
       "available": 1182,
-      "kept": 280
+      "kept": 277
     },
     {
       "layer": "Hurto  frustrado",
       "available": 166,
-      "kept": 166
+      "kept": 160
     },
     {
       "layer": "Estafa y otras defraudaciones",
       "available": 9793,
-      "kept": 350
+      "kept": 349
     }
   ],
   "frequency_source": "media mensual SIDPOL/MININTER (últimos 24 meses)",
