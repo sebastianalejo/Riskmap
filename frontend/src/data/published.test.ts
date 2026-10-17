@@ -36,7 +36,7 @@ describe('toMapPoint (dataset publicado)', () => {
 })
 
 describe('toAnalysisIncident (dataset publicado)', () => {
-  it('conserva año, hora, día y frecuencia', () => {
+  it('conserva año, hora, día, frecuencia y fuente', () => {
     const incident = toAnalysisIncident([
       'inc_1',
       'COMAS',
@@ -46,6 +46,7 @@ describe('toAnalysisIncident (dataset publicado)', () => {
       'lunes',
       'alto',
       120,
+      'inei',
     ])
 
     expect(incident).toEqual({
@@ -57,7 +58,13 @@ describe('toAnalysisIncident (dataset publicado)', () => {
       dayOfWeek: 'lunes',
       riskLevel: 'alto',
       historicalFrequency: 120,
+      source: 'inei',
     })
+  })
+
+  it('deja la fuente en null si la fila no la trae', () => {
+    const incident = toAnalysisIncident(['inc_2', 'COMAS', 'hurto', 2023, 3, 'lunes', 'alto', 10])
+    expect(incident?.source).toBeNull()
   })
 })
 
@@ -81,7 +88,7 @@ describe('toMonthlyStat (dataset publicado)', () => {
 })
 
 const MANIFEST = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   generatedAt: '2026-01-01T00:00:00Z',
   dataset: 'prueba',
   counts: { incidents: 1, mapPoints: 1, analysisRows: 1, monthlyRows: 0, sources: { inei: 1 } },

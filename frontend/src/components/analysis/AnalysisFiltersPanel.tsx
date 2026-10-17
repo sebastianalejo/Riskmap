@@ -10,6 +10,7 @@ import {
   type AnalysisFilters,
   type RiskLevel,
 } from '../../utils/analysis'
+import { SOURCE_OPTIONS } from '../../utils/incidentRows'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card, CardHeader } from '../ui/card'
@@ -27,10 +28,11 @@ interface Props {
   filters: AnalysisFilters
   districts: string[]
   crimeTypes: string[]
+  sources: string[]
   onChange: (filters: AnalysisFilters) => void
 }
 
-export function AnalysisFiltersPanel({ filters, districts, crimeTypes, onChange }: Props) {
+export function AnalysisFiltersPanel({ filters, districts, crimeTypes, sources, onChange }: Props) {
   const activeCount = countActiveFilters(filters)
 
   function toggleRisk(level: RiskLevel) {
@@ -66,7 +68,7 @@ export function AnalysisFiltersPanel({ filters, districts, crimeTypes, onChange 
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <div>
           <Label htmlFor="analysis-district">Distrito</Label>
           <Select
@@ -125,6 +127,22 @@ export function AnalysisFiltersPanel({ filters, districts, crimeTypes, onChange 
             {HOUR_RANGE_OPTIONS.map((option, index) => (
               <option key={option.label} value={index}>
                 {option.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="analysis-source">Fuente</Label>
+          <Select
+            id="analysis-source"
+            value={filters.source}
+            onChange={(event) => onChange({ ...filters, source: event.target.value })}
+          >
+            <option value="">Todas las fuentes</option>
+            {sources.map((source) => (
+              <option key={source} value={source}>
+                {SOURCE_OPTIONS.find((option) => option.value === source)?.label ?? source}
               </option>
             ))}
           </Select>

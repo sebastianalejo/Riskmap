@@ -55,6 +55,12 @@ sys.path.insert(0, str(REPO_ROOT / "functions"))
 
 from crime_ml.validation import LAT_MAX, LAT_MIN, LON_MAX, LON_MIN  # noqa: E402
 
+from derive import (  # noqa: E402
+    arcgis_derive_key,
+    frequency_for,
+    hour_day_for,
+    load_frequency_lookup,
+)
 from taxonomy import classify, load_taxonomy, normalize_district, normalize_modality  # noqa: E402
 
 BASE_URL = (
@@ -62,6 +68,8 @@ BASE_URL = (
     "DATACRIM005_AGS_PUNTOSDELITOS_CIUDADANO/MapServer"
 )
 COORDINATES = f"{LON_MIN},{LAT_MIN},{LON_MAX},{LAT_MAX}"  # xmin,ymin,xmax,ymax (WGS84)
+
+SEVERITY_TO_RISK = {"alta": "alto", "media": "medio", "baja": "bajo"}
 
 # Campos lógicos deseados; se resuelven por capa porque el esquema cambia por año.
 DESIRED_FIELDS = (
@@ -92,14 +100,19 @@ NON_MODALITY_PREFIXES = (
 LIMA_SCOPE_PREFIXES = ("1501", "0701")
 
 COLUMNS = [
-    "occurred_year",
-    "district",
-    "ubigeo",
     "crime_type",
-    "macro_category",
-    "severity_level",
+    "hour",
+    "day_of_week",
+    "district",
     "latitude",
     "longitude",
+    "historical_frequency",
+    "risk_level",
+    "occurred_year",
+    "ubigeo",
+    "macro_category",
+    "severity_level",
+    "source",
 ]
 
 
@@ -243,6 +256,7 @@ def to_row(
     year: int,
     field_map: dict[str, str],
     taxonomy: dict[str, Any],
+    freq_lookup: tuple,
 ) -> dict[str, Any] | None:
     def value(logical: str) -> Any:
         actual = field_map.get(logical)
@@ -275,17 +289,30 @@ def to_row(
         else:
             ubigeo = ""
 
-    return {
+    severity = classification["severity"]
+    row = {
         "occurred_year": int(year),
         "district": normalize_district(value("nombdist")),
         "ubigeo": ubigeo,
         "crime_type": modality,
         "macro_category": macro,
-        "severity_level": classification["severity"],
+        "severity_level": severity,
+        "risk_level": SEVERITY_TO_RISK.get(severity, "medio"),
         "latitude": round(float(latitude), 6),
         "longitude": round(float(longitude), 6),
+        "source": "inei",
         "_denuncia_id": value("id_denuncia"),
     }
+    # Hora, día y frecuencia no vienen en la fuente: se derivan de forma
+    # determinista (mismo registro → mismos valores) para unificar el esquema.
+    hour, day = hour_day_for(arcgis_derive_key(row))
+    row["hour"] = hour
+    row["day_of_week"] = day
+    pair_mean, district_mean, global_mean = freq_lookup
+    row["historical_frequency"] = frequency_for(
+        row["district"], modality, pair_mean, district_mean, global_mean
+    )
+    return row
 
 
 def dedupe_key(row: dict[str, Any]) -> tuple[Any, ...]:
@@ -328,6 +355,7 @@ def main() -> int:
     args = parser.parse_args()
 
     taxonomy = load_taxonomy()
+    freq_lookup = load_frequency_lookup()[:3]
     rng = random.Random(args.seed)
     groups = discover_year_groups()
     print("Años disponibles:", ", ".join(str(year) for year in sorted(groups)))
@@ -369,7 +397,7 @@ def main() -> int:
 
             kept = 0
             for attributes, geometry in records:
-                row = to_row(attributes, geometry, year, field_map, taxonomy)
+                row = to_row(attributes, geometry, year, field_map, taxonomy, freq_lookup)
                 if row is None:
                     continue
                 raw_rows.append(row)

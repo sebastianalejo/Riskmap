@@ -216,6 +216,11 @@ def validate_arcgis_incident_row(row: Any) -> dict[str, Any]:
 
     macro = row.get("macro_category")
     cleaned["macro_category"] = _require_str(macro, "macro_category", max_length=MAX_STR_MACRO) if macro else "otros"
+
+    # `ubigeo` es opcional: se conserva como texto de 6 dígitos (ceros a la izquierda).
+    ubigeo = row.get("ubigeo")
+    if ubigeo not in (None, ""):
+        cleaned["ubigeo"] = str(ubigeo).strip().zfill(6)
     return cleaned
 
 

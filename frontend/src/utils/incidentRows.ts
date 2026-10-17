@@ -17,7 +17,7 @@ export type MapPoint = {
 export const SOURCE_OPTIONS = [
   { value: '', label: 'Todas las fuentes' },
   { value: 'inei', label: 'INEI 2021-2024 (con año)' },
-  { value: 'modalidad', label: 'Modalidad (sin fecha)' },
+  { value: 'modalidad', label: 'INEI 2022 (modalidad)' },
 ] as const
 
 export function sourceLabel(source?: string): string {

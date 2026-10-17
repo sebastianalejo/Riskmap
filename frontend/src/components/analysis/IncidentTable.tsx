@@ -3,11 +3,12 @@ import { useMemo, useState } from 'react'
 import type { AnalysisIncident } from '../../hooks/useIncidentsForAnalysis'
 import { RISK_LABELS, WEEKDAYS, formatInt, type RiskLevel } from '../../utils/analysis'
 import { formatEventTime } from '../../utils/eventTime'
+import { sourceLabel } from '../../utils/incidentRows'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card, CardHeader } from '../ui/card'
 
-type SortKey = 'district' | 'crimeType' | 'eventTime' | 'riskLevel' | 'historicalFrequency'
+type SortKey = 'district' | 'crimeType' | 'eventTime' | 'riskLevel' | 'historicalFrequency' | 'source'
 type SortDir = 'asc' | 'desc'
 
 interface Column {
@@ -33,6 +34,7 @@ const COLUMNS: Column[] = [
     numeric: true,
     title: 'Campo historical_frequency del registro',
   },
+  { key: 'source', label: 'Fuente', numeric: false, title: 'Origen del registro (INEI 2021-2024 o modalidad 2022)' },
 ]
 
 const RISK_RANK: Record<RiskLevel, number> = { bajo: 0, medio: 1, alto: 2 }
@@ -45,6 +47,7 @@ function weekdayIndex(day: string | null): number {
 function compareRows(a: AnalysisIncident, b: AnalysisIncident, key: SortKey): number {
   if (key === 'district') return a.district.localeCompare(b.district, 'es')
   if (key === 'crimeType') return a.crimeType.localeCompare(b.crimeType, 'es')
+  if (key === 'source') return (a.source ?? '').localeCompare(b.source ?? '', 'es')
   if (key === 'riskLevel') {
     return (a.riskLevel ? RISK_RANK[a.riskLevel] : -1) - (b.riskLevel ? RISK_RANK[b.riskLevel] : -1)
   }
@@ -83,7 +86,7 @@ export function IncidentTable({ incidents }: { incidents: AnalysisIncident[] }) 
       return
     }
     setSortKey(key)
-    setSortDir(key === 'district' || key === 'crimeType' || key === 'eventTime' ? 'asc' : 'desc')
+    setSortDir(key === 'district' || key === 'crimeType' || key === 'eventTime' || key === 'source' ? 'asc' : 'desc')
   }
 
   return (
@@ -160,6 +163,9 @@ export function IncidentTable({ incidents }: { incidents: AnalysisIncident[] }) 
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-content-primary">
                     {row.historicalFrequency === null ? '—' : formatInt(row.historicalFrequency)}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-content-secondary">
+                    {sourceLabel(row.source ?? undefined)}
                   </td>
                 </tr>
               ))

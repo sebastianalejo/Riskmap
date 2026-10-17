@@ -58,6 +58,10 @@ export function AnalysisPage() {
     () => uniqueValues(incidents.map((i) => i.crimeType).filter((t) => t !== SIN_TIPO)),
     [incidents],
   )
+  const sources = useMemo(
+    () => uniqueValues(incidents.map((i) => i.source).filter((s): s is string => Boolean(s))),
+    [incidents],
+  )
 
   const filtered = useMemo(() => applyFilters(incidents, filters), [incidents, filters])
   const overview = useMemo(() => computeOverview(filtered), [filtered])
@@ -134,6 +138,7 @@ export function AnalysisPage() {
             filters={filters}
             districts={districts}
             crimeTypes={crimeTypes}
+            sources={sources}
             onChange={setFilters}
           />
 

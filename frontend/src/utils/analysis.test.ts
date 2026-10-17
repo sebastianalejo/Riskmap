@@ -26,6 +26,7 @@ function incident(overrides: Partial<AnalysisIncident> = {}): AnalysisIncident {
     dayOfWeek: 'lunes',
     riskLevel: 'bajo',
     historicalFrequency: 100,
+    source: null,
     ...overrides,
   }
 }

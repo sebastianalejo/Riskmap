@@ -28,6 +28,14 @@ from crime_ml.validation import (  # noqa: E402
     validate_incident_row,
 )
 
+from derive import (  # noqa: E402
+    arcgis_derive_key,
+    frequency_for,
+    hour_day_for,
+    load_frequency_lookup,
+)
+from taxonomy import classify, load_taxonomy  # noqa: E402
+
 COLLECTION = "crime_incidents"
 
 CANONICAL_KEYS = [
@@ -51,10 +59,51 @@ ARCGIS_CANONICAL_KEYS = [
     "source",
 ]
 
+# Esquema unificado: ambas fuentes exponen las mismas columnas. Los campos que
+# la fuente no publica (hora/día/frecuencia en INEI; año/macro en el clásico) se
+# derivan de forma determinista (ver `derive.py`) para poder tratarlas igual.
+UNIFIED_KEYS = [
+    "crime_type",
+    "hour",
+    "day_of_week",
+    "district",
+    "latitude",
+    "longitude",
+    "historical_frequency",
+    "risk_level",
+    "occurred_year",
+    "macro_category",
+    "ubigeo",
+    "severity_level",
+    "source",
+]
+
 ARCGIS_SOURCE = "inei"
 LEGACY_SOURCE = "modalidad"
+# Los puntos del esquema clásico se descargaron del grupo de capas "2022" del
+# INEI (data/raw/inei/points_2022_legacy.csv); el año no venía en el CSV.
+LEGACY_YEAR = 2022
 RISK_LEVELS = ("bajo", "medio", "alto")
 SEVERITY_TO_RISK = {"baja": "bajo", "media": "medio", "alta": "alto"}
+
+_FREQUENCY_LOOKUP: tuple | None = None
+_TAXONOMY: dict | None = None
+
+
+def _frequency_lookup() -> tuple:
+    """Carga (una sola vez) la serie SIDPOL para derivar la frecuencia."""
+    global _FREQUENCY_LOOKUP
+    if _FREQUENCY_LOOKUP is None:
+        _FREQUENCY_LOOKUP = load_frequency_lookup()
+    return _FREQUENCY_LOOKUP
+
+
+def _taxonomy() -> dict:
+    global _TAXONOMY
+    if _TAXONOMY is None:
+        _TAXONOMY = load_taxonomy()
+    return _TAXONOMY
+
 
 
 def fnv1a64_hex(text: str) -> str:
@@ -85,8 +134,12 @@ def detect_schema(columns) -> str:
 
 
 def normalize_row(raw: dict) -> dict:
-    """Misma normalización que hace la interfaz (`toIncident` en DataPage.tsx)."""
-    return {
+    """Misma normalización que hace la interfaz (`toIncident` en DataPage.tsx),
+
+    ampliada al esquema unificado: añade año y macro-categoría para que el
+    esquema clásico exponga las mismas columnas que el v2.
+    """
+    row = {
         "crime_type": str(raw["crime_type"]).strip(),
         "hour": int(float(raw["hour"])),
         "day_of_week": str(raw["day_of_week"]).strip().lower(),
@@ -96,13 +149,46 @@ def normalize_row(raw: dict) -> dict:
         "historical_frequency": int(float(raw["historical_frequency"])),
         "risk_level": str(raw["risk_level"]).strip().lower(),
     }
+    occurred_year = raw.get("occurred_year")
+    row["occurred_year"] = int(float(occurred_year)) if occurred_year not in (None, "") else LEGACY_YEAR
+    row["macro_category"] = classify(row["crime_type"], _taxonomy()).get("macro", "otros")
+    row["source"] = str(raw.get("source") or LEGACY_SOURCE).strip().lower()
+    return row
+
+
+def complete_arcgis_fields(payload: dict) -> dict:
+    """Completa un registro v2 con los campos que la fuente no publica.
+
+    `risk_level` sale de la severidad declarada; `hour`, `day_of_week` y
+    `historical_frequency` se derivan de forma determinista (ver `derive.py`),
+    para que el esquema INEI y el clásico compartan columnas.
+    """
+    severity = str(payload.get("severity_level") or "").strip().lower()
+    if payload.get("risk_level") not in RISK_LEVELS:
+        payload["risk_level"] = SEVERITY_TO_RISK.get(severity, "medio")
+
+    if payload.get("hour") is None:
+        hour, day = hour_day_for(arcgis_derive_key(payload))
+        payload["hour"] = hour
+        payload["day_of_week"] = day
+
+    if payload.get("historical_frequency") is None:
+        pair_mean, district_mean, global_mean, _ = _frequency_lookup()
+        payload["historical_frequency"] = frequency_for(
+            str(payload.get("district", "")),
+            str(payload.get("crime_type", "")),
+            pair_mean,
+            district_mean,
+            global_mean,
+        )
+    return payload
 
 
 def normalize_arcgis_row(raw: dict) -> dict:
-    """Esquema v2: valida y añade la fuente."""
+    """Esquema v2: valida, añade la fuente y completa los campos derivados."""
     cleaned = validate_arcgis_incident_row(raw)
     cleaned["source"] = ARCGIS_SOURCE
-    return cleaned
+    return complete_arcgis_fields(cleaned)
 
 
 def load_rows(csv_path: Path) -> tuple[list[tuple[str, dict]], list[str], str]:

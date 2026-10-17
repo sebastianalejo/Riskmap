@@ -32,7 +32,6 @@ import argparse
 import json
 import random
 import sys
-import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -53,7 +52,6 @@ from taxonomy import classify, load_taxonomy, normalize_district, normalize_moda
 SEVERITY_TO_RISK = {"alta": "alto", "media": "medio", "baja": "bajo"}
 DEFAULT_HOURS = [20, 21, 22, 23, 20, 21, 22, 7, 8, 20, 21, 23, 22, 20, 0, 21, 22, 23, 19, 20]
 DEFAULT_DAYS = ["viernes", "sábado", "viernes", "domingo", "jueves", "sábado", "viernes", "lunes"]
-SIDPOL_CSV = REPO_ROOT / "data" / "processed" / "sidpol_monthly_lima.csv"
 SCOPE_PREFIXES = ("1501", "0701")
 CSV_COLUMNS = [
     "crime_type",
@@ -67,74 +65,17 @@ CSV_COLUMNS = [
 ]
 
 
-def _plain(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", str(text).strip().lower())
-    return " ".join("".join(ch for ch in decomposed if not unicodedata.combining(ch)).split())
-
-
-def sidpol_modality_key(crime_type: str) -> str:
-    """Mapea la modalidad de la taxonomía a una modalidad de la serie SIDPOL."""
-    value = _plain(crime_type)
-    if "robo" in value:
-        return "robo"
-    if "hurto" in value:
-        return "hurto"
-    if "estafa" in value or "defraud" in value:
-        return "estafa"
-    if "extorsion" in value:
-        return "extorsion"
-    if "secuestro" in value:
-        return "secuestro"
-    return "otros"
-
-
-def load_frequency_lookup() -> tuple[dict[tuple[str, str], float], dict[str, float], float, dict[str, str]]:
-    """Media mensual real (últimos 24 meses) por (distrito, modalidad), por distrito,
-    y el mapa ubigeo→distrito canónico (nombres consistentes con SIDPOL)."""
-    if not SIDPOL_CSV.exists():
-        raise SystemExit(
-            "Falta data/processed/sidpol_monthly_lima.csv. "
-            "Ejecuta primero: python scripts/pipeline/ingest_sidpol.py"
-        )
-    frame = pd.read_csv(SIDPOL_CSV, dtype={"ubigeo": str})
-    frame["period"] = frame["year"] * 100 + frame["month"]
-    last_two = sorted(frame["period"].unique())[-24:]
-    frame = frame[frame["period"].isin(last_two)]
-
-    pairs: dict[tuple[str, str], float] = {}
-    districts: dict[str, float] = {}
-    ubigeo_names: dict[str, str] = {}
-    for _, row in frame.iterrows():
-        district = str(row["district"])
-        ubigeo = str(row["ubigeo"]).zfill(6)
-        ubigeo_names.setdefault(ubigeo, district)
-        for modality in ("robo", "hurto", "estafa", "extorsion", "secuestro", "violencia_mujer", "otros"):
-            count = float(row.get(modality, 0) or 0)
-            key = (district, modality)
-            pairs[key] = pairs.get(key, 0.0) + count
-        districts[district] = districts.get(district, 0.0) + float(row.get("total", 0) or 0)
-
-    months = max(1, len(last_two))
-    pair_mean = {key: value / months for key, value in pairs.items()}
-    district_mean = {key: value / months for key, value in districts.items()}
-    global_mean = sum(district_mean.values()) / max(1, len(district_mean)) if district_mean else 100.0
-    return pair_mean, district_mean, global_mean, ubigeo_names
-
-
-def frequency_for(district: str, crime_type: str, pair_mean, district_mean, global_mean) -> int:
-    value = pair_mean.get((district, sidpol_modality_key(crime_type)))
-    if value is None:
-        value = district_mean.get(district)
-    if value is None or value <= 0:
-        value = global_mean
-    return max(1, int(round(value)))
-
-
-def hour_day_for(denuncia_id: int, modality_key: str) -> tuple[int, str]:
-    """Hora y día deterministas a partir del ID de denuncia (idempotencia)."""
-    hour = DEFAULT_HOURS[denuncia_id % len(DEFAULT_HOURS)]
-    day = DEFAULT_DAYS[(denuncia_id + 7) % len(DEFAULT_DAYS)]
-    return hour, day
+# La derivación de hora/día/frecuencia vive en `derive.py` para compartirla con
+# el resto del pipeline (esquema unificado). Aquí se re-exporta para conservar
+# la interfaz histórica de este módulo.
+from derive import (  # noqa: E402,F401
+    DEFAULT_DAYS,
+    DEFAULT_HOURS,
+    frequency_for,
+    hour_day_for,
+    load_frequency_lookup,
+    sidpol_modality_key,
+)
 
 
 def main() -> int:

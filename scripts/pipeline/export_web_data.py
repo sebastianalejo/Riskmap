@@ -38,12 +38,13 @@ sys.path.insert(0, str(PIPELINE_DIR))
 
 from incidents_dataset import (  # noqa: E402
     LEGACY_SOURCE,
+    complete_arcgis_fields,
     int_or_none,
     load_rows,
     risk_level,
 )
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 RISK_ORDER = ["bajo", "medio", "alto"]
 RISK_INDEX = {risk: index for index, risk in enumerate(RISK_ORDER)}
 MODALITIES = ["estafa", "extorsion", "hurto", "otros", "robo", "secuestro", "violencia_mujer"]
@@ -69,6 +70,7 @@ ANALYSIS_COLUMNS = [
     "dayOfWeek",
     "riskLevel",
     "historicalFrequency",
+    "source",
 ]
 MONTHLY_COLUMNS = ["year", "month", "ubigeo", "district", "total", "porModalidad"]
 
@@ -171,6 +173,7 @@ def build_analysis_rows(rows: list[tuple[str, dict]]) -> list[list]:
                 str(payload.get("day_of_week") or "").strip().lower() or None,
                 risk_level(payload),
                 int_or_none(payload.get("historical_frequency")),
+                _source_name(payload),
             ]
         )
     return incidents
@@ -243,6 +246,9 @@ def payload_from_firestore(data: dict) -> dict | None:
         payload["source"] = source.strip()
     else:
         payload["source"] = "inei" if data.get("occurred_year") is not None else LEGACY_SOURCE
+    # Esquema v2 en Firestore: completa hora/día/frecuencia/riesgo derivados.
+    if payload.get("occurred_year") is not None:
+        complete_arcgis_fields(payload)
     return payload
 
 

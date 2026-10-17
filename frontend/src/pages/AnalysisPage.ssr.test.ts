@@ -14,6 +14,7 @@ const { state, DATA } = vi.hoisted(() => {
       dayOfWeek: 'viernes',
       riskLevel: 'alto',
       historicalFrequency: 120,
+      source: 'inei',
     },
     {
       id: '2',
@@ -24,6 +25,7 @@ const { state, DATA } = vi.hoisted(() => {
       dayOfWeek: 'sábado',
       riskLevel: 'medio',
       historicalFrequency: 150,
+      source: 'inei',
     },
     {
       id: '3',
@@ -34,6 +36,7 @@ const { state, DATA } = vi.hoisted(() => {
       dayOfWeek: 'lunes',
       riskLevel: 'alto',
       historicalFrequency: 230,
+      source: 'modalidad',
     },
   ]
   return { state: { incidents: DATA as typeof DATA | [], isAdmin: false }, DATA }

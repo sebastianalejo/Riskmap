@@ -17,6 +17,7 @@ import {
   truncateLabel,
   type AnalysisFilters,
 } from '../../utils/analysis'
+import { SOURCE_OPTIONS } from '../../utils/incidentRows'
 import { Button } from '../ui/button'
 import { useToast } from '../ui/toast'
 
@@ -26,12 +27,15 @@ function filterSummary(filters: AnalysisFilters): { label: string; value: string
     filters.risks.length === RISK_LEVELS.length
       ? 'Todos'
       : filters.risks.map((level) => RISK_LABELS[level]).join(', ') || 'Ninguno'
+  const sourceLabel =
+    SOURCE_OPTIONS.find((option) => option.value === filters.source)?.label ?? 'Todas las fuentes'
   return [
     { label: 'Distrito', value: filters.district || 'Todos' },
     { label: 'Tipo de delito', value: filters.crimeType || 'Todos' },
     { label: 'Día', value: filters.dayOfWeek ? WEEKDAY_LABELS[filters.dayOfWeek] : 'Todos' },
     { label: 'Franja', value: hourLabel },
     { label: 'Riesgo', value: risks },
+    { label: 'Fuente', value: sourceLabel },
   ]
 }
 

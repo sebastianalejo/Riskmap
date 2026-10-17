@@ -8,7 +8,6 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Select } from '../components/ui/input'
 import { useAuth } from '../context/AuthContext'
-import { CRIME_TYPES, DISTRICTS } from '../data/sampleIncidents'
 import { getGoogleMapsApiKey } from '../firebase/client'
 import { useCrimeIncidentsForMap, type MapPoint } from '../hooks/useCrimeIncidentsForMap'
 import { useCrimeStatsMonthly } from '../hooks/useCrimeStatsMonthly'
@@ -28,9 +27,6 @@ const RISK_CHIP_ACTIVE: Record<RiskLevel, string> = {
 }
 const RISK_CHIP_IDLE =
   'text-content-muted ring-line-subtle hover:text-content-secondary hover:ring-line-strong'
-
-const CRIME_LABELS = CRIME_TYPES.map((c) => c.type)
-const DISTRICT_NAMES = [...DISTRICTS].sort((a, b) => a.name.localeCompare(b.name)).map((d) => d.name)
 
 const HOUR_LABELS = ['Todas', 'Madrugada (0–5)', 'Mañana (6–11)', 'Tarde (12–17)', 'Noche (18–23)']
 const HOUR_RANGES: Array<[number, number] | null> = [null, [0, 5], [6, 11], [12, 17], [18, 23]]
@@ -104,6 +100,22 @@ export function MapPage() {
     () =>
       [...new Set(allPoints.map((p) => p.year).filter((y): y is number => typeof y === 'number'))].sort(
         (a, b) => b - a,
+      ),
+    [allPoints],
+  )
+
+  // ── Catálogos de filtros derivados del dataset (ambas fuentes) ────
+  const crimeLabels = useMemo(
+    () =>
+      [...new Set(allPoints.map((p) => p.crimeType).filter((t): t is string => Boolean(t)))].sort(
+        (a, b) => a.localeCompare(b, 'es'),
+      ),
+    [allPoints],
+  )
+  const districtNames = useMemo(
+    () =>
+      [...new Set(allPoints.map((p) => p.district).filter((d): d is string => Boolean(d)))].sort(
+        (a, b) => a.localeCompare(b, 'es'),
       ),
     [allPoints],
   )
@@ -235,7 +247,7 @@ export function MapPage() {
                 aria-label="Filtrar por tipo de delito"
               >
                 <option value="">Todos los tipos</option>
-                {CRIME_LABELS.map((c) => (
+                {crimeLabels.map((c) => (
                   <option key={c} value={c}>
                     {c.charAt(0).toUpperCase() + c.slice(1)}
                   </option>
@@ -255,7 +267,7 @@ export function MapPage() {
                 aria-label="Filtrar por distrito"
               >
                 <option value="">Todos los distritos</option>
-                {DISTRICT_NAMES.map((d) => (
+                {districtNames.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>

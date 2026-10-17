@@ -68,6 +68,8 @@ export interface AnalysisFilters {
   /** Índice dentro de `HOUR_RANGE_OPTIONS` (0 = todas). */
   hourRange: number
   risks: RiskLevel[]
+  /** Fuente de los datos (`inei`, `modalidad`) o cadena vacía = todas. */
+  source: string
 }
 
 export function createDefaultFilters(): AnalysisFilters {
@@ -77,6 +79,7 @@ export function createDefaultFilters(): AnalysisFilters {
     dayOfWeek: '',
     hourRange: 0,
     risks: [...RISK_LEVELS],
+    source: '',
   }
 }
 
@@ -86,6 +89,7 @@ export function countActiveFilters(filters: AnalysisFilters): number {
   if (filters.crimeType) count++
   if (filters.dayOfWeek) count++
   if (filters.hourRange > 0) count++
+  if (filters.source) count++
   if (filters.risks.length < RISK_LEVELS.length) count++
   return count
 }
@@ -99,6 +103,7 @@ export function applyFilters(
     if (filters.district && incident.district !== filters.district) return false
     if (filters.crimeType && incident.crimeType !== filters.crimeType) return false
     if (filters.dayOfWeek && incident.dayOfWeek !== filters.dayOfWeek) return false
+    if (filters.source && incident.source !== filters.source) return false
     if (range) {
       if (incident.hour === null) return false
       if (incident.hour < range[0] || incident.hour > range[1]) return false

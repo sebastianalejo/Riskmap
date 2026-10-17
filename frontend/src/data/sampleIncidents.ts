@@ -7,6 +7,12 @@ export type CrimeIncident = {
   longitude: number
   historical_frequency: number
   risk_level: 'bajo' | 'medio' | 'alto'
+  /** Campos opcionales del esquema unificado (INEI 2021-2024). */
+  occurred_year?: number
+  macro_category?: string
+  ubigeo?: string
+  severity_level?: 'baja' | 'media' | 'alta'
+  source?: string
 }
 
 const DAYS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'] as const

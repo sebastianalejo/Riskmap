@@ -35,6 +35,31 @@ Cobertura del muestreo 2021–2024: **5 977 filas**, 49 distritos, 15 modalidade
 (2021: 1 584 · 2022: 1 594 · 2023: 1 158 · 2024: 1 641). Detalles completos en
 `quality_report.json`.
 
+### Esquema unificado
+
+Ambas fuentes (INEI 2021-2024 y los puntos clásicos 2022) comparten las mismas
+columnas en el dataset canónico y en los JSON publicados:
+
+```
+crime_type, hour, day_of_week, district, latitude, longitude,
+historical_frequency, risk_level,          # núcleo
+occurred_year, macro_category, ubigeo, severity_level, source   # INEI
+```
+
+Los campos que la fuente **no publica** se derivan de forma determinista para
+que ambas fuentes se traten igual (ver `scripts/pipeline/derive.py`):
+
+- `hour` y `day_of_week` de los puntos INEI 2021-2024: derivados del contenido
+  del registro (mismo registro → mismos valores → publicación idempotente).
+- `historical_frequency`: media mensual **real** de SIDPOL/MININTER (últimos 24
+  meses) por distrito y modalidad, con respaldo por distrito y global.
+- `risk_level`: severidad declarada de la taxonomía (`severity_level` → riesgo)
+  para INEI; `risk_level` propio en el esquema clásico.
+- `occurred_year` del esquema clásico: 2022 (grupo de capas del que se descargó).
+
+**Son valores estimados, no observados** (la fuente INEI no publica hora/día):
+se etiquetan con `source` y se documentan en `MODEL_CARD.md`.
+
 ## Regenerar
 
 Desde la raíz del repositorio:
@@ -143,13 +168,17 @@ python scripts/pipeline/upload_incidents.py --csv data/processed/incidents_lima.
 
 - `upload_incidents.py` **detecta el esquema** del CSV: si trae `occurred_year` y `severity_level`
   usa el esquema v2 (núcleo `crime_type`, `district`, `latitude`, `longitude` + `occurred_year`,
-  `severity_level`, `macro_category` y `source="inei"`); si no, el clásico de 8 columnas.
+  `severity_level`, `macro_category` y `source="inei"`); si no, el clásico de 8 columnas. En
+  ambos casos se completa el **esquema unificado** (ver «Esquema unificado»): a los puntos v2 se
+  les derivan hora, día y frecuencia, y al clásico se le añade el año y la macro-categoría.
 - IDs deterministas propios (`arc_<hex>`, FNV-1a 64 sobre las 8 claves v2): reimportar **no
-  duplica**. La app colorea por severidad (alta→alto, media→medio, baja→bajo), habilita el
-  **filtro por año** y muestra el año en los popups.
-- Las reglas de Firestore siguen exigiendo el esquema clásico para escrituras **desde el
-  navegador**; los documentos v2 los escribe el pipeline con el Admin SDK y no pasan por reglas
-  (la lectura sí está cubierta por `isSignedIn`).
+  duplica**. La app colorea **todos** los puntos por riesgo (alta→alto, media→medio, baja→bajo),
+  distingue los INEI con un borde azul, habilita el **filtro por año** y muestra el nivel de
+  riesgo, el año y la fuente en los popups.
+- Desde la Fase del esquema unificado, `firestore.rules` admite las 13 columnas
+  (`hasOnly`): las 8 del núcleo son obligatorias y las de INEI
+  (`occurred_year`, `macro_category`, `ubigeo`, `severity_level`, `source`) son opcionales pero
+  validadas si vienen. Así la importación desde el navegador y el pipeline comparten el esquema.
 
 ### Publicación de datos (JSON) y consultas del mapa
 

@@ -13,7 +13,7 @@ import type { MapPoint, RiskLevel } from '../utils/incidentRows'
 import type { MonthlyStat } from '../utils/monthlyStats'
 
 const DATA_BASE = '/data'
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
 
 export type AnalysisRiskLevel = RiskLevel
 
@@ -29,6 +29,8 @@ export type AnalysisIncident = {
   dayOfWeek: string | null
   riskLevel: AnalysisRiskLevel | null
   historicalFrequency: number | null
+  /** Origen del registro: `inei` (2021-2024) o `modalidad` (clásico). */
+  source: string | null
 }
 
 export type PublishedFile = {
@@ -111,7 +113,7 @@ export function toMapPoint(row: unknown): MapPoint | null {
 /** Convierte una fila compacta del análisis en `AnalysisIncident`. */
 export function toAnalysisIncident(row: unknown): AnalysisIncident | null {
   if (!Array.isArray(row) || row.length < 8) return null
-  const [id, district, crimeType, year, hour, dayOfWeek, riskLevel, historicalFrequency] = row
+  const [id, district, crimeType, year, hour, dayOfWeek, riskLevel, historicalFrequency, source] = row
   return {
     id: String(id),
     district: asString(district) ?? 'Sin distrito',
@@ -121,6 +123,7 @@ export function toAnalysisIncident(row: unknown): AnalysisIncident | null {
     dayOfWeek: asString(dayOfWeek)?.toLowerCase() ?? null,
     riskLevel: asRisk(riskLevel),
     historicalFrequency: asNumber(historicalFrequency),
+    source: asString(source),
   }
 }
 

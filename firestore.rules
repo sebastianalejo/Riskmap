@@ -8,17 +8,57 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Claim personalizado `admin` (ver scripts/set-admin-claim.py y README §9.1).
-    function isAdmin() {
-      return isSignedIn() && request.auth.token.get('admin', false) == true;
+    function userPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
     }
 
-    // Forma válida de un incidente: exactamente las 8 columnas del esquema,
-    // con tipos y rangos razonables para Lima Metropolitana.
+    function hasProfile() {
+      return isSignedIn() && exists(userPath());
+    }
+
+    function profile() {
+      return get(userPath()).data;
+    }
+
+    // Rol `admin`: fuente de verdad en `users/{uid}.role` (se gestiona desde la
+    // sección Usuarios del panel, sin Cloud Functions). Se mantiene un puente
+    // temporal con el claim `admin` heredado (scripts/set-admin-claim.py) para
+    // no dejar sin acceso a las cuentas admin anteriores a la migración.
+    function isAdmin() {
+      return isSignedIn()
+        && ((hasProfile() && profile().role == 'admin')
+            || request.auth.token.get('admin', false) == true);
+    }
+
+    // Las cuentas deshabilitadas (baja lógica) pierden lectura y escritura.
+    // Sin perfil (nunca inició sesión) se asume activa.
+    function isActive() {
+      return !hasProfile() || profile().get('disabled', false) != true;
+    }
+
+    function canReadData() {
+      return isSignedIn() && isActive();
+    }
+
+    // Campos admitidos en `users/{uid}`.
+    function isValidProfile() {
+      return request.resource.data.keys().hasOnly([
+          'email', 'displayName', 'role', 'disabled',
+          'createdAt', 'lastLoginAt', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.role in ['admin', 'user']
+        && request.resource.data.email is string;
+    }
+
+    // Forma válida de un incidente: las 13 columnas del esquema unificado. Las
+    // 8 del núcleo son obligatorias (tipos y rangos para Lima Metropolitana) y
+    // las de INEI (`occurred_year`, `macro_category`, `ubigeo`, `severity_level`,
+    // `source`) son opcionales, pero si vienen deben ser válidas.
     function isValidIncident(data) {
       return data.keys().hasOnly([
           'crime_type', 'hour', 'day_of_week', 'district',
-          'latitude', 'longitude', 'historical_frequency', 'risk_level'
+          'latitude', 'longitude', 'historical_frequency', 'risk_level',
+          'occurred_year', 'macro_category', 'ubigeo', 'severity_level', 'source'
         ])
         && data.crime_type is string
         && data.crime_type.size() > 0 && data.crime_type.size() <= 60
@@ -33,22 +73,64 @@ service cloud.firestore {
         && data.longitude >= -77.5 && data.longitude <= -76.5
         && data.historical_frequency is number
         && data.historical_frequency >= 1 && data.historical_frequency <= 1000000
-        && data.risk_level in ['bajo', 'medio', 'alto'];
+        && data.risk_level in ['bajo', 'medio', 'alto']
+        && (!data.keys().hasAny(['occurred_year'])
+            || (data.occurred_year is int && data.occurred_year >= 2000 && data.occurred_year <= 2100))
+        && (!data.keys().hasAny(['macro_category'])
+            || (data.macro_category is string && data.macro_category.size() <= 80))
+        && (!data.keys().hasAny(['ubigeo'])
+            || (data.ubigeo is string && data.ubigeo.size() <= 6))
+        && (!data.keys().hasAny(['severity_level'])
+            || data.severity_level in ['baja', 'media', 'alta'])
+        && (!data.keys().hasAny(['source'])
+            || (data.source is string && data.source.size() <= 40));
     }
 
-    // Delitos históricos: lectura para usuarios autenticados;
-    // creación, actualización y borrado solo para cuentas con claim `admin`,
+    // ── Perfiles de cuenta (rol, estado y actividad) ──────────────────────
+    match /users/{uid} {
+      function isSelf() {
+        return isSignedIn() && request.auth.uid == uid;
+      }
+
+      // Lectura: el propio usuario o un administrador.
+      allow read: if isSelf() || isAdmin();
+
+      // Alta: uno mismo (siempre como `user`, con el correo de su token) o un
+      // administrador (alta de cuentas desde el panel con app secundaria).
+      allow create: if (isSelf()
+                        && request.resource.data.role == 'user'
+                        && request.resource.data.get('disabled', false) == false
+                        && request.resource.data.email == request.auth.token.email
+                        && isValidProfile())
+                    || (isAdmin() && isValidProfile());
+
+      // Edición: el propio usuario solo campos no sensibles; un administrador
+      // puede cambiar rol/estado de otras cuentas, pero nadie se degrada a sí
+      // mismo (evita quedarse sin ningún admin activo por error).
+      allow update: if (isSelf()
+                        && !request.resource.data.diff(resource.data).affectedKeys()
+                              .hasAny(['role', 'disabled', 'email', 'createdAt'])
+                        && isValidProfile())
+                    || (isAdmin()
+                        && request.auth.uid != uid
+                        && isValidProfile());
+
+      allow delete: if isAdmin() && request.auth.uid != uid;
+    }
+
+    // Delitos históricos: lectura para usuarios autenticados y activos;
+    // creación, actualización y borrado solo para cuentas admin activas,
     // y solo si el documento cumple el esquema (hasOnly + tipos + rangos).
     match /crime_incidents/{docId} {
-      allow read: if isSignedIn();
-      allow create, update: if isAdmin() && isValidIncident(request.resource.data);
-      allow delete: if isAdmin();
+      allow read: if canReadData();
+      allow create, update: if isAdmin() && isActive() && isValidIncident(request.resource.data);
+      allow delete: if isAdmin() && isActive();
     }
 
-    // Serie mensual real SIDPOL (Oleada 1): solo lectura para usuarios autenticados.
+    // Serie mensual real SIDPOL (Oleada 1): solo lectura para usuarios activos.
     // La escribe el pipeline offline con el Admin SDK (no pasa por reglas).
     match /crime_stats_monthly/{docId} {
-      allow read: if isSignedIn();
+      allow read: if canReadData();
       allow write: if false;
     }
 

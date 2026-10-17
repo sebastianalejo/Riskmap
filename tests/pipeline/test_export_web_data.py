@@ -61,7 +61,7 @@ def test_exporta_manifest_json_y_reporte(tmp_path):
     assert code == 0
 
     manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["schemaVersion"] == 1
+    assert manifest["schemaVersion"] == 2
     # 2 legacy válidas (una duplicada) + 2 v2 = 4 incidentes publicados.
     assert manifest["counts"]["incidents"] == 4
     assert manifest["counts"]["sources"] == {"modalidad": 2, "inei": 2}
@@ -78,12 +78,23 @@ def test_exporta_manifest_json_y_reporte(tmp_path):
     inei = next(row for row in map_payload["points"] if row[6] == "inei" and row[4] == "robo agravado")
     assert inei[5] == "alto"  # severity_level "alta" → "alto"
     assert inei[7] == 2024
+    # Esquema unificado: el punto INEI también trae hora y día derivados.
+    assert inei[8] is not None and 0 <= inei[8] <= 23
+    assert inei[9] in ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+    legacy_point = next(row for row in map_payload["points"] if row[6] == "modalidad")
+    assert legacy_point[7] == 2022  # año del grupo legacy
 
     analysis_payload = json.loads(
         (out / manifest["files"]["analysis"]["name"]).read_text(encoding="utf-8")
     )
     assert analysis_payload["columns"][3] == "year"
+    assert analysis_payload["columns"][8] == "source"
     assert any(row[3] == 2024 for row in analysis_payload["incidents"])
+    assert {row[8] for row in analysis_payload["incidents"]} == {"inei", "modalidad"}
+    # La frecuencia histórica derivada es un entero ≥ 1 para ambas fuentes.
+    assert all(
+        isinstance(row[7], int) and row[7] >= 1 for row in analysis_payload["incidents"]
+    )
 
     monthly_payload = json.loads(
         (out / manifest["files"]["monthly"]["name"]).read_text(encoding="utf-8")

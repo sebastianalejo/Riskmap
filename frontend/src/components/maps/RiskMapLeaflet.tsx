@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaf
 import { useTheme } from '../../context/ThemeContext'
 import type { MapPoint } from '../../hooks/useCrimeIncidentsForMap'
 import { formatEventTime } from '../../utils/eventTime'
+import { sourceLabel } from '../../utils/incidentRows'
 import { resolveRiskColors, riskDotColor } from './riskColors'
 
 const LIMA_CENTER: [number, number] = [-12.0464, -77.0428]
@@ -55,19 +56,19 @@ export function RiskMapLeaflet({ points }: Props) {
           <CircleMarker
             key={p.id}
             center={[p.lat, p.lng]}
-            radius={p.source === 'inei' ? 8 : 9}
+            radius={9}
             pathOptions={{
-              color: '#ffffff',
-              weight: 2,
-              fillColor: p.source === 'inei' ? colors.info : riskDotColor(p.riskLevel, colors),
+              // Color de relleno = nivel de riesgo para todas las fuentes; el
+              // borde azul distingue visualmente los puntos INEI.
+              color: p.source === 'inei' ? colors.info : '#ffffff',
+              weight: p.source === 'inei' ? 2.5 : 2,
+              fillColor: riskDotColor(p.riskLevel, colors),
               fillOpacity: 0.9,
             }}
           >
             <Popup>
               <div className="text-xs">
-                {p.source === 'inei' && (
-                  <p className="mb-1 font-semibold text-info">INEI DataCrime / ArcGIS</p>
-                )}
+                <p className="mb-1 font-semibold text-info">{sourceLabel(p.source)}</p>
                 {p.crimeType && <p className="font-medium">{p.crimeType}</p>}
                 {p.district && <p className="text-content-secondary">{p.district}</p>}
                 {(p.year !== undefined || p.hour !== undefined || p.dayOfWeek) && (
@@ -75,9 +76,9 @@ export function RiskMapLeaflet({ points }: Props) {
                     Fecha y hora: {formatEventTime({ year: p.year, dayOfWeek: p.dayOfWeek, hour: p.hour })}
                   </p>
                 )}
-                {p.source === 'firestore' && p.riskLevel && (
+                {p.riskLevel && (
                   <p className="mt-1">
-                    Riesgo: <strong>{p.riskLevel}</strong>
+                    Riesgo: <strong className="capitalize">{p.riskLevel}</strong>
                   </p>
                 )}
                 <p className="font-mono text-[10px] text-content-muted">

@@ -76,12 +76,24 @@ function validateRow(row: Record<string, unknown>): string | null {
   if (!(RISK_LEVELS as readonly string[]).includes(risk))
     return `risk_level debe ser bajo, medio o alto (fila tiene: "${String(row.risk_level)}")`
 
+  // Campos opcionales del esquema unificado: si vienen, se validan.
+  if (row.occurred_year !== undefined && String(row.occurred_year).trim() !== '') {
+    const year = Number(row.occurred_year)
+    if (!Number.isInteger(year) || year < 2000 || year > 2100)
+      return 'occurred_year debe ser un entero entre 2000 y 2100'
+  }
+  if (row.severity_level !== undefined && String(row.severity_level).trim() !== '') {
+    const severity = String(row.severity_level).trim().toLowerCase()
+    if (!['baja', 'media', 'alta'].includes(severity))
+      return 'severity_level debe ser baja, media o alta'
+  }
+
   return null
 }
 
-/** Normaliza la fila a exactamente las 8 columnas del esquema (las reglas exigen hasOnly). */
+/** Normaliza la fila a las columnas del esquema unificado (núcleo + extras). */
 function toIncident(row: Record<string, unknown>): CrimeIncident {
-  return {
+  const incident: CrimeIncident = {
     crime_type: String(row.crime_type).trim(),
     hour: Number(row.hour),
     day_of_week: String(row.day_of_week).trim().toLowerCase(),
@@ -91,6 +103,22 @@ function toIncident(row: Record<string, unknown>): CrimeIncident {
     historical_frequency: Number(row.historical_frequency),
     risk_level: String(row.risk_level).trim().toLowerCase() as CrimeIncident['risk_level'],
   }
+  if (row.occurred_year !== undefined && String(row.occurred_year).trim() !== '') {
+    incident.occurred_year = Number(row.occurred_year)
+  }
+  if (row.macro_category !== undefined && String(row.macro_category).trim() !== '') {
+    incident.macro_category = String(row.macro_category).trim()
+  }
+  if (row.ubigeo !== undefined && String(row.ubigeo).trim() !== '') {
+    incident.ubigeo = String(row.ubigeo).trim()
+  }
+  if (row.severity_level !== undefined && String(row.severity_level).trim() !== '') {
+    incident.severity_level = String(row.severity_level).trim().toLowerCase() as CrimeIncident['severity_level']
+  }
+  if (row.source !== undefined && String(row.source).trim() !== '') {
+    incident.source = String(row.source).trim().toLowerCase()
+  }
+  return incident
 }
 
 interface ParsedRow {

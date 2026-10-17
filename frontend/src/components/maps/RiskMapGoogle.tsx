@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import type { MapPoint } from '../../hooks/useCrimeIncidentsForMap'
 import { formatEventTime } from '../../utils/eventTime'
+import { sourceLabel } from '../../utils/incidentRows'
 import { resolveRiskColors, riskDotColor } from './riskColors'
 
 const containerStyle = { width: '100%', height: '100%' }
@@ -79,11 +80,12 @@ export function RiskMapGoogle({ apiKey, points }: Props) {
         title: [point.crimeType, point.district].filter(Boolean).join(' · '),
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: point.source === 'inei' ? 8 : 9,
-          fillColor: point.source === 'inei' ? colors.info : riskDotColor(point.riskLevel, colors),
+          scale: 9,
+          // Relleno = riesgo (igual para ambas fuentes); borde azul para INEI.
+          fillColor: riskDotColor(point.riskLevel, colors),
           fillOpacity: 0.95,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
+          strokeColor: point.source === 'inei' ? colors.info : '#ffffff',
+          strokeWeight: point.source === 'inei' ? 2.5 : 2,
         },
       })
       marker.addListener('click', () => setSelected(point))
@@ -140,9 +142,7 @@ export function RiskMapGoogle({ apiKey, points }: Props) {
             onCloseClick={() => setSelected(null)}
           >
             <div className="text-xs">
-              {selectedPoint.source === 'inei' && (
-                <p className="mb-1 font-semibold text-info">INEI DataCrime / ArcGIS</p>
-              )}
+              <p className="mb-1 font-semibold text-info">{sourceLabel(selectedPoint.source)}</p>
               {selectedPoint.crimeType && <p className="font-medium">{selectedPoint.crimeType}</p>}
               {selectedPoint.district && (
                 <p className="text-content-secondary">{selectedPoint.district}</p>
@@ -159,9 +159,9 @@ export function RiskMapGoogle({ apiKey, points }: Props) {
                   })}
                 </p>
               )}
-              {selectedPoint.source === 'firestore' && selectedPoint.riskLevel && (
+              {selectedPoint.riskLevel && (
                 <p className="mt-1">
-                  Riesgo: <strong>{selectedPoint.riskLevel}</strong>
+                  Riesgo: <strong className="capitalize">{selectedPoint.riskLevel}</strong>
                 </p>
               )}
               <p className="font-mono text-[10px] text-content-muted">
