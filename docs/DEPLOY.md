@@ -165,7 +165,8 @@ cd ..
 firebase deploy --only hosting
 ```
 
-> Si importaste datos desde `/datos` (Firestore), repite el export para que aparezcan en la app.
+> Si importaste datos desde `/datos` (Firestore), repite el export con
+> `python scripts/pipeline/export_web_data.py --from-firestore` para que aparezcan en la app.
 
 ## 8. Verificación rápida (con un usuario autenticado)
 

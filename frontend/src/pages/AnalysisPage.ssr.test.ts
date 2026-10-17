@@ -51,7 +51,6 @@ vi.mock('../context/AuthContext', () => ({
 }))
 
 vi.mock('../hooks/useIncidentsForAnalysis', () => ({
-  ANALYSIS_MAX_DOCS: 5000,
   useIncidentsForAnalysis: () => ({
     incidents: state.incidents,
     loading: false,

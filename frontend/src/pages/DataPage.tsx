@@ -361,8 +361,10 @@ export function DataPage() {
           Esta pantalla escribe en Firestore como <strong>borrador</strong>. El Resumen, el Mapa y el
           Análisis leen el dataset publicado en{' '}
           <code className="font-mono text-xs">/data</code>; para publicar lo importado ejecuta{' '}
-          <code className="font-mono text-xs">python scripts/pipeline/export_web_data.py</code> y
-          despliega Hosting (<code className="font-mono text-xs">firebase deploy --only hosting</code>).
+          <code className="font-mono text-xs">
+            python scripts/pipeline/export_web_data.py --from-firestore
+          </code>{' '}
+          y despliega Hosting (<code className="font-mono text-xs">firebase deploy --only hosting</code>).
         </p>
       </div>
 

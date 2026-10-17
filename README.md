@@ -22,7 +22,7 @@ Todo el estado compartido vive en **Firestore** (base de datos NoSQL de Firebase
 | **Vite** | Servidor de desarrollo y build (`tsc -b && vite build`). |
 | **Tailwind CSS 4** (plugin `@tailwindcss/vite`) | Estilos utilitarios. |
 | **React Router 7** | Rutas: `/login`, `/` (resumen), `/analisis` (analista), `/prediccion`, `/mapa`; solo admin: `/datos` (importar datos) y `/usuarios`. |
-| **Firebase JS SDK 11** | `Auth` (login), `Firestore` (lectura/escritura de incidentes). |
+| **Firebase JS SDK 11** | `Auth` (login), `Firestore` (escritura/borrador en `/datos`; la lectura del mapa/análisis llega del JSON publicado en Hosting). |
 | **Leaflet + react-leaflet** | Mapa de riesgo por defecto (no requiere API key). |
 | **@react-google-maps/api** | Mapa alternativo si se define una Google Maps API key. |
 | **lucide-react** | Iconografía. |
@@ -398,6 +398,9 @@ El modelo ML espera las variables `FEATURES` y el objetivo `TARGET` definidos en
 > `python scripts/pipeline/export_web_data.py --check` (o `npm run data:check`) valida el
 > manifest y los archivos. El formato lo consume [`frontend/src/data/published.ts`](frontend/src/data/published.ts)
 > y el reporte de conteos queda en `frontend/public/data/export_report.json`.
+> Si importaste registros desde `/datos`, publícalos con
+> `python scripts/pipeline/export_web_data.py --from-firestore` (lee Firestore una vez con el
+> Admin SDK).
 
 ### 9.1 Permisos de administrador (claim `admin`)
 

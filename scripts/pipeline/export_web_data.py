@@ -208,6 +208,118 @@ def load_monthly(monthly_path: Path) -> tuple[list[list], dict]:
     return rows, {"report": report, "errors": errors}
 
 
+def payload_from_firestore(data: dict) -> dict | None:
+    """Convierte un documento de `crime_incidents` al payload normalizado del exportador."""
+    crime_type = str(data.get("crime_type") or "").strip()
+    district = str(data.get("district") or "").strip()
+    if not crime_type or not district:
+        return None
+    try:
+        latitude = float(data.get("latitude"))
+        longitude = float(data.get("longitude"))
+    except (TypeError, ValueError):
+        return None
+
+    payload: dict = {
+        "crime_type": crime_type.lower(),
+        "district": district.upper(),
+        "latitude": latitude,
+        "longitude": longitude,
+    }
+    if data.get("occurred_year") is not None:
+        payload["occurred_year"] = data["occurred_year"]
+    if data.get("severity_level"):
+        payload["severity_level"] = str(data["severity_level"]).strip().lower()
+    if data.get("risk_level"):
+        payload["risk_level"] = str(data["risk_level"]).strip().lower()
+    for key in ("hour", "historical_frequency"):
+        if data.get(key) is not None:
+            payload[key] = data[key]
+    if isinstance(data.get("day_of_week"), str):
+        payload["day_of_week"] = data["day_of_week"].strip().lower()
+
+    source = data.get("source")
+    if isinstance(source, str) and source.strip():
+        payload["source"] = source.strip()
+    else:
+        payload["source"] = "inei" if data.get("occurred_year") is not None else LEGACY_SOURCE
+    return payload
+
+
+def load_from_firestore() -> tuple[list[tuple[str, dict]], list[list], dict, dict]:
+    """Lee `crime_incidents` y `crime_stats_monthly` con el Admin SDK.
+
+    Consume lecturas (una por documento) una sola vez; el frontend no vuelve a
+    tocar Firestore. Útil tras importar datos desde `/datos`.
+    """
+    from firebase_admin import firestore as admin_firestore
+    from firebase_admin import initialize_app
+
+    try:
+        initialize_app()
+    except ValueError:
+        pass  # ya inicializado en el proceso
+    db = admin_firestore.client()
+
+    combined: dict[str, dict] = {}
+    skipped = 0
+    for doc in db.collection("crime_incidents").stream():
+        payload = payload_from_firestore(doc.to_dict() or {})
+        if payload is None:
+            skipped += 1
+            continue
+        combined[doc.id] = payload
+    rows = sorted(combined.items(), key=lambda item: item[0])
+
+    monthly_rows: list[list] = []
+    monthly_errors: list[str] = []
+    monthly_total = 0
+    for doc in db.collection("crime_stats_monthly").stream():
+        monthly_total += 1
+        data = doc.to_dict() or {}
+        try:
+            year = int(data["year"])
+            month = int(data["month"])
+            total = int(data.get("total") or 0)
+            ubigeo = str(data.get("ubigeo") or "").strip().zfill(6)
+            district = str(data.get("district") or "").strip().upper()
+            modalidad = data.get("por_modalidad") or {}
+            counts = [max(0, int(modalidad.get(modality) or 0)) for modality in MODALITIES]
+        except (KeyError, TypeError, ValueError) as exc:
+            monthly_errors.append(f"{doc.id}: {exc}")
+            continue
+        monthly_rows.append([year, month, ubigeo, district, total, counts])
+    monthly_rows.sort(key=lambda row: (row[0], row[1], row[2]))
+
+    sources: dict[str, int] = {}
+    for _doc_id, payload in rows:
+        source = _source_name(payload)
+        sources[source] = sources.get(source, 0) + 1
+
+    dataset_report = {
+        "inputs": {"firestore": "crime_incidents"},
+        "sources": {
+            "firestore": {
+                "schema": "mixto (v2 + legacy)",
+                "raw_rows": len(rows) + skipped,
+                "valid_rows": len(rows),
+                "added_rows": len(rows),
+                "duplicates_or_invalid": skipped,
+                "errors": 0,
+            }
+        },
+        "errors": [],
+        "source_counts": sources,
+    }
+    monthly_report = {
+        "input": "crime_stats_monthly",
+        "raw_rows": monthly_total,
+        "valid_rows": len(monthly_rows),
+        "errors": monthly_errors,
+    }
+    return rows, monthly_rows, dataset_report, monthly_report
+
+
 def build_predict_stats(rows: list[tuple[str, dict]]) -> dict:
     by_type_district: dict[str, list[int]] = {}
     by_type: dict[str, list[int]] = {}
@@ -391,6 +503,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--monthly", type=Path, default=DEFAULT_MONTHLY)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument(
+        "--from-firestore",
+        action="store_true",
+        help="Lee `crime_incidents` y `crime_stats_monthly` con el Admin SDK (tras importar en /datos).",
+    )
+    parser.add_argument(
         "--check",
         action="store_true",
         help="Solo valida manifest/archivos existentes (no lee los CSV).",
@@ -408,37 +525,36 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Datos publicados: OK ({out_dir})")
         return 0
 
-    for path in (args.legacy, args.incidents, args.monthly):
-        if not path.exists():
-            print(f"No existe el CSV: {path}", file=sys.stderr)
-            return 1
-
     generated_at = datetime.now(timezone.utc).isoformat()
-    rows, dataset_report = load_incidents(args.legacy.resolve(), args.incidents.resolve())
-    monthly_rows, monthly_result = load_monthly(args.monthly.resolve())
+    if args.from_firestore:
+        rows, monthly_rows, dataset_report, monthly_report = load_from_firestore()
+    else:
+        for path in (args.legacy, args.incidents, args.monthly):
+            if not path.exists():
+                print(f"No existe el CSV: {path}", file=sys.stderr)
+                return 1
+        rows, dataset_report = load_incidents(args.legacy.resolve(), args.incidents.resolve())
+        monthly_rows, monthly_result = load_monthly(args.monthly.resolve())
+        monthly_report = {**monthly_result["report"], "errors": monthly_result["errors"]}
 
     map_payload = {
         "schemaVersion": SCHEMA_VERSION,
-        "generatedAt": generated_at,
         "columns": MAP_COLUMNS,
         "points": build_map_rows(rows),
     }
     analysis_payload = {
         "schemaVersion": SCHEMA_VERSION,
-        "generatedAt": generated_at,
         "columns": ANALYSIS_COLUMNS,
         "incidents": build_analysis_rows(rows),
     }
     monthly_payload = {
         "schemaVersion": SCHEMA_VERSION,
-        "generatedAt": generated_at,
         "columns": MONTHLY_COLUMNS,
         "modalities": MODALITIES,
         "rows": monthly_rows,
     }
     predict_payload = {
         "schemaVersion": SCHEMA_VERSION,
-        "generatedAt": generated_at,
         **build_predict_stats(rows),
     }
 
@@ -449,7 +565,7 @@ def main(argv: list[str] | None = None) -> int:
         monthly_payload=monthly_payload,
         predict_payload=predict_payload,
         dataset_report=dataset_report,
-        monthly_report={**monthly_result["report"], "errors": monthly_result["errors"]},
+        monthly_report=monthly_report,
         generated_at=generated_at,
     )
 
@@ -461,8 +577,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  fuentes: {manifest['counts']['sources']}")
     for key, info in manifest["files"].items():
         print(f"  {key:8s} {info['name']} ({info['bytes'] / 1024:.1f} KB)")
-    if dataset_report["errors"] or monthly_result["errors"]:
-        print(f"  avisos: {len(dataset_report['errors']) + len(monthly_result['errors'])} fila(s)")
+    if dataset_report["errors"] or monthly_report["errors"]:
+        print(f"  avisos: {len(dataset_report['errors']) + len(monthly_report['errors'])} fila(s)")
     print(f"  reporte: {out_dir / 'export_report.json'}")
     return 0
 

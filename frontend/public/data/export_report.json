@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-17T16:11:53.405531+00:00",
+  "generated_at": "2026-10-17T16:28:29.970876+00:00",
   "schema_version": 1,
   "inputs": {
     "legacy": "data\\raw\\inei\\points_2022_legacy.csv",
@@ -36,27 +36,27 @@
   "errors": [],
   "outputs": {
     "map": {
-      "name": "files/incidents-map.c1baedbe5cc1.json",
-      "bytes": 1136112,
-      "sha256": "c1baedbe5cc1bee153fe2026beaad458090ce5f8d23bd0423d3fa98fae770807",
+      "name": "files/incidents-map.e94162a81194.json",
+      "bytes": 1136063,
+      "sha256": "e94162a81194c8e07e52f7c487eda722b88fcf58966d63c1bcaf0202319739d8",
       "count": 9904
     },
     "analysis": {
-      "name": "files/incidents-analysis.c87eebbfcc21.json",
-      "bytes": 894088,
-      "sha256": "c87eebbfcc210c7921644c909ea92b4815720a9d792ac548aac9786706272060",
+      "name": "files/incidents-analysis.48c2f799ac4d.json",
+      "bytes": 894039,
+      "sha256": "48c2f799ac4ddb1c5b295cdd4020d5fbe45b68d80ae67d6e9282b96d42ce6572",
       "count": 9904
     },
     "monthly": {
-      "name": "files/crime-monthly.52832dc92991.json",
-      "bytes": 299777,
-      "sha256": "52832dc92991f938a33f029368f36948a7d215b3282e911b6d1dc5cd5c2d8851",
+      "name": "files/crime-monthly.7bbe33b40b78.json",
+      "bytes": 299728,
+      "sha256": "7bbe33b40b782b73b402df60ba4a15728658a94419f0326630987ebaf198c788",
       "count": 5141
     },
     "predict": {
-      "name": "files/predict-stats.5e1d5fe4093f.json",
-      "bytes": 29531,
-      "sha256": "5e1d5fe4093f14682b651f6fba00611d3c6b8df3d224b616125572ed0beb0043",
+      "name": "files/predict-stats.fae054b0f7c5.json",
+      "bytes": 29482,
+      "sha256": "fae054b0f7c526aaaa5a56722477cfb7325eaaa88f625e5736eb4e313569c512",
       "count": 0
     }
   }

@@ -170,6 +170,9 @@ python scripts/pipeline/upload_incidents.py --csv data/processed/incidents_lima.
 
   `python scripts/pipeline/export_web_data.py --check` valida el manifest y los archivos
   (también se ejecuta en CI).
+- Si importaste datos desde `/datos` (Firestore), publícalos con
+  `python scripts/pipeline/export_web_data.py --from-firestore` (una lectura por documento con
+  el Admin SDK).
 - Firestore sigue siendo el **borrador** de importación (`/datos`): lo importado ahí no aparece
   en la app hasta publicar el dataset.
 

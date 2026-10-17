@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts" / "pipeline"))
 sys.path.insert(0, str(REPO_ROOT / "functions"))
 
-from export_web_data import main  # noqa: E402
+from export_web_data import main, payload_from_firestore  # noqa: E402
 
 LEGACY_CSV = (
     "crime_type,hour,day_of_week,district,latitude,longitude,historical_frequency,risk_level\n"
@@ -94,6 +94,41 @@ def test_exporta_manifest_json_y_reporte(tmp_path):
     report = json.loads((out / "export_report.json").read_text(encoding="utf-8"))
     assert report["valid"]["incidents"] == 4
     assert report["sources"]["legacy"]["duplicates_or_invalid"] == 1
+
+
+def test_payload_from_firestore_normaliza_y_detecta_fuente():
+    v2 = payload_from_firestore(
+        {
+            "crime_type": "Robo Agravado",
+            "district": "miraflores",
+            "latitude": -12.12,
+            "longitude": -77.03,
+            "occurred_year": 2024,
+            "severity_level": "alta",
+        }
+    )
+    assert v2 is not None
+    assert v2["source"] == "inei"
+    assert v2["crime_type"] == "robo agravado"
+    assert v2["district"] == "MIRAFLORES"
+
+    legacy = payload_from_firestore(
+        {
+            "crime_type": "hurto",
+            "district": "comas",
+            "latitude": -11.9,
+            "longitude": -77.0,
+            "hour": 8,
+            "day_of_week": "Sábado",
+            "historical_frequency": 120,
+            "risk_level": "bajo",
+        }
+    )
+    assert legacy is not None
+    assert legacy["source"] == "modalidad"
+    assert legacy["day_of_week"] == "sábado"
+
+    assert payload_from_firestore({"crime_type": "", "district": "COMAS"}) is None
 
 
 def test_check_valida_los_archivos_publicados(tmp_path):
