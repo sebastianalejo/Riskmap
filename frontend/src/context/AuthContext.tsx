@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         const token = await user.getIdTokenResult()
         setAuthToken(`Bearer ${token.token}`)
-        setUsername(user.email ?? user.uid)
+        setUsername(user.displayName?.trim() || user.email || user.uid)
         setIsAdmin(token.claims.admin === true)
       } else {
         setAuthToken(null)

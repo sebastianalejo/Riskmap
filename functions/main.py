@@ -599,6 +599,92 @@ def publish_model(req: https_fn.Request) -> https_fn.Response:
 
 
 @https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
+@_instrument("create_user")
+def create_user(req: https_fn.Request) -> https_fn.Response:
+    """Crea una cuenta de Firebase Auth (solo admin). El usuario entra luego en /login con correo y contraseña."""
+    if req.method == "OPTIONS":
+        return https_fn.Response("", status=204)
+
+    _admin_user, error = _require_admin(req)
+    if error:
+        return error
+
+    if req.method != "POST":
+        return _json_response({"detail": "Usa POST"}, status=405)
+
+    try:
+        body = req.get_json(silent=True) or {}
+    except Exception:
+        return _json_response({"detail": "JSON inválido"}, status=400)
+
+    if not isinstance(body, dict):
+        return _json_response({"detail": "El cuerpo debe ser un objeto JSON."}, status=400)
+
+    email = str(body.get("email") or "").strip()
+    password = str(body.get("password") or "")
+    display_name = str(body.get("displayName") or "").strip()
+
+    if "@" not in email or email.startswith("@") or email.endswith("@"):
+        return _json_response({"detail": "Indica un correo electrónico válido."}, status=400)
+    if len(password) < 6:
+        return _json_response({"detail": "La contraseña debe tener al menos 6 caracteres."}, status=400)
+    if len(display_name) > 120:
+        return _json_response({"detail": "El nombre no debe exceder 120 caracteres."}, status=400)
+
+    auth = _admin()["auth"]
+    try:
+        user = auth.create_user(email=email, password=password, display_name=display_name or None)
+    except auth.EmailAlreadyExistsError:
+        return _json_response({"detail": "Ya existe una cuenta con ese correo."}, status=409)
+    except ValueError as exc:
+        return _json_response({"detail": f"Datos inválidos: {exc}"}, status=400)
+
+    logger.info("create_user_ok uid=%s email=%s", user.uid, user.email)
+    return _json_response(
+        {"uid": user.uid, "email": user.email, "displayName": user.display_name},
+        status=201,
+    )
+
+
+@https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
+@_instrument("list_users")
+def list_users(req: https_fn.Request) -> https_fn.Response:
+    """Lista las cuentas de Firebase Auth con su rol (claim `admin`). Solo admin."""
+    if req.method == "OPTIONS":
+        return https_fn.Response("", status=204)
+
+    _admin_user, error = _require_admin(req)
+    if error:
+        return error
+
+    if req.method != "GET":
+        return _json_response({"detail": "Usa GET"}, status=405)
+
+    auth = _admin()["auth"]
+    users: list[dict[str, Any]] = []
+    for user in auth.list_users().iterate_all():
+        claims = user.custom_claims or {}
+        metadata = user.user_metadata
+        users.append(
+            {
+                "uid": user.uid,
+                "email": user.email,
+                "displayName": user.display_name,
+                "role": "admin" if claims.get("admin") is True else "user",
+                "disabled": bool(user.disabled),
+                "emailVerified": bool(user.email_verified),
+                "createdAt": metadata.creation_timestamp if metadata else None,
+                "lastSignInAt": metadata.last_sign_in_timestamp if metadata else None,
+            }
+        )
+        if len(users) >= 1000:
+            break
+
+    users.sort(key=lambda u: u["createdAt"] or 0, reverse=True)
+    return _json_response({"users": users, "total": len(users)}, status=200)
+
+
+@https_fn.on_request(enforce_app_check=_ENFORCE_APP_CHECK)
 @_instrument("import_incidents")
 def import_incidents(req: https_fn.Request) -> https_fn.Response:
     """Carga filas en Firestore (mismo esquema que CrimeIncident). Útil antes de entrenar sin dataset inline."""

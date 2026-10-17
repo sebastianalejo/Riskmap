@@ -21,13 +21,15 @@ Todo el estado compartido vive en **Firestore** (base de datos NoSQL de Firebase
 | **TypeScript** | Tipado estático de todo el frontend. |
 | **Vite** | Servidor de desarrollo y build (`tsc -b && vite build`). |
 | **Tailwind CSS 4** (plugin `@tailwindcss/vite`) | Estilos utilitarios. |
-| **React Router 7** | Rutas: `/login`, `/` (resumen), `/prediccion`, `/mapa`, `/datos`. |
+| **React Router 7** | Rutas: `/login`, `/` (resumen), `/analisis` (analista), `/prediccion`, `/mapa`, `/datos`. |
 | **Firebase JS SDK 11** | `Auth` (login), `Firestore` (lectura/escritura de incidentes). |
 | **Leaflet + react-leaflet** | Mapa de riesgo por defecto (no requiere API key). |
 | **@react-google-maps/api** | Mapa alternativo si se define una Google Maps API key. |
 | **lucide-react** | Iconografía. |
 | **xlsx (SheetJS)** | Importación de archivos `.xlsx`, `.xls` y `.csv`. |
 | **jsPDF** | Exportación de reportes en PDF. |
+| **Recharts 3** | Gráficos del módulo Análisis (barras horizontales, apiladas al 100 % y ranking). |
+| **PapaParse** | Serialización CSV de la exportación del módulo Análisis. |
 
 ### Backend / datos
 
@@ -101,10 +103,10 @@ Tesis-main/
 │   │   ├── context/AuthContext.tsx# Estado de sesión (Firebase Auth)
 │   │   ├── data/sampleIncidents.ts# 38 distritos, 10 tipos de delito, generador
 │   │   ├── firebase/client.ts     # Inicialización del SDK (env o JSON)
-│   │   ├── hooks/                 # Lectura de incidentes para el mapa
+│   │   ├── hooks/                 # Lectura de incidentes (mapa y análisis) y serie SIDPOL
 │   │   ├── ml/localPredict.ts     # Predicción local (Firestore + heurística)
-│   │   ├── pages/                 # Login, Home, Predict, Map, Data
-│   │   └── utils/                 # Errores de Auth, fechas, datos de gráficos
+│   │   ├── pages/                 # Login, Home, Análisis, Predict, Map, Data
+│   │   └── utils/                 # Errores de Auth, serie mensual, IDs estables, análisis
 │   ├── .env.example
 │   └── package.json
 ├── functions/                     # Cloud Functions (Python)
@@ -430,7 +432,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 | API + ML + pipeline (Python) | pytest · **71 pruebas** | `python -m pytest functions/tests tests/pipeline -q` | ✅ |
 | API end-to-end | emuladores auth+firestore+functions · **17 comprobaciones** | `firebase emulators:exec --only auth,firestore,functions --project demo-riskmap "python tests/functions/e2e_functions.py"` | ✅ |
 | Reglas de Firestore | emulador · **16 pruebas** | `firebase emulators:exec --only firestore --project demo-riskmap "node tests/firestore/firestore.rules.test.mjs"` | ✅ |
-| Frontend | Vitest · **19 pruebas** | `cd frontend && npm test` | ✅ |
+| Frontend | Vitest · **35 pruebas** | `cd frontend && npm test` | ✅ |
 | Lint y build | ESLint 9 + tsc + Vite | `cd frontend && npm run lint && npm run build` | ✅ |
 | Integración continua | GitHub Actions | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en cada push/PR | configurado |
 

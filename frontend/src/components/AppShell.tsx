@@ -1,4 +1,4 @@
-import { Database, LayoutDashboard, LogOut, Map, Menu, Radar, Sparkles, X } from 'lucide-react'
+import { BarChart3, Database, LayoutDashboard, LogOut, Map, Menu, Radar, Sparkles, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -7,6 +7,7 @@ import { ThemeToggle } from './ui/theme-toggle'
 
 const items = [
   { to: '/', label: 'Resumen', icon: LayoutDashboard },
+  { to: '/analisis', label: 'Análisis', icon: BarChart3 },
   { to: '/prediccion', label: 'Predicción', icon: Sparkles },
   { to: '/mapa', label: 'Mapa de riesgo', icon: Map },
   { to: '/datos', label: 'Importar datos', icon: Database },

@@ -21,7 +21,8 @@ desplegar Hosting → verificar
 2. **Firestore Database → crear base de datos** en modo producción (región `us-central1` o la
    más cercana). Necesario antes de desplegar reglas o Functions.
 3. **Authentication → activar Correo electrónico/contraseña**. Crea el usuario administrador
-   (no hay registro público en la app).
+   inicial desde la consola (no hay registro público: las demás cuentas se crean desde la app,
+   sección **Usuarios**, con una cuenta que tenga el claim `admin`).
 4. Acepta el plan **Blaze** (necesario para Functions) y configura una **alerta de presupuesto**
    en Google Cloud → Facturación → Presupuestos (p. ej. 5 USD).
 5. Inicia sesión en el CLI **con la cuenta dueña del proyecto nuevo**. Si ya tienes otra cuenta
@@ -118,6 +119,8 @@ requieren además el claim admin):
 | `POST train_model` | Entrena en la nube (dataset inline o colección). Solo admin. |
 | `POST publish_model` | Publica un `.joblib` del pipeline offline. Solo admin. |
 | `POST import_incidents` / `import_csv_dataset` | Ingesta validada. Solo admin. |
+| `POST create_user` | Crea cuentas de Firebase Auth (nombre, correo y contraseña temporal). Solo admin. |
+| `GET list_users` | Lista cuentas con rol, estado y actividad. Solo admin. |
 | `GET inei_datacrim_aggregate` / `inei_arcgis_points` | Proxies INEI (CORS). |
 
 ## 5. Modelo de predicción

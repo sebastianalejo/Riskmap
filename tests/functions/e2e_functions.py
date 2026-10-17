@@ -1,8 +1,8 @@
 """Pruebas end-to-end de la API de Functions contra los emuladores de Firebase.
 
 Verifica: CORS, autenticación, permisos admin, entrenamiento inline, publicación
-de artefacto, predicción con probabilidades, importación validada, health y
-revocación de tokens.
+de artefacto, predicción con probabilidades, importación validada, creación de
+cuentas (solo admin), health y revocación de tokens.
 
 Uso (desde la raíz del repositorio; requiere Java):
 
@@ -370,6 +370,103 @@ def main() -> int:
         assert status == 400, f"{status}: {body[:200]}"
 
     check("publish_model con artefacto inválido → 400", publish_invalid_artifact)
+
+    # ── create_user (solo admin) ─────────────────────────────────────────────
+    def create_user_without_token():
+        status, _, body = request(
+            "POST",
+            f"{FUNCTIONS}/create_user",
+            {"email": "nuevo-sin-token@example.com", "password": "secreto-123"},
+        )
+        assert status == 401, f"{status}: {body[:200]}"
+
+    check("create_user sin token → 401", create_user_without_token)
+
+    def create_user_as_user_forbidden():
+        status, _, body = request(
+            "POST",
+            f"{FUNCTIONS}/create_user",
+            {"email": "nuevo-prohibido@example.com", "password": "secreto-123"},
+            bearer(user_token),
+        )
+        assert status == 403, f"{status}: {body[:200]}"
+
+    check("create_user como usuario no-admin → 403", create_user_as_user_forbidden)
+
+    created_email = "cuenta-nueva-e2e@example.com"
+    created_password = "secreto-nueva-123"
+
+    def create_user_as_admin():
+        status, _, body = request(
+            "POST",
+            f"{FUNCTIONS}/create_user",
+            {"email": created_email, "password": created_password, "displayName": "Cuenta E2E"},
+            bearer(admin_token),
+        )
+        assert status == 201, f"{status}: {body[:300]}"
+        data = json.loads(body)
+        assert data["uid"], data
+        assert data["email"] == created_email, data
+        assert data["displayName"] == "Cuenta E2E", data
+
+    check("create_user como admin → 201", create_user_as_admin)
+
+    def created_user_can_login():
+        token = sign_in(created_email, created_password)
+        assert token, "sin idToken"
+
+    check("la cuenta creada puede iniciar sesión", created_user_can_login)
+
+    def create_user_duplicate():
+        status, _, body = request(
+            "POST",
+            f"{FUNCTIONS}/create_user",
+            {"email": created_email, "password": created_password},
+            bearer(admin_token),
+        )
+        assert status == 409, f"{status}: {body[:200]}"
+
+    check("create_user con correo duplicado → 409", create_user_duplicate)
+
+    def create_user_short_password():
+        status, _, body = request(
+            "POST",
+            f"{FUNCTIONS}/create_user",
+            {"email": "otra-cuenta-e2e@example.com", "password": "123"},
+            bearer(admin_token),
+        )
+        assert status == 400, f"{status}: {body[:200]}"
+
+    check("create_user con contraseña corta → 400", create_user_short_password)
+
+    # ── list_users (solo admin) ──────────────────────────────────────────────
+    def list_users_without_token():
+        status, _, body = request("GET", f"{FUNCTIONS}/list_users")
+        assert status == 401, f"{status}: {body[:200]}"
+
+    check("list_users sin token → 401", list_users_without_token)
+
+    def list_users_as_user_forbidden():
+        status, _, body = request("GET", f"{FUNCTIONS}/list_users", headers=bearer(user_token))
+        assert status == 403, f"{status}: {body[:200]}"
+
+    check("list_users como usuario no-admin → 403", list_users_as_user_forbidden)
+
+    def list_users_as_admin():
+        status, _, body = request("GET", f"{FUNCTIONS}/list_users", headers=bearer(admin_token))
+        assert status == 200, f"{status}: {body[:300]}"
+        data = json.loads(body)
+        by_email = {u["email"]: u for u in data["users"]}
+        admin_row = by_email.get(ADMIN_EMAIL, {})
+        assert admin_row.get("role") == "admin", admin_row
+        assert by_email.get(USER_EMAIL, {}).get("role") == "user", by_email.get(USER_EMAIL)
+        created_row = by_email.get(created_email, {})
+        assert created_row.get("role") == "user", created_row
+        assert created_row.get("displayName") == "Cuenta E2E", created_row
+        assert created_row.get("disabled") is False, created_row
+        assert created_row.get("createdAt"), created_row
+
+    check("list_users como admin → 200 con roles y estado", list_users_as_admin)
 
     # ── CORS ─────────────────────────────────────────────────────────────────
     def cors_allowed():

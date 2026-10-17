@@ -235,6 +235,7 @@ Etiqueta micro mayúsculas, cifra grande en `font-mono` (Display), variación (c
 |---|---|---|
 | `/login` | Acceso | Autenticación con Firebase (correo/contraseña) |
 | `/` | Resumen | KPIs, tendencia, distribución, top distritos, estado del sistema |
+| `/analisis` | Análisis | Vista analista: filtros, KPIs, composición por distrito, patrones horarios y exportación (CSV/PDF) |
 | `/prediccion` | Predicción | Formulario de escenario + resultado con confianza y factores |
 | `/mapa` | Mapa de riesgo | Mapa + filtros (riesgo, delito, distrito, hora) + tendencia + PDF |
 | `/datos` | Importar datos | CSV/XLSX con validación y vista previa, JSON, borrado con confirmación |
