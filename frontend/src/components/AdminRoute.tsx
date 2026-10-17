@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-/** Variante de ProtectedRoute que además exige el claim `admin` (ver AuthContext.isAdmin). */
+/** Variante de ProtectedRoute que además exige el rol `admin` (ver AuthContext.isAdmin). */
 export function AdminRoute() {
   const { isAdmin, isReady } = useAuth()
 

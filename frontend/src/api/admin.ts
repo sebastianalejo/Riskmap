@@ -1,11 +1,27 @@
-import { paths } from '../config/api'
-import { apiFetch } from './client'
+import {
+  collection,
+  doc,
+  getDoc,
+  getFirestore,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  type DocumentData,
+  type Firestore,
+} from 'firebase/firestore'
+import { deleteApp, initializeApp } from 'firebase/app'
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  sendPasswordResetEmail,
+  signOut as signOutAuth,
+  updateProfile,
+} from 'firebase/auth'
+import { getFirebaseApp, getFirebaseAuth } from '../firebase/client'
+import { mapAdminUser, sortUsersByCreatedAtDesc, type AdminUser, type UserRole } from '../utils/adminUsers'
 
-export interface CreatedUser {
-  uid: string
-  email: string | null
-  displayName: string | null
-}
+export type { AdminUser, UserRole } from '../utils/adminUsers'
 
 export interface CreateUserInput {
   email: string
@@ -13,32 +29,127 @@ export interface CreateUserInput {
   displayName?: string
 }
 
-export interface AdminUser {
-  uid: string
-  email: string | null
-  displayName: string | null
-  /** `admin` cuando la cuenta tiene el claim; `user` en caso contrario. */
-  role: 'admin' | 'user'
-  disabled: boolean
-  emailVerified: boolean
-  /** Milisegundos Unix o null si no está disponible. */
-  createdAt: number | null
-  /** Milisegundos Unix o null si nunca inició sesión. */
-  lastSignInAt: number | null
+function firestore(): Firestore {
+  const app = getFirebaseApp()
+  if (!app) throw new Error('Firebase no está configurado.')
+  return getFirestore(app)
 }
 
-/** Llama a la Cloud Function `create_user` (solo admin) con el ID token de la sesión actual. */
-export async function createUser(input: CreateUserInput): Promise<CreatedUser> {
-  const body = await apiFetch(paths.createUser, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+function currentUid(): string {
+  const uid = getFirebaseAuth()?.currentUser?.uid
+  if (!uid) throw new Error('Se requiere una sesión iniciada.')
+  return uid
+}
+
+/** Escucha la colección `users` en vivo (solo admin). Devuelve la función para dejar de escuchar. */
+export function subscribeUsers(
+  onData: (users: AdminUser[]) => void,
+  onError: (error: unknown) => void,
+): () => void {
+  return onSnapshot(
+    collection(firestore(), 'users'),
+    (snap) => {
+      onData(sortUsersByCreatedAtDesc(snap.docs.map((d) => mapAdminUser(d.id, d.data()))))
+    },
+    onError,
+  )
+}
+
+/**
+ * Crea una cuenta de Firebase Auth sin cerrar la sesión del administrador, usando una
+ * instancia secundaria de la app. Luego registra el perfil en `users/{uid}` con rol `user`.
+ */
+export async function createUser(input: CreateUserInput): Promise<AdminUser> {
+  const app = getFirebaseApp()
+  if (!app) throw new Error('Firebase no está configurado.')
+  const email = input.email.trim()
+  const displayName = input.displayName?.trim() || null
+
+  const secondary = initializeApp(app.options, `create-user-${Date.now()}`)
+  let uid: string
+  try {
+    const secondaryAuth = getAuth(secondary)
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, input.password)
+    uid = cred.user.uid
+    if (displayName) {
+      try {
+        await updateProfile(cred.user, { displayName })
+      } catch {
+        /* el nombre es opcional: la cuenta ya está creada */
+      }
+    }
+    await signOutAuth(secondaryAuth)
+  } finally {
+    await deleteApp(secondary).catch(() => undefined)
+  }
+
+  const db = firestore()
+  await setDoc(doc(db, 'users', uid), {
+    email,
+    displayName,
+    role: 'user',
+    disabled: false,
+    createdAt: serverTimestamp(),
+    lastLoginAt: null,
+    updatedAt: serverTimestamp(),
+    updatedBy: currentUid(),
   })
-  return body as CreatedUser
+
+  return {
+    uid,
+    email,
+    displayName,
+    role: 'user',
+    disabled: false,
+    createdAt: null,
+    lastSignInAt: null,
+  }
 }
 
-/** Lista las cuentas de Firebase Auth con su rol (solo admin). */
-export async function listUsers(): Promise<AdminUser[]> {
-  const body = await apiFetch(paths.listUsers, { method: 'GET' })
-  return (body as { users: AdminUser[] }).users
+/** Cambia el rol de una cuenta (`admin` / `user`). */
+export async function setUserRole(uid: string, role: UserRole): Promise<void> {
+  const ref = doc(firestore(), 'users', uid)
+  const snapshot = await getDoc(ref)
+  const payload: DocumentData = { role, updatedAt: serverTimestamp(), updatedBy: currentUid() }
+  if (snapshot.exists()) {
+    await updateDoc(ref, payload)
+  } else {
+    await setDoc(ref, {
+      ...payload,
+      email: '',
+      displayName: null,
+      disabled: false,
+      createdAt: serverTimestamp(),
+    })
+  }
+}
+
+/** Habilita o deshabilita (baja lógica) una cuenta. */
+export async function setUserDisabled(uid: string, disabled: boolean): Promise<void> {
+  await updateDoc(doc(firestore(), 'users', uid), {
+    disabled,
+    updatedAt: serverTimestamp(),
+    updatedBy: currentUid(),
+  })
+}
+
+/** Actualiza el nombre visible de una cuenta. */
+export async function updateUserName(uid: string, displayName: string): Promise<void> {
+  await updateDoc(doc(firestore(), 'users', uid), {
+    displayName: displayName.trim(),
+    updatedAt: serverTimestamp(),
+    updatedBy: currentUid(),
+  })
+}
+
+/** Envía el correo de restablecimiento de contraseña (SDK cliente, sin Cloud Functions). */
+export async function sendPasswordReset(email: string): Promise<void> {
+  const auth = getFirebaseAuth()
+  if (!auth) throw new Error('Firebase no está configurado.')
+  await sendPasswordResetEmail(auth, email.trim())
+}
+
+/** UID de la sesión actual (para evitar acciones destructivas sobre uno mismo). */
+export function currentAdminUid(): string | null {
+  return getFirebaseAuth()?.currentUser?.uid ?? null
 }

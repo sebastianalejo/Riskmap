@@ -185,11 +185,17 @@ cp firebase-config.example.json firebase-config.json
 ### 5.3 Crear usuarios para iniciar sesión
 
 En la Consola Firebase → **Authentication** → activa **Correo electrónico/Contraseña** y crea el
-primer usuario (administrador). Ese usuario necesita el claim `admin` (ver §9.1) para poder crear
-más cuentas y ver las existentes desde la app en la sección **Usuarios** (`/usuarios`), que llama a
-las Cloud Functions `create_user` (nombre, correo y contraseña temporal) y `list_users` (rol,
-estado y actividad de cada cuenta). No hay registro público: todas las cuentas las crea un
-administrador. Esas credenciales son las que se usan en `/login`.
+primer usuario. Ese usuario necesita el rol `admin` (ver §9.1) para ver la sección **Administración**
+(**Usuarios** e **Importar datos**).
+
+Los **roles se guardan en Firestore**, en la colección `users` (`users/{uid}.role`: `admin` o
+`user`), y se gestionan desde la propia sección **Usuarios** del panel: crear cuenta (nombre, correo
+y contraseña temporal), cambiar rol, deshabilitar/habilitar y enviar el restablecimiento de
+contraseña. **No requiere Cloud Functions ni plan Blaze.** No hay registro público: todas las cuentas
+las crea un administrador. Esas credenciales son las que se usan en `/login`.
+
+El borrado definitivo de una cuenta de Authentication se hace en la Consola (el panel solo aplica
+una baja lógica con `disabled: true`).
 
 ### 5.4 Levantar el servidor de desarrollo
 
@@ -200,8 +206,8 @@ npm run dev
 
 Abre **http://localhost:5173** (Vite cambia a `5174`, `5175`… si el puerto está ocupado).
 Inicia sesión y navega por **Resumen**, **Análisis**, **Predicción** y **Mapa de riesgo**.
-Las cuentas con claim `admin` ven además la sección **Administración** (**Importar datos** y
-**Usuarios** para crear nuevas cuentas).
+Las cuentas con rol `admin` ven además la sección **Administración** (**Importar datos** y
+**Usuarios**).
 
 ### 5.5 Otros comandos del frontend
 
@@ -321,8 +327,8 @@ Todas las rutas (salvo `prediction_health`) exigen `Authorization: Bearer <Fireb
 | `publish_model` | POST | Publica un `.joblib` entrenado offline (ver `scripts/publish_model.py`). Requiere claim `admin`. |
 | `import_incidents` | POST | Inserta filas (`rows`) validadas por fila. Requiere claim `admin`. |
 | `import_csv_dataset` | POST | Importa CSV (`csv_text`) validado por fila. Requiere claim `admin`. |
-| `create_user` | POST | Crea una cuenta de Firebase Auth (`email`, `password`, `displayName`). Requiere claim `admin`. |
-| `list_users` | GET | Lista cuentas con rol (claim `admin`), estado, último acceso y fecha de creación. Requiere claim `admin`. |
+| `create_user` | POST | Crea una cuenta de Firebase Auth (`email`, `password`, `displayName`). Requiere rol admin. **Solo si despliegas Functions.** |
+| `list_users` | GET | Lista cuentas con rol (claim `admin`), estado, último acceso y fecha de creación. Requiere rol admin. **Solo si despliegas Functions.** |
 | `inei_datacrim_aggregate` / `inei_arcgis_points` | GET | Proxies del INEI (series anuales y puntos ArcGIS). |
 
 Configuración por entorno en `functions/.env` (no versionado): `CORS_ORIGINS` (**define tus
@@ -375,9 +381,10 @@ debe apuntar a **`frontend/dist`** (ya está configurado en `firebase.json`).
 
 | Colección | Uso | Acceso |
 |-----------|-----|--------|
-| `crime_incidents` | Filas de delitos (campos del modelo ML). | Lectura: usuarios autenticados. Crear/actualizar/borrar: solo cuentas con claim `admin`, con validación de esquema en las reglas (Fase 1). Reimportar no duplica (ID determinista). |
-| `crime_stats_monthly` | Serie mensual real SIDPOL/MININTER por distrito y año-mes (2018–hoy) con mapa `por_modalidad`; ID `AAAA-MM-UBIGEO`. | Lectura: usuarios autenticados. Escritura: solo el pipeline offline (Admin SDK). |
+| `crime_incidents` | Filas de delitos (campos del modelo ML). | Lectura: usuarios autenticados activos. Crear/actualizar/borrar: solo cuentas con rol `admin` activas, con validación de esquema en las reglas (Fase 1). Reimportar no duplica (ID determinista). |
+| `crime_stats_monthly` | Serie mensual real SIDPOL/MININTER por distrito y año-mes (2018–hoy) con mapa `por_modalidad`; ID `AAAA-MM-UBIGEO`. | Lectura: usuarios autenticados activos. Escritura: solo el pipeline offline (Admin SDK). |
 | `ml_model_parts` | Modelo `.joblib` **versionado por run**: puntero `_meta`, metadatos en `ml_model_parts/<run>` y trozos en `ml_model_parts/<run>/chunks/<i>`; candado `_training_lock` para entrenamientos concurrentes. | Solo Admin SDK (Cloud Functions). |
+| `users` | Perfil de cada cuenta: `email`, `displayName`, `role` (`admin`/`user`), `disabled`, `createdAt`, `lastLoginAt`. Fuente de verdad de los roles. | Lectura: el propio usuario o un admin. Escritura: el propio usuario solo su nombre/último acceso; un admin gestiona roles y estado (no puede auto-degradarse). |
 
 Reglas: [`firestore.rules`](firestore.rules) · Índices: [`firestore.indexes.json`](firestore.indexes.json).
 El modelo ML espera las variables `FEATURES` y el objetivo `TARGET` definidos en
@@ -402,10 +409,12 @@ El modelo ML espera las variables `FEATURES` y el objetivo `TARGET` definidos en
 > `python scripts/pipeline/export_web_data.py --from-firestore` (lee Firestore una vez con el
 > Admin SDK).
 
-### 9.1 Permisos de administrador (claim `admin`)
+### 9.1 Permisos de administrador (rol `admin`)
 
-Desde la Fase 1, las reglas exigen el claim `admin` para escribir o borrar en `crime_incidents`.
-Para asignarlo a tu cuenta:
+Las reglas exigen el rol `admin` para escribir o borrar en `crime_incidents`. La fuente de verdad es
+`users/{uid}.role` en Firestore y se gestiona desde la sección **Usuarios** del panel (sin Cloud
+Functions). El **primer** administrador (o una recuperación de emergencia) se crea con el script, que
+escribe tanto el claim como `users/{uid}.role`:
 
 ```bash
 # Requiere credenciales de administrador de Google Cloud:
@@ -414,8 +423,14 @@ pip install -r functions/requirements.txt   # si aún no tienes firebase-admin
 python scripts/set-admin-claim.py tu-correo@ejemplo.com
 ```
 
-El claim viaja en el ID token: **cierra sesión y vuelve a entrar** en la web para que surta efecto.
-Para revocarlo: `python scripts/set-admin-claim.py tu-correo@ejemplo.com --revoke`.
+El rol en Firestore surte efecto al instante; el claim solo viaja en el ID token, así que tras
+ejecutar el script conviene **cerrar sesión y volver a entrar**. Para revocarlo:
+`python scripts/set-admin-claim.py tu-correo@ejemplo.com --revoke`, y para ver los roles actuales:
+`python scripts/set-admin-claim.py --list`.
+
+> Reglas: `isAdmin()` lee `users/{uid}.role`, con un **puente temporal** que también acepta el claim
+> `admin` heredado. Cuando ya no queden cuentas solo-claim, se puede quitar ese puente de
+> `firestore.rules`.
 
 ### 9.2 Pruebas de reglas con el emulador
 

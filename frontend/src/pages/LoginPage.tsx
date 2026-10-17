@@ -9,7 +9,7 @@ import { getFirebaseApp } from '../firebase/client'
 import { friendlyFirebaseLoginError } from '../utils/firebaseAuthErrors'
 
 export function LoginPage() {
-  const { authToken, login, isReady } = useAuth()
+  const { authToken, login, isReady, sessionNotice, clearSessionNotice } = useAuth()
   const firebaseConfigured = Boolean(getFirebaseApp())
   const navigate = useNavigate()
   const location = useLocation()
@@ -68,6 +68,24 @@ export function LoginPage() {
           onSubmit={handleSubmit}
           className="shadow-card rounded-2xl border border-line-subtle bg-surface-1/90 p-6 backdrop-blur"
         >
+          {sessionNotice && (
+            <div
+              className="mb-4 flex gap-3 rounded-xl border border-risk-medio/30 bg-risk-medio-soft px-3 py-3 text-sm text-risk-medio"
+              role="status"
+            >
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <span className="flex-1">{sessionNotice}</span>
+              <button
+                type="button"
+                onClick={clearSessionNotice}
+                aria-label="Cerrar aviso"
+                className="rounded-md p-0.5 text-risk-medio transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           {error && (
             <div
               className="mb-4 flex gap-3 rounded-xl border border-risk-alto/30 bg-risk-alto-soft px-3 py-3 text-sm text-risk-alto"

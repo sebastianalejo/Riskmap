@@ -63,7 +63,19 @@ export async function apiFetch(
   }
 
   const url = joinUrl(path)
-  const res = await fetch(url, { ...rest, headers: h })
+  let res: Response
+  try {
+    res = await fetch(url, { ...rest, headers: h })
+  } catch {
+    // `fetch` solo falla por red/CORS: p. ej. Cloud Functions no desplegadas
+    // (plan Spark) o un origen fuera de CORS_ORIGINS. Sin esto el navegador
+    // muestra un "Failed to fetch" sin contexto.
+    throw new ApiError(
+      'No se pudo contactar con el servicio. Puede que las Cloud Functions no estén desplegadas (plan Blaze) o que este origen no esté permitido en CORS.',
+      0,
+      null,
+    )
+  }
 
   if (res.status === 204) {
     return null

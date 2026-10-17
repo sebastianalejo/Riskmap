@@ -60,9 +60,12 @@ Alternativa sin variables: `frontend/public/firebase-config.json` (está en `.gi
 Restringe la apiKey web por dominio (HTTP referrers: todo `*.web.app`, `*.firebaseapp.com`
 y `localhost`) y rota la clave antigua.
 
-## 3. Claim admin (antes de las reglas)
+## 3. Rol admin (antes de las reglas)
 
-Las reglas exigen el claim `admin` para escribir. Opción A (recomendada si tienes `gcloud`):
+La fuente de verdad de los roles es la colección `users` de Firestore (`users/{uid}.role`), que se
+gestiona desde la sección **Usuarios** del panel (**no requiere Blaze**). Para el **primer**
+administrador hace falta el script, que escribe el claim y `users/{uid}.role = 'admin'`. Opción A
+(recomendada si tienes `gcloud`):
 
 ```bash
 gcloud auth application-default login          # cuenta dueña del proyecto nuevo
@@ -83,9 +86,16 @@ firebase deploy --only firestore:rules
 
 > No subas la clave al repositorio. Bórrala cuando termines.
 
-Cierra sesión y vuelve a entrar en la web para que el claim llegue al ID token.
+El rol en Firestore surte efecto al instante. Para ver los roles actuales:
+`python scripts/set-admin-claim.py --list`. Las reglas mantienen un **puente temporal** que también
+acepta el claim `admin` heredado; se puede quitar cuando no queden cuentas solo-claim.
 
 ## 4. Cloud Functions
+
+> **Ya no son necesarias para gestionar usuarios.** Las secciones **Usuarios** e **Importar datos**
+> funcionan solo con Firestore + reglas. Las Functions (y el plan Blaze) se necesitan únicamente
+> para la **predicción con modelo** (`predict_crime`, `prediction_health`) y para entrenar/publicar
+> desde la nube.
 
 Opciones de entorno (se leen de `functions/.env` en el deploy; ese archivo no se versiona —
 hay una plantilla en `functions/.env.example`):
@@ -119,8 +129,8 @@ requieren además el claim admin):
 | `POST train_model` | Entrena en la nube (dataset inline o colección). Solo admin. |
 | `POST publish_model` | Publica un `.joblib` del pipeline offline. Solo admin. |
 | `POST import_incidents` / `import_csv_dataset` | Ingesta validada. Solo admin. |
-| `POST create_user` | Crea cuentas de Firebase Auth (nombre, correo y contraseña temporal). Solo admin. |
-| `GET list_users` | Lista cuentas con rol, estado y actividad. Solo admin. |
+| `POST create_user` | Crea cuentas de Firebase Auth (nombre, correo y contraseña temporal). Solo admin. **Opcional:** el panel ya no la usa. |
+| `GET list_users` | Lista cuentas con rol, estado y actividad. Solo admin. **Opcional:** el panel ya no la usa. |
 | `GET inei_datacrim_aggregate` / `inei_arcgis_points` | Proxies INEI (CORS). |
 
 ## 5. Modelo de predicción

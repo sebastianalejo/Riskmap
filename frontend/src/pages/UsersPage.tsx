@@ -3,22 +3,34 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  KeyRound,
   Loader2,
   Lock,
   Mail,
   RefreshCw,
   ShieldCheck,
+  ShieldOff,
   User,
   UserPlus,
 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import { createUser, listUsers, type AdminUser } from '../api/admin'
-import { ApiError } from '../api/client'
+import {
+  createUser,
+  currentAdminUid,
+  sendPasswordReset,
+  setUserDisabled,
+  setUserRole,
+  subscribeUsers,
+  type AdminUser,
+  type UserRole,
+} from '../api/admin'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardHeader } from '../components/ui/card'
-import { Input, Label } from '../components/ui/input'
+import { Input, Label, Select } from '../components/ui/input'
+import { Modal } from '../components/ui/modal'
 import { useToast } from '../components/ui/toast'
+import { friendlyUserError } from '../utils/adminErrors'
 
 interface CreatedAccount {
   displayName: string
@@ -26,16 +38,12 @@ interface CreatedAccount {
   password: string
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+type ConfirmAction =
+  | { kind: 'disable'; user: AdminUser }
+  | { kind: 'enable'; user: AdminUser }
+  | { kind: 'demote'; user: AdminUser }
 
-function friendlyAdminError(err: unknown, fallback: string): string {
-  if (err instanceof ApiError) {
-    if (err.status === 401) return 'Tu sesión expiró. Vuelve a iniciar sesión y reinténtalo.'
-    if (err.status === 403) return 'Tu cuenta no tiene el permiso admin para esta operación.'
-    return err.message
-  }
-  return err instanceof Error ? err.message : fallback
-}
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function formatDateTime(ms: number | null): string {
   if (!ms) return '—'
@@ -44,6 +52,7 @@ function formatDateTime(ms: number | null): string {
 
 export function UsersPage() {
   const { toast } = useToast()
+  const selfUid = currentAdminUid()
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -58,27 +67,21 @@ export function UsersPage() {
   const [listLoading, setListLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [pendingUid, setPendingUid] = useState<string | null>(null)
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
 
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const data = await listUsers()
-        if (cancelled) return
+    return subscribeUsers(
+      (data) => {
         setUsers(data)
         setListError(null)
-      } catch (err) {
-        if (!cancelled) {
-          setListError(friendlyAdminError(err, 'No se pudieron cargar las cuentas.'))
-        }
-      } finally {
-        if (!cancelled) setListLoading(false)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
+        setListLoading(false)
+      },
+      (err) => {
+        setListError(friendlyUserError(err, 'No se pudieron cargar las cuentas.'))
+        setListLoading(false)
+      },
+    )
   }, [reloadKey])
 
   const refreshUsers = () => {
@@ -86,6 +89,23 @@ export function UsersPage() {
     setListError(null)
     setReloadKey((k) => k + 1)
   }
+
+  const commit = async (action: () => Promise<void>, uid: string, fallback: string) => {
+    setPendingUid(uid)
+    try {
+      await action()
+    } catch (err) {
+      toast({
+        variant: 'error',
+        title: 'Operación no completada',
+        description: friendlyUserError(err, fallback),
+      })
+    } finally {
+      setPendingUid(null)
+    }
+  }
+
+  const activeAdmins = users.filter((u) => u.role === 'admin' && !u.disabled).length
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -113,7 +133,11 @@ export function UsersPage() {
 
     setLoading(true)
     try {
-      const user = await createUser({ displayName: trimmedName, email: trimmedEmail, password })
+      const user = await createUser({
+        displayName: trimmedName,
+        email: trimmedEmail,
+        password,
+      })
       setCreated({
         displayName: user.displayName?.trim() || trimmedName,
         email: user.email ?? trimmedEmail,
@@ -128,22 +152,114 @@ export function UsersPage() {
         title: 'Cuenta creada',
         description: 'La persona ya puede iniciar sesión en /login con esas credenciales.',
       })
-      refreshUsers()
     } catch (err) {
-      setError(friendlyAdminError(err, 'No se pudo crear la cuenta.'))
+      setError(friendlyUserError(err, 'No se pudo crear la cuenta.'))
     } finally {
       setLoading(false)
     }
   }
+
+  const commitRole = (user: AdminUser, role: UserRole) =>
+    commit(
+      async () => {
+        await setUserRole(user.uid, role)
+        toast({
+          variant: 'success',
+          title: role === 'admin' ? 'Rol admin asignado' : 'Rol actualizado',
+          description:
+            role === 'admin'
+              ? `${user.displayName || user.email} verá la sección Administración al recargar.`
+              : `${user.displayName || user.email} queda como usuario.`,
+        })
+      },
+      user.uid,
+      'No se pudo cambiar el rol.',
+    )
+
+  const applyRole = async (user: AdminUser, role: UserRole) => {
+    if (user.role === role) return
+    if (role === 'user' && user.role === 'admin' && activeAdmins <= 1) {
+      toast({
+        variant: 'error',
+        title: 'No se puede quitar el rol',
+        description: 'Es el último administrador activo. Asigna otro admin antes de cambiarlo.',
+      })
+      return
+    }
+    if (role === 'user' && user.role === 'admin') {
+      setConfirmAction({ kind: 'demote', user })
+      return
+    }
+    await commitRole(user, role)
+  }
+
+  const applyDisabled = async (user: AdminUser, disabled: boolean) => {
+    await commit(async () => {
+      await setUserDisabled(user.uid, disabled)
+      toast({
+        variant: 'success',
+        title: disabled ? 'Cuenta deshabilitada' : 'Cuenta habilitada',
+        description: disabled
+          ? `${user.displayName || user.email} ya no puede acceder a los datos.`
+          : `${user.displayName || user.email} recupera el acceso.`,
+      })
+    }, user.uid, 'No se pudo actualizar el estado de la cuenta.')
+  }
+
+  const handleReset = (user: AdminUser) => {
+    if (!user.email) return
+    void commit(
+      async () => {
+        await sendPasswordReset(user.email!)
+        toast({
+          variant: 'success',
+          title: 'Correo enviado',
+          description: `Se envió el restablecimiento de contraseña a ${user.email}.`,
+        })
+      },
+      user.uid,
+      'No se pudo enviar el correo de restablecimiento.',
+    )
+  }
+
+  const confirmCopy = (() => {
+    if (!confirmAction) return null
+    const who = confirmAction.user.displayName || confirmAction.user.email || 'esta cuenta'
+    if (confirmAction.kind === 'disable') {
+      return {
+        title: 'Deshabilitar cuenta',
+        description: `${who} no podrá volver a leer ni escribir datos hasta que la habilites. La cuenta de Firebase Authentication sigue existiendo.`,
+        label: 'Deshabilitar',
+        variant: 'danger' as const,
+        run: () => applyDisabled(confirmAction.user, true),
+      }
+    }
+    if (confirmAction.kind === 'enable') {
+      return {
+        title: 'Habilitar cuenta',
+        description: `${who} recuperará el acceso a los datos que permite su rol.`,
+        label: 'Habilitar',
+        variant: 'primary' as const,
+        run: () => applyDisabled(confirmAction.user, false),
+      }
+    }
+    return {
+      title: 'Quitar rol de administrador',
+      description: `${who} dejará de ver la sección Administración. Para borrar la cuenta definitivamente, usa Firebase Console → Authentication.`,
+      label: 'Quitar admin',
+      variant: 'danger' as const,
+      run: () => commitRole(confirmAction.user, 'user'),
+    }
+  })()
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-content-primary">Usuarios</h1>
         <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-          Crea cuentas para acceder al panel y consulta los roles existentes. Se registran en
-          Firebase Authentication (correo y contraseña) y se usan en{' '}
-          <code className="rounded bg-surface-2 px-1 font-mono text-xs">/login</code>.
+          Crea cuentas y gestiona roles y estado. Los roles se guardan en Firestore (
+          <code className="rounded bg-surface-2 px-1 font-mono text-xs">users</code>) y se aplican al
+          instante; las credenciales se administran en Firebase Authentication.
         </p>
       </div>
 
@@ -177,7 +293,7 @@ export function UsersPage() {
         <Card className="p-6">
           <CardHeader
             title="Nueva cuenta"
-            description="La cuenta no recibe permisos de administrador automáticamente."
+            description="La cuenta se crea con rol Usuario; asciéndela cuando corresponda."
           />
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
@@ -291,25 +407,18 @@ export function UsersPage() {
           </form>
 
           <p className="mt-4 text-xs text-content-muted">
-            ¿La cuenta necesita permisos de administrador? Asígnalos con{' '}
-            <span className="font-mono text-content-secondary">
-              python scripts/set-admin-claim.py correo@ejemplo.com
-            </span>{' '}
-            y pídele cerrar sesión y volver a entrar.
+            La contraseña es temporal: compártela y pide a la persona cambiarla con “Enviar
+            restablecimiento” o desde el login. Para eliminar una cuenta por completo, usa Firebase
+            Console → Authentication.
           </p>
         </Card>
 
         <Card className="p-6">
           <CardHeader
             title="Cuentas registradas"
-            description="Roles, estado y actividad según Firebase Authentication."
+            description="Rol y estado según la colección users de Firestore."
             action={
-              <Button
-                variant="ghost"
-                size="sm"
-                loading={listLoading}
-                onClick={refreshUsers}
-              >
+              <Button variant="ghost" size="sm" loading={listLoading} onClick={refreshUsers}>
                 <RefreshCw className="size-3.5" aria-hidden />
                 Actualizar
               </Button>
@@ -335,74 +444,135 @@ export function UsersPage() {
             <p className="mt-4 text-sm text-content-muted">Aún no hay cuentas registradas.</p>
           ) : (
             <div className="mt-4 overflow-x-auto rounded-xl border border-line-subtle">
-              <table className="w-full min-w-[560px] text-left text-xs">
+              <table className="w-full min-w-[720px] text-left text-xs">
                 <thead className="bg-surface-2 text-[10px] uppercase tracking-wide text-content-muted">
                   <tr>
                     <th className="px-3 py-2 font-semibold">Usuario</th>
                     <th className="px-3 py-2 font-semibold">Rol</th>
                     <th className="px-3 py-2 font-semibold">Estado</th>
                     <th className="px-3 py-2 font-semibold">Último acceso</th>
-                    <th className="px-3 py-2 font-semibold">Creada</th>
+                    <th className="px-3 py-2 font-semibold">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
-                    <tr key={u.uid} className="border-t border-line-subtle hover:bg-surface-2/60">
-                      <td className="px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent">
-                            {(u.displayName || u.email || '?').trim().charAt(0).toUpperCase() || '?'}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-medium text-content-primary">
-                              {u.displayName || 'Sin nombre'}
-                            </p>
-                            <p className="truncate text-[11px] text-content-muted">
-                              {u.email ?? '—'}
-                            </p>
+                  {users.map((u) => {
+                    const isSelf = u.uid === selfUid
+                    const busy = pendingUid === u.uid
+                    return (
+                      <tr key={u.uid} className="border-t border-line-subtle hover:bg-surface-2/60">
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent">
+                              {(u.displayName || u.email || '?').trim().charAt(0).toUpperCase() || '?'}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-medium text-content-primary">
+                                {u.displayName || 'Sin nombre'}
+                                {isSelf && <span className="ml-1 text-[10px] text-content-muted">(tú)</span>}
+                              </p>
+                              <p className="truncate text-[11px] text-content-muted">
+                                {u.email ?? '—'}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <Badge tone={u.role === 'admin' ? 'accent' : 'neutral'}>
-                          {u.role === 'admin' ? (
-                            <>
-                              <ShieldCheck className="size-3" aria-hidden />
-                              Admin
-                            </>
-                          ) : (
-                            'Usuario'
-                          )}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className={u.disabled ? 'text-risk-alto' : 'text-risk-bajo'}>
-                          {u.disabled ? 'Deshabilitada' : 'Activa'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-content-secondary">
-                        {formatDateTime(u.lastSignInAt)}
-                      </td>
-                      <td className="px-3 py-2 text-content-secondary">
-                        {formatDateTime(u.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Select
+                            aria-label={`Rol de ${u.displayName || u.email || u.uid}`}
+                            value={u.role}
+                            disabled={busy || isSelf}
+                            title={isSelf ? 'No puedes cambiar tu propio rol' : undefined}
+                            onChange={(e) => void applyRole(u, e.target.value as UserRole)}
+                            className="h-8 w-28 px-2 py-0 text-xs"
+                          >
+                            <option value="user">Usuario</option>
+                            <option value="admin">Admin</option>
+                          </Select>
+                        </td>
+                        <td className="px-3 py-2">
+                          <Badge tone={u.disabled ? 'alto' : 'bajo'}>
+                            {u.disabled ? (
+                              <>
+                                <ShieldOff className="size-3" aria-hidden />
+                                Deshabilitada
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="size-3" aria-hidden />
+                                Activa
+                              </>
+                            )}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-2 text-content-secondary">
+                          <p>{formatDateTime(u.lastSignInAt)}</p>
+                          <p className="text-[11px] text-content-muted">
+                            Creada: {formatDateTime(u.createdAt)}
+                          </p>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={busy || !u.email}
+                              onClick={() => handleReset(u)}
+                              title="Enviar correo de restablecimiento de contraseña"
+                            >
+                              <KeyRound className="size-3.5" aria-hidden />
+                              Reset
+                            </Button>
+                            <Button
+                              variant={u.disabled ? 'secondary' : 'ghost'}
+                              size="sm"
+                              disabled={busy || isSelf}
+                              title={isSelf ? 'No puedes deshabilitar tu propia cuenta' : undefined}
+                              onClick={() =>
+                                setConfirmAction({ kind: u.disabled ? 'enable' : 'disable', user: u })
+                              }
+                            >
+                              {u.disabled ? 'Habilitar' : 'Deshabilitar'}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
           )}
 
-          {!listLoading && !listError && (
-            <p className="mt-3 text-[11px] text-content-muted">
-              {users.length} cuenta(s). Los roles se asignan por fuera de la app:{' '}
-              <span className="font-mono text-content-secondary">
-                python scripts/set-admin-claim.py correo@ejemplo.com
-              </span>
-            </p>
-          )}
+          <p className="mt-3 text-[11px] text-content-muted">
+            {users.length} cuenta(s). No puedes cambiar tu propio rol ni deshabilitar tu cuenta. El
+            borrado definitivo se hace en Firebase Console → Authentication.
+          </p>
         </Card>
       </div>
+
+      <Modal
+        open={confirmAction !== null}
+        onClose={() => setConfirmAction(null)}
+        title={confirmCopy?.title ?? ''}
+        description={confirmCopy?.description}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirmAction(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmCopy?.variant ?? 'primary'}
+              onClick={() => {
+                const run = confirmCopy?.run
+                setConfirmAction(null)
+                void run?.()
+              }}
+            >
+              {confirmCopy?.label ?? 'Confirmar'}
+            </Button>
+          </>
+        }
+      />
     </div>
   )
 }

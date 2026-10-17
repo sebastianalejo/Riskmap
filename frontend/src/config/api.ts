@@ -11,6 +11,7 @@ const FN_MAP: Record<string, string> = {
 export const paths = {
   importIncidents: '/firebase/import-rows/',
   importCsv: '/firebase/import-csv/',
+  // Solo para el backend en Blaze: el panel gestiona cuentas y roles vía Firestore.
   createUser: '/admin/create-user/',
   listUsers: '/admin/list-users/',
 } as const
