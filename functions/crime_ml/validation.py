@@ -155,6 +155,70 @@ def validate_incident_row(row: Any, feature_fields: Any, target_field: str) -> d
     return cleaned
 
 
+ARCGIS_REQUIRED_FIELDS = ("crime_type", "district", "latitude", "longitude", "occurred_year", "severity_level")
+ARCGIS_SEVERITY_LEVELS = ("baja", "media", "alta")
+MAX_STR_MACRO = 80
+
+
+def _coerce_number(value: Any, field: str) -> float:
+    """Convierte números o cadenas numéricas (los CSV llegan como texto)."""
+    if isinstance(value, bool):
+        raise ValidationError(f"'{field}' debe ser un número.")
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        raise ValidationError(f"'{field}' debe ser un número.") from None
+
+
+def _coerce_int(value: Any, field: str) -> int:
+    number = _coerce_number(value, field)
+    if not number.is_integer():
+        raise ValidationError(f"'{field}' debe ser un número entero.")
+    return int(number)
+
+
+def validate_arcgis_incident_row(row: Any) -> dict[str, Any]:
+    """Valida una fila del dataset INEI 2021-2024 (esquema v2: núcleo + año/severidad).
+
+    Acepta valores numéricos nativos o en texto (formato CSV). Devuelve la fila
+    normalizada con exactamente las columnas del esquema v2 (sin `source`, que
+    añade el pipeline).
+    """
+    if not isinstance(row, dict):
+        raise ValidationError("La fila debe ser un objeto.")
+
+    missing = [field for field in ARCGIS_REQUIRED_FIELDS if field not in row or row[field] in (None, "")]
+    if missing:
+        raise ValidationError(f"Faltan campos obligatorios: {missing}")
+
+    cleaned = {
+        "crime_type": _clean_field("crime_type", row["crime_type"]),
+        "district": _clean_field("district", row["district"]),
+        "latitude": _require_number(
+            _coerce_number(row["latitude"], "latitude"), "latitude", minimum=LAT_MIN, maximum=LAT_MAX
+        ),
+        "longitude": _require_number(
+            _coerce_number(row["longitude"], "longitude"), "longitude", minimum=LON_MIN, maximum=LON_MAX
+        ),
+        "occurred_year": _require_int(
+            _coerce_int(row["occurred_year"], "occurred_year"),
+            "occurred_year",
+            minimum=MIN_YEAR,
+            maximum=MAX_YEAR,
+        ),
+    }
+
+    severity = row.get("severity_level")
+    severity = severity.strip().lower() if isinstance(severity, str) else severity
+    if severity not in ARCGIS_SEVERITY_LEVELS:
+        raise ValidationError(f"'severity_level' debe ser uno de: {', '.join(ARCGIS_SEVERITY_LEVELS)}.")
+    cleaned["severity_level"] = severity
+
+    macro = row.get("macro_category")
+    cleaned["macro_category"] = _require_str(macro, "macro_category", max_length=MAX_STR_MACRO) if macro else "otros"
+    return cleaned
+
+
 def validate_dataset_rows(dataset: Any) -> list[dict[str, Any]]:
     """Valida el array `dataset` del endpoint de entrenamiento."""
     if not isinstance(dataset, list) or not dataset:

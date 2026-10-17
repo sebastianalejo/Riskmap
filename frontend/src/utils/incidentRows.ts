@@ -7,9 +7,20 @@ export type MapPoint = {
   district?: string
   crimeType?: string
   riskLevel?: string
-  source?: 'firestore' | 'inei'
+  source?: string
   year?: number
   hour?: number
+}
+
+/** Fuentes conocidas de `crime_incidents` (para el filtro del mapa). */
+export const SOURCE_OPTIONS = [
+  { value: '', label: 'Todas las fuentes' },
+  { value: 'inei', label: 'INEI 2021-2024 (con año)' },
+  { value: 'modalidad', label: 'Modalidad (sin fecha)' },
+] as const
+
+export function sourceLabel(source?: string): string {
+  return SOURCE_OPTIONS.find((option) => option.value === source)?.label ?? 'Otros'
 }
 
 const SEVERITY_TO_RISK: Record<string, RiskLevel> = { baja: 'bajo', media: 'medio', alta: 'alto' }
@@ -46,7 +57,7 @@ export function mapIncidentToPoint(id: string, data: Record<string, unknown>): M
     id,
     lat,
     lng,
-    source: data.source === 'inei' ? 'inei' : 'firestore',
+    source: typeof data.source === 'string' && data.source ? data.source : 'firestore',
     district: typeof data.district === 'string' ? data.district : undefined,
     crimeType: typeof data.crime_type === 'string' ? data.crime_type : undefined,
     hour: typeof data.hour === 'number' ? data.hour : undefined,

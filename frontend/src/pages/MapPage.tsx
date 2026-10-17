@@ -1,18 +1,19 @@
 import { Filter, MapPin, RefreshCw, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { MonthlyTrendCard } from '../components/charts/MonthlyTrendCard'
+import { DistrictChoroplethMap, DistrictLegend } from '../components/maps/DistrictChoroplethMap'
 import { RiskMapGoogle } from '../components/maps/RiskMapGoogle'
 import { RiskMapLeaflet } from '../components/maps/RiskMapLeaflet'
 import { riskVar } from '../components/maps/riskColors'
-import { PdfExportControls } from '../components/PdfExportControls'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Select } from '../components/ui/input'
+import { useAuth } from '../context/AuthContext'
 import { CRIME_TYPES, DISTRICTS } from '../data/sampleIncidents'
 import { getGoogleMapsApiKey } from '../firebase/client'
-import { useCrimeIncidentsForMap, type MapPoint } from '../hooks/useCrimeIncidentsForMap'
+import { useCrimeIncidentsForMap, MAX_DOCS, type MapPoint } from '../hooks/useCrimeIncidentsForMap'
 import { useCrimeStatsMonthly } from '../hooks/useCrimeStatsMonthly'
-import { aggregateSeries } from '../utils/monthlyStats'
+import { aggregateByDistrict } from '../utils/districtStats'
+import { SOURCE_OPTIONS } from '../utils/incidentRows'
 
 type RiskLevel = 'bajo' | 'medio' | 'alto'
 export type Stats = Record<RiskLevel, number>
@@ -52,21 +53,25 @@ function StatBadge({ color, label, count }: { color: string; label: string; coun
 }
 
 export function MapPage() {
+  const { isAdmin } = useAuth()
   const mapsKey = getGoogleMapsApiKey()
-  const { points: allPoints, loading, error } = useCrimeIncidentsForMap()
+  const [sourceFilter, setSourceFilter] = useState('')
+  const { points: allPoints, loading, error } = useCrimeIncidentsForMap(sourceFilter || undefined)
 
   // ── Filtros ────────────────────────────────────────────────────
   const [activeRisks, setActiveRisks] = useState<Set<RiskLevel>>(new Set(RISK_LEVELS))
   const [crimeFilter, setCrimeFilter] = useState('')
   const [districtFilter, setDistrictFilter] = useState('')
+  const [yearFilter, setYearFilter] = useState(0)
   const [hourRange, setHourRange] = useState(0) // índice en HOUR_LABELS
   // En escritorio los filtros se muestran abiertos; en móvil parten colapsados
   // para no empujar el mapa fuera de la pantalla.
   const [filtersOpen, setFiltersOpen] = useState(
     () => typeof window === 'undefined' || window.matchMedia('(min-width: 1024px)').matches,
   )
-  const [months, setMonths] = useState(24)
-  const { rows: monthlyRows, loading: monthlyLoading, error: monthlyError } = useCrimeStatsMonthly()
+  const [months] = useState(24)
+  const [layer, setLayer] = useState<'puntos' | 'distritos'>('puntos')
+  const { rows: monthlyRows } = useCrimeStatsMonthly()
 
   function toggleRisk(r: RiskLevel) {
     setActiveRisks((prev) => {
@@ -82,9 +87,26 @@ export function MapPage() {
     setCrimeFilter('')
     setDistrictFilter('')
     setHourRange(0)
+    setYearFilter(0)
+    setSourceFilter('')
   }
 
-  const hasFilters = activeRisks.size < 3 || crimeFilter || districtFilter || hourRange > 0
+  const hasFilters =
+    activeRisks.size < 3 ||
+    crimeFilter !== '' ||
+    districtFilter !== '' ||
+    hourRange > 0 ||
+    yearFilter > 0 ||
+    sourceFilter !== ''
+
+  // ── Años disponibles (documentos del esquema v2 con occurred_year) ──
+  const years = useMemo(
+    () =>
+      [...new Set(allPoints.map((p) => p.year).filter((y): y is number => typeof y === 'number'))].sort(
+        (a, b) => b - a,
+      ),
+    [allPoints],
+  )
 
   // ── Puntos filtrados ───────────────────────────────────────────
   const points: MapPoint[] = useMemo(() => {
@@ -96,13 +118,14 @@ export function MapPage() {
       if (!p.riskLevel && activeRisks.size < 3) return false
       if (crimeFilter && p.crimeType !== crimeFilter) return false
       if (districtFilter && p.district !== districtFilter) return false
+      if (yearFilter > 0 && p.year !== yearFilter) return false
       if (!inHourRange(p.hour ?? -1, hr) && hr !== null) {
         // hour no siempre está en MapPoint; si falta, no filtramos por hora
         if (typeof p.hour === 'number') return false
       }
       return true
     })
-  }, [allPoints, activeRisks, crimeFilter, districtFilter, hourRange])
+  }, [allPoints, activeRisks, crimeFilter, districtFilter, hourRange, yearFilter])
 
   // ── Estadísticas ──────────────────────────────────────────────
   const stats: Stats = useMemo(() => {
@@ -114,13 +137,9 @@ export function MapPage() {
     return s
   }, [points])
 
-  // ── Etiquetas para filtros ─────────────────────────────────────
-  const riskLabels = [...activeRisks].sort().join(', ')
-  const hourLabel = HOUR_LABELS[hourRange]
-  const crimeLabel = crimeFilter
-  const districtLabel = districtFilter
-  const monthlySeries = useMemo(
-    () => aggregateSeries(monthlyRows, { months }),
+  // ── Serie SIDPOL agregada por distrito (capa coroplética) ──────
+  const districtTotals = useMemo(
+    () => aggregateByDistrict(monthlyRows, months),
     [monthlyRows, months],
   )
 
@@ -181,6 +200,29 @@ export function MapPage() {
               </div>
             </fieldset>
 
+            {/* Fuente de los datos (consulta filtrada en el servidor) */}
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-content-muted">
+                Fuente de datos
+              </p>
+              <Select
+                className="py-1.5 text-xs"
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                aria-label="Filtrar por fuente de datos"
+              >
+                {SOURCE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1 text-[10px] leading-snug text-content-muted">
+                El filtro se aplica en el servidor: acota la consulta para ver todos los puntos de
+                esa fuente (tope de 10 000 por carga).
+              </p>
+            </div>
+
             {/* Tipo de delito */}
             <div>
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-content-muted">
@@ -220,6 +262,28 @@ export function MapPage() {
                 ))}
               </Select>
             </div>
+
+            {/* Año (solo si hay documentos del esquema v2 con occurred_year) */}
+            {years.length > 0 && (
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-content-muted">
+                  Año del hecho (INEI)
+                </p>
+                <Select
+                  className="py-1.5 text-xs"
+                  value={yearFilter}
+                  onChange={(e) => setYearFilter(Number(e.target.value))}
+                  aria-label="Filtrar por año"
+                >
+                  <option value={0}>Todos los años</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
 
             {/* Franja horaria */}
             <div>
@@ -285,25 +349,35 @@ export function MapPage() {
           <MapPin className="size-4 shrink-0 text-accent" aria-hidden />
           <span className="text-sm font-semibold text-content-primary">Mapa de riesgo criminal</span>
           <span className="text-xs text-content-muted">Lima Metropolitana</span>
+          <div className="flex rounded-xl border border-line-subtle bg-surface-2 p-0.5" role="group" aria-label="Capa del mapa">
+            {(['puntos', 'distritos'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setLayer(option)}
+                aria-pressed={layer === option}
+                className={[
+                  'rounded-lg px-2.5 py-1 text-xs font-medium capitalize transition',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                  layer === option
+                    ? 'bg-surface-1 text-accent shadow-sm ring-1 ring-line-subtle'
+                    : 'text-content-secondary hover:text-content-primary',
+                ].join(' ')}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
           {hasFilters && <Badge tone="accent">Filtros activos</Badge>}
-          <div className="ml-auto flex flex-wrap items-center gap-3">
-            {!loading && points.length > 0 && (
-              <PdfExportControls
-                points={points}
-                allPointsCount={allPoints.length}
-                stats={stats}
-                crimeFilter={crimeLabel}
-                districtFilter={districtLabel}
-                hourLabel={hourLabel}
-                riskLabels={riskLabels}
-                months={months}
-                onMonthsChange={setMonths}
-                series={monthlySeries}
-              />
-            )}
+          <div className="ml-auto flex items-center gap-3">
             <span className="font-mono text-xs text-content-secondary">
               {loading ? 'Cargando…' : `${points.length} / ${allPoints.length} puntos`}
             </span>
+            {!loading && allPoints.length >= MAX_DOCS && (
+              <span className="rounded-full bg-risk-medio-soft px-2 py-0.5 text-[11px] text-risk-medio ring-1 ring-risk-medio/30">
+                Límite de {MAX_DOCS.toLocaleString('es-PE')}: acota con Fuente/Año/Distrito
+              </span>
+            )}
           </div>
         </div>
 
@@ -314,33 +388,49 @@ export function MapPage() {
           </div>
         )}
 
-        {/* Sin datos */}
-        {!loading && !error && allPoints.length === 0 && (
+        {/* Sin datos (solo capa de puntos: la coropleta usa la serie SIDPOL) */}
+        {layer === 'puntos' && !loading && !error && allPoints.length === 0 && (
           <div className="m-4 rounded-xl border border-risk-medio/30 bg-risk-medio-soft px-4 py-3 text-sm text-risk-medio">
-            Sin registros con coordenadas. Ve a <strong>«Importar datos»</strong> y carga los datos
-            de muestra.
+            {sourceFilter ? (
+              <>
+                No hay puntos con la fuente seleccionada. Prueba con «Todas las fuentes»: puede que
+                ese conjunto esté pendiente de carga.
+              </>
+            ) : isAdmin ? (
+              <>
+                Sin registros con coordenadas. Ve a <strong>«Importar datos»</strong> y carga los
+                datos de muestra.
+              </>
+            ) : (
+              <>Sin registros con coordenadas. Pide a un administrador que importe los datos.</>
+            )}
           </div>
         )}
 
         {/* Mapa */}
-        <div className="h-[min(65vh,560px)] shrink-0 p-4 pb-0">
-          {mapsKey ? (
-            <RiskMapGoogle apiKey={mapsKey} points={points} />
+        <div className="min-h-[320px] flex-1 p-4">
+          {layer === 'puntos' ? (
+            mapsKey ? (
+              <RiskMapGoogle apiKey={mapsKey} points={points} />
+            ) : (
+              <RiskMapLeaflet points={points} />
+            )
           ) : (
-            <RiskMapLeaflet points={points} />
+            <DistrictChoroplethMap districts={districtTotals} months={months} />
           )}
         </div>
 
-        {/* Tendencia real (SIDPOL/MININTER) */}
-        <div className="shrink-0 px-4 py-4">
-          <MonthlyTrendCard
-            rows={monthlyRows}
-            loading={monthlyLoading}
-            error={monthlyError}
-            months={months}
-            onChangeMonths={setMonths}
-          />
-        </div>
+        {layer === 'distritos' && (
+          <div className="shrink-0 space-y-2 px-4 pb-4">
+            <DistrictLegend districts={districtTotals} />
+            <p className="text-[11px] leading-snug text-content-muted">
+              Serie mensual SIDPOL/MININTER por distrito (
+              {months === 0 ? 'todo el histórico disponible' : `últimos ${months} meses`}). Denuncias
+              registradas en términos absolutos, todavía sin normalizar por población; el detalle por
+              modalidad está en el tooltip de cada distrito.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

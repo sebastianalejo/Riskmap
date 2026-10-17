@@ -101,3 +101,87 @@ python scripts/pipeline/ingest_sidpol.py --refresh --upload
 (`scripts/pipeline/upload_incidents.py`), con pruebas de paridad en JS y Python. Reimportar el
 mismo archivo actualiza los mismos documentos; la migración inicial fusionó 1 fila duplicada del
 CSV (1 000 filas → 999 documentos).
+
+## Puntos INEI adicionales (Fase A)
+
+```bash
+python scripts/pipeline/ingest_inei_legacy.py --year 2022 --per-modality 320
+python scripts/pipeline/upload_incidents.py --csv data/raw/inei/points_2022_legacy.csv --verify
+```
+
+- Descarga ~4 100 puntos reales del grupo 2022 (capas 123-137, descubiertas dinámicamente) con el
+  **esquema clásico** de 8 columnas, filtrando por ubigeo (1501/0701) y nombre canónico.
+- `hour` y `day_of_week` se derivan **determinísticamente del ID de denuncia** (mismo punto →
+  mismos valores → la subida es idempotente); `historical_frequency` usa la **media mensual real de
+  SIDPOL** del distrito y modalidad (no tablas inventadas); `risk_level` es la severidad declarada.
+- Estado de la colección: **5 179 documentos** (999 previos + 4 180 únicos; 41 filas con contenido
+  duplicado se fusionaron solas).
+- Cupo: el plan gratuito permite 20 000 escrituras/día; no conviene encadenar muchas migraciones
+  el mismo día (la re-verificación puede devolver `429`).
+
+## Capa coroplética por distrito (Fase B)
+
+```bash
+python scripts/pipeline/build_geo.py
+```
+
+- Genera `frontend/public/geo/lima_distritos.geojson` (50 distritos, ~35 KB): fuente nacional
+  simplificada + **parche vía Nominatim (OSM/ODbL)** para los 3 distritos ausentes (La Punta,
+  Mi Perú y Santa Anita — este último tenía geometría nula en la fuente; SMP sí venía, es 150135).
+- En el mapa: selector **«Puntos | Distritos»**. La coropleta usa `crime_stats_monthly` dentro del
+  periodo elegido, con leyenda, tooltip por distrito (total + modalidad dominante) y aviso de
+  que son valores absolutos.
+- **Pendiente (requiere aprobación de fuente)**: población distrital para tasas por 100 000 hab.
+  No existe dataset en el portal de datos abiertos; la vía es el XLSX de proyecciones del INEI o
+  el Censo 2017. Documentar como aproximación si se usa el censo.
+
+## Esquema v2: puntos INEI 2021-2024 (con año y severidad)
+
+```bash
+python scripts/pipeline/upload_incidents.py --csv data/processed/incidents_lima.csv --verify
+```
+
+- `upload_incidents.py` **detecta el esquema** del CSV: si trae `occurred_year` y `severity_level`
+  usa el esquema v2 (núcleo `crime_type`, `district`, `latitude`, `longitude` + `occurred_year`,
+  `severity_level`, `macro_category` y `source="inei"`); si no, el clásico de 8 columnas.
+- IDs deterministas propios (`arc_<hex>`, FNV-1a 64 sobre las 8 claves v2): reimportar **no
+  duplica**. La app colorea por severidad (alta→alto, media→medio, baja→bajo), habilita el
+  **filtro por año** y muestra el año en los popups.
+- Las reglas de Firestore siguen exigiendo el esquema clásico para escrituras **desde el
+  navegador**; los documentos v2 los escribe el pipeline con el Admin SDK y no pasan por reglas
+  (la lectura sí está cubierta por `isSignedIn`).
+
+### Fuente y tope de 10 000 (mapa)
+
+- El mapa filtra por **fuente en el servidor** (`where('source','==',…)`): `inei` (v2, con año) y
+  `modalidad` (puntos sin fecha). Los 5 179 documentos clásicos necesitan el **backfill** una vez:
+
+  ```bash
+  python scripts/pipeline/upload_incidents.py --backfill-source modalidad --verify
+  ```
+
+- **Tope duro**: Firestore rechaza `limit()` mayor que **10 000** (error
+  `Limit value ... over the maximum value of 10000`). El mapa usa `MAX_DOCS = 10 000` (con prueba
+  de regresión en Vitest) y avisa «Límite de 10 000: acota con Fuente/Año/Distrito» cuando la
+  consulta se recorta. Con los filtros por fuente, cada conjunto queda por debajo del tope
+  (5 179 y ~5 977).
+- Coste: cada carga del mapa consume ~N lecturas (50 000/día en el plan gratuito) → conviene usar
+  los filtros y no abusar de recargas.
+
+### Estado de las cargas pendientes (cupo diario agotado)
+
+```bash
+# 1) backfill de fuente (una vez)   2) subida v2
+python scripts/pipeline/upload_incidents.py --backfill-source modalidad --verify
+python scripts/pipeline/upload_incidents.py --csv data/processed/incidents_lima.csv --verify
+```
+
+Ambos son **idempotentes** y pueden repetirse sin riesgo. Se pospusieron porque el plan gratuito
+agota sus cuotas diarias (20 000 escrituras / 50 000 lecturas); hasta entonces la app funciona
+igual: sin backfill, la opción «Modalidad» del filtro aparece vacía y el filtro por año no se
+muestra (no hay documentos con `occurred_year`).
+- **Estado de la subida**: pendiente del reinicio del cupo diario del plan gratuito
+  (20 000 escrituras y 50 000 lecturas por día; hoy se consumieron con las migraciones).
+  Ejecutar el comando tras la medianoche del Pacífico; es idempotente y puede repetirse sin riesgo.
+  Mientras tanto, la app funciona igual: el filtro por año simplemente no aparece hasta que
+  existan documentos con `occurred_year`.

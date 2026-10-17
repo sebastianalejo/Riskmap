@@ -39,6 +39,10 @@ el modelo nuevo del pipeline offline; su conexión a la API y la UI es trabajo d
 (2018–hoy) en `crime_stats_monthly`, usada para la **tendencia real** del panel y el PDF. No es
 una feature del modelo todavía (ver `data/README.md`).
 
+**Esquema v2 en la app:** además del esquema clásico, `crime_incidents` convive con puntos INEI
+2021-2024 (`occurred_year`, `severity_level`, `macro_category`, `source="inei"`), que el mapa
+colorea por severidad declarada y filtra por año. Siguen sin ser features del modelo.
+
 **Limitaciones de los datos:** subregistro de denuncias (cifra negra), posible doble conteo
 residual, muestreo por ventanas (no es un censo), geocodificación y etiquetas de la fuente con
 inconsistencias (mitigadas, no eliminadas), ausencia de hora/día y de población como denominador.

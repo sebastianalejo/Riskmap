@@ -248,6 +248,66 @@ def test_decode_artifact_excede_tamano(validation, monkeypatch):
         validation.decode_artifact_b64(base64.b64encode(b"12345").decode())
 
 
+# ── esquema v2: filas del dataset INEI 2021-2024 ─────────────────────────────
+
+
+def test_arcgis_row_valida(validation):
+    cleaned = validation.validate_arcgis_incident_row(
+        {
+            "crime_type": "robo agravado",
+            "district": "miraflores",
+            "latitude": "-12.1219",
+            "longitude": "-77.0297",
+            "occurred_year": "2024",
+            "severity_level": "ALTA",
+            "macro_category": "delitos contra el patrimonio",
+        }
+    )
+    assert cleaned["district"] == "MIRAFLORES"
+    assert cleaned["occurred_year"] == 2024
+    assert cleaned["severity_level"] == "alta"
+    assert set(cleaned) == {
+        "crime_type",
+        "district",
+        "latitude",
+        "longitude",
+        "occurred_year",
+        "severity_level",
+        "macro_category",
+    }
+
+
+def test_arcgis_row_errores(validation):
+    base = {
+        "crime_type": "hurto",
+        "district": "LINCE",
+        "latitude": -12.08,
+        "longitude": -77.03,
+        "occurred_year": 2024,
+        "severity_level": "baja",
+    }
+    with pytest.raises(validation.ValidationError, match="Faltan campos"):
+        validation.validate_arcgis_incident_row({k: v for k, v in base.items() if k != "latitude"})
+    with pytest.raises(validation.ValidationError, match="severity_level"):
+        validation.validate_arcgis_incident_row(dict(base, severity_level="imposible"))
+    with pytest.raises(validation.ValidationError, match="occurred_year"):
+        validation.validate_arcgis_incident_row(dict(base, occurred_year=1800))
+
+
+def test_arcgis_row_macro_por_defecto(validation):
+    cleaned = validation.validate_arcgis_incident_row(
+        {
+            "crime_type": "hurto",
+            "district": "LINCE",
+            "latitude": -12.08,
+            "longitude": -77.03,
+            "occurred_year": 2024,
+            "severity_level": "baja",
+        }
+    )
+    assert cleaned["macro_category"] == "otros"
+
+
 # ── csv_text ─────────────────────────────────────────────────────────────────
 
 

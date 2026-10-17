@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mapIncidentToPoint, riskFromIncident, severityToRisk } from './incidentRows'
+import { mapIncidentToPoint, riskFromIncident, severityToRisk, SOURCE_OPTIONS, sourceLabel } from './incidentRows'
 
 describe('severityToRisk y riskFromIncident', () => {
   it('traduce la severidad declarada', () => {
@@ -59,5 +59,18 @@ describe('mapIncidentToPoint', () => {
   it('descarta documentos sin coordenadas válidas', () => {
     expect(mapIncidentToPoint('x', { latitude: 'abc', longitude: -77 })).toBeNull()
     expect(mapIncidentToPoint('x', {})).toBeNull()
+  })
+})
+
+describe('SOURCE_OPTIONS y sourceLabel', () => {
+  it('etiqueta las fuentes conocidas y el resto como Otros', () => {
+    expect(sourceLabel('inei')).toContain('INEI')
+    expect(sourceLabel('modalidad')).toContain('Modalidad')
+    expect(sourceLabel('otra-cosa')).toBe('Otros')
+    expect(sourceLabel(undefined)).toBe('Otros')
+  })
+
+  it('incluye la opción «Todas» con valor vacío', () => {
+    expect(SOURCE_OPTIONS[0]).toEqual({ value: '', label: 'Todas las fuentes' })
   })
 })

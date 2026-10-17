@@ -1,6 +1,7 @@
 import { collection, getDocs, getFirestore, limit, query, where } from 'firebase/firestore'
 import { getFirebaseApp } from '../firebase/client'
 import { CRIME_TYPES, DISTRICTS } from '../data/sampleIncidents'
+import { riskFromIncident } from '../utils/incidentRows'
 
 export type RiskLevel = 'bajo' | 'medio' | 'alto'
 
@@ -151,8 +152,9 @@ export async function predictLocal(input: PredictInput): Promise<PredictResult> 
       if (!snap.empty) {
         const counts: Record<RiskLevel, number> = { bajo: 0, medio: 0, alto: 0 }
         snap.forEach((doc) => {
-          const rl = String(doc.data().risk_level ?? '').toLowerCase() as RiskLevel
-          if (rl === 'bajo' || rl === 'medio' || rl === 'alto') counts[rl]++
+          // Acepta el esquema clásico (`risk_level`) y el v2 (`severity_level`).
+          const level = riskFromIncident(doc.data() as Record<string, unknown>)
+          if (level) counts[level]++
         })
 
         const total = counts.bajo + counts.medio + counts.alto
