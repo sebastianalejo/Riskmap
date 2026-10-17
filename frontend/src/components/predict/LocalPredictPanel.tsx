@@ -5,6 +5,10 @@ import { predictLocal, type PredictInput, type PredictResult, type RiskLevel } f
 
 const DAYS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'] as const
 
+const DISTRICT_OPTIONS = [...DISTRICTS].sort((a, b) => a.name.localeCompare(b.name))
+
+const DEFAULT_DISTRICT = DISTRICTS.find((d) => d.name === 'LA VICTORIA') ?? DISTRICTS[0]
+
 const RISK_CONFIG: Record<RiskLevel, { label: string; bg: string; ring: string; bar: string; text: string }> = {
   bajo:  { label: 'BAJO',  bg: 'bg-risk-bajo-soft',  ring: 'ring-risk-bajo/35',  bar: 'bg-risk-bajo',  text: 'text-risk-bajo' },
   medio: { label: 'MEDIO', bg: 'bg-risk-medio-soft', ring: 'ring-risk-medio/35', bar: 'bg-risk-medio', text: 'text-risk-medio' },
@@ -45,10 +49,10 @@ export function LocalPredictPanel() {
   const [crimeType, setCrimeType] = useState(CRIME_TYPES[0].type)
   const [hour, setHour] = useState(22)
   const [day, setDay] = useState<(typeof DAYS)[number]>('viernes')
-  const [district, setDistrict] = useState(DISTRICTS[7].name) // LA VICTORIA
-  const [latitude, setLatitude]   = useState(DISTRICTS[7].lat)
-  const [longitude, setLongitude] = useState(DISTRICTS[7].lng)
-  const [frequency, setFrequency] = useState(270)
+  const [district, setDistrict] = useState(DEFAULT_DISTRICT.name)
+  const [latitude, setLatitude]   = useState(DEFAULT_DISTRICT.lat)
+  const [longitude, setLongitude] = useState(DEFAULT_DISTRICT.lng)
+  const [frequency, setFrequency] = useState(DEFAULT_DISTRICT.base_freq)
 
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
@@ -147,7 +151,7 @@ export function LocalPredictPanel() {
                 Distrito
               </span>
               <select className={inputClass} value={district} onChange={(e) => handleDistrictChange(e.target.value)}>
-                {DISTRICTS.sort((a, b) => a.name.localeCompare(b.name)).map((d) => (
+                {DISTRICT_OPTIONS.map((d) => (
                   <option key={d.name} value={d.name}>{d.name}</option>
                 ))}
               </select>

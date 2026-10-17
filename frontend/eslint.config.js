@@ -19,5 +19,12 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Los hooks viven junto a sus providers (patrón normal en context/ y ui/).
+      'react-refresh/only-export-components': [
+        'error',
+        { allowExportNames: ['useAuth', 'useTheme', 'useToast'] },
+      ],
+    },
   },
 ])

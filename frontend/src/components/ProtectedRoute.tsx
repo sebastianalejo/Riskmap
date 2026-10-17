@@ -7,13 +7,13 @@ export function ProtectedRoute() {
 
   if (!isReady) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-slate-50">
+      <div className="flex min-h-svh items-center justify-center bg-surface-0">
         <div className="flex flex-col items-center gap-3">
           <div
-            className="size-10 animate-spin rounded-full border-2 border-teal-600 border-t-transparent"
+            className="size-10 animate-spin rounded-full border-2 border-accent border-t-transparent"
             aria-hidden
           />
-          <p className="text-sm text-slate-600">Cargando sesión…</p>
+          <p className="text-sm text-content-secondary">Cargando sesión…</p>
         </div>
       </div>
     )

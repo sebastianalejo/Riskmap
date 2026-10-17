@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { FileDown, Loader2 } from 'lucide-react'
+import { FileDown } from 'lucide-react'
 import { jsPDF } from 'jspdf'
+import { Button } from './ui/button'
 import { simulateDates, SIMULATED_DATES_NOTICE } from '../utils/simulateDates'
 import { computeChartData, RANGE_OPTIONS } from '../utils/chartData'
 import type { TimeRange } from '../utils/chartData'
@@ -221,7 +222,8 @@ export function PdfExportControls({
       <select
         value={range}
         onChange={(e) => onRangeChange(e.target.value as TimeRange)}
-        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+        aria-label="Rango de la tendencia"
+        className="h-8 rounded-xl border border-line-subtle bg-surface-2 px-2.5 text-xs text-content-primary outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/25"
       >
         {RANGE_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -229,18 +231,10 @@ export function PdfExportControls({
           </option>
         ))}
       </select>
-      <button
-        onClick={handleExport}
-        disabled={!hasData || exporting}
-        className="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-medium text-white hover:bg-teal-700 disabled:opacity-50"
-      >
-        {exporting ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          <FileDown className="size-4" />
-        )}
+      <Button size="sm" onClick={handleExport} disabled={!hasData} loading={exporting}>
+        {!exporting && <FileDown className="size-3.5" aria-hidden />}
         {exporting ? 'Generando…' : 'Descargar PDF'}
-      </button>
+      </Button>
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { IncidentTrendChart } from './IncidentTrendChart'
+import { Card, CardHeader } from './ui/card'
 import { simulateDates } from '../utils/simulateDates'
 import { RANGE_OPTIONS } from '../utils/chartData'
 import type { TimeRange } from '../utils/chartData'
@@ -14,11 +15,14 @@ export function PdfExportButton({ points, range }: Props) {
   const datedPoints = simulateDates(points, rangeOpt.days)
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <h3 className="mb-3 text-sm font-semibold text-slate-800">
-        Tendencia de incidentes
-      </h3>
-      <IncidentTrendChart points={datedPoints} range={range} />
-    </div>
+    <Card className="p-4 sm:p-5">
+      <CardHeader
+        title="Tendencia de incidentes"
+        description="Serie de demostración usada en el reporte PDF."
+      />
+      <div className="mt-4">
+        <IncidentTrendChart points={datedPoints} range={range} />
+      </div>
+    </Card>
   )
 }

@@ -1,23 +1,9 @@
-import {
-  Database,
-  LayoutDashboard,
-  LogOut,
-  Map,
-  Menu,
-  Sparkles,
-  X,
-} from 'lucide-react'
+import { Database, LayoutDashboard, LogOut, Map, Menu, Radar, Sparkles, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-
-const navClass = ({ isActive }: { isActive: boolean }) =>
-  [
-    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-    isActive
-      ? 'bg-teal-600 text-white shadow-sm'
-      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-  ].join(' ')
+import { Button } from './ui/button'
+import { ThemeToggle } from './ui/theme-toggle'
 
 const items = [
   { to: '/', label: 'Resumen', icon: LayoutDashboard },
@@ -38,57 +24,91 @@ export function AppShell({ children }: { children?: ReactNode }) {
     })()
   }
 
+  const initial = (username ?? '?').trim().charAt(0).toUpperCase() || '?'
+
   const sidebar = (
-    <div className="flex h-full flex-col border-r border-slate-200 bg-white">
-      <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
-          <Sparkles className="size-5" aria-hidden />
+    <div className="flex h-full flex-col border-r border-line-subtle bg-surface-1">
+      {/* Marca */}
+      <div className="flex items-center gap-3 border-b border-line-subtle px-5 py-4">
+        <div className="shadow-glow flex size-10 items-center justify-center rounded-xl bg-accent-strong text-accent-foreground">
+          <Radar className="size-5" aria-hidden />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-900">Riesgo Criminal</p>
-          <p className="truncate text-xs text-slate-500">Lima Metropolitana</p>
+          <p className="truncate text-sm font-semibold tracking-tight text-content-primary">RiskMap</p>
+          <p className="truncate text-xs text-content-muted">Lima Metropolitana</p>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 p-3" aria-label="Principal">
+      {/* Navegación */}
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Principal">
+        <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-content-muted">
+          Operaciones
+        </p>
         {items.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
-            className={navClass}
             onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              [
+                'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                isActive
+                  ? 'bg-accent-soft text-accent'
+                  : 'text-content-secondary hover:bg-surface-2 hover:text-content-primary',
+              ].join(' ')
+            }
           >
-            <Icon className="size-4 shrink-0 opacity-90" aria-hidden />
-            {label}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span
+                    className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent"
+                    aria-hidden
+                  />
+                )}
+                <Icon className="size-4 shrink-0 opacity-90" aria-hidden />
+                {label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
-      <div className="border-t border-slate-100 p-3">
-        <div className="mb-2 rounded-xl bg-slate-50 px-3 py-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Usuario</p>
-          <p className="truncate text-sm font-medium text-slate-800">{username}</p>
+      {/* Usuario */}
+      <div className="space-y-2 border-t border-line-subtle p-3">
+        <div className="flex items-center gap-3 rounded-xl bg-surface-2 px-3 py-2">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
+            {initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-content-primary">{username ?? 'Invitado'}</p>
+            <p className="text-[11px] text-content-muted">Sesión activa</p>
+          </div>
+          <ThemeToggle />
         </div>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          className="w-full justify-start hover:bg-risk-alto-soft hover:text-risk-alto"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-red-50 hover:text-red-700"
         >
           <LogOut className="size-4" aria-hidden />
           Cerrar sesión
-        </button>
+        </Button>
       </div>
     </div>
   )
 
   return (
-    <div className="flex min-h-svh bg-slate-50">
-      <aside className="hidden w-64 shrink-0 lg:block">{sidebar}</aside>
+    <div className="flex min-h-svh bg-surface-0">
+      <aside className="hidden w-64 shrink-0 lg:sticky lg:top-0 lg:block lg:h-svh lg:self-start">
+        {sidebar}
+      </aside>
 
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden"
+          className="animate-fade-in fixed inset-0 z-40 bg-surface-0/70 backdrop-blur-sm lg:hidden"
           role="presentation"
           onClick={() => setMobileOpen(false)}
         />
@@ -103,21 +123,24 @@ export function AppShell({ children }: { children?: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line-subtle bg-surface-0/85 px-4 py-3 backdrop-blur lg:hidden">
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-700 shadow-sm"
+            className="inline-flex items-center justify-center rounded-xl border border-line-subtle bg-surface-1 p-2 text-content-secondary transition hover:text-content-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             onClick={() => setMobileOpen((o) => !o)}
             aria-expanded={mobileOpen}
             aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
           >
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
-          <span className="truncate text-sm font-semibold text-slate-800">Panel</span>
-          <span className="w-10" />
+          <span className="flex items-center gap-2 truncate text-sm font-semibold text-content-primary">
+            <Radar className="size-4 text-accent" aria-hidden />
+            RiskMap
+          </span>
+          <ThemeToggle />
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {children ?? <Outlet />}
         </main>
       </div>

@@ -23,16 +23,14 @@ function num(v: unknown): number | null {
 
 export function useCrimeIncidentsForMap() {
   const [points, setPoints] = useState<MapPoint[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(() => getFirebaseApp() !== null)
+  const [error, setError] = useState<string | null>(() =>
+    getFirebaseApp() ? null : 'Firebase no inicializado',
+  )
 
   useEffect(() => {
     const app = getFirebaseApp()
-    if (!app) {
-      setLoading(false)
-      setError('Firebase no inicializado')
-      return
-    }
+    if (!app) return
 
     let cancelled = false
     ;(async () => {

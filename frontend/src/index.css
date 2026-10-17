@@ -1,20 +1,111 @@
 @import 'tailwindcss';
 
-@theme {
+/* Dark mode por atributo: <html data-theme="dark|light"> (tema oscuro por defecto). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ── Tokens semánticos ──────────────────────────────────────────────
+   Ver docs/design/DESIGN.md. Los componentes usan SIEMPRE estos tokens,
+   nunca colores de paleta directa. */
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --surface-0: #060b17;
+  --surface-1: #0c1425;
+  --surface-2: #131e33;
+
+  --line-subtle: rgb(148 163 184 / 0.16);
+  --line-strong: rgb(148 163 184 / 0.3);
+
+  --content-primary: #e9eef8;
+  --content-secondary: #a6b4cc;
+  --content-muted: #6c7a94;
+
+  --accent: #2dd4bf;
+  --accent-strong: #14b8a6;
+  --accent-soft: rgb(45 212 191 / 0.12);
+  --accent-foreground: #042f2e;
+
+  --risk-bajo: #34d399;
+  --risk-medio: #fb923c;
+  --risk-alto: #f87171;
+  --risk-bajo-soft: rgb(52 211 153 / 0.14);
+  --risk-medio-soft: rgb(251 146 60 / 0.14);
+  --risk-alto-soft: rgb(248 113 113 / 0.14);
+
+  --info: #38bdf8;
+  --info-soft: rgb(56 189 248 / 0.14);
+
+  --grid-line: rgb(148 163 184 / 0.1);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --surface-0: #f5f7fb;
+  --surface-1: #ffffff;
+  --surface-2: #eef2f8;
+
+  --line-subtle: rgb(15 23 42 / 0.1);
+  --line-strong: rgb(15 23 42 / 0.18);
+
+  --content-primary: #0f172a;
+  --content-secondary: #475569;
+  --content-muted: #64748b;
+
+  --accent: #0f766e;
+  --accent-strong: #0f766e;
+  --accent-soft: rgb(13 148 136 / 0.1);
+  --accent-foreground: #ffffff;
+
+  --risk-bajo: #16a34a;
+  --risk-medio: #ea580c;
+  --risk-alto: #dc2626;
+  --risk-bajo-soft: rgb(22 163 74 / 0.12);
+  --risk-medio-soft: rgb(234 88 12 / 0.12);
+  --risk-alto-soft: rgb(220 38 38 / 0.12);
+
+  --info: #0284c7;
+  --info-soft: rgb(2 132 199 / 0.12);
+
+  --grid-line: rgb(15 23 42 / 0.08);
+}
+
+@theme inline {
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --color-surface-50: #f8fafc;
-  --color-surface-100: #f1f5f9;
-  --color-surface-200: #e2e8f0;
-  --color-surface-800: #1e293b;
-  --color-surface-900: #0f172a;
-  --color-accent-500: #0d9488;
-  --color-accent-600: #0f766e;
-  --color-accent-foreground: #f0fdfa;
-  --color-risk-bajo: #16a34a;
-  --color-risk-medio: #ea580c;
-  --color-risk-alto: #dc2626;
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+
+  --color-line-subtle: var(--line-subtle);
+  --color-line-strong: var(--line-strong);
+
+  --color-content-primary: var(--content-primary);
+  --color-content-secondary: var(--content-secondary);
+  --color-content-muted: var(--content-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-risk-bajo: var(--risk-bajo);
+  --color-risk-medio: var(--risk-medio);
+  --color-risk-alto: var(--risk-alto);
+  --color-risk-bajo-soft: var(--risk-bajo-soft);
+  --color-risk-medio-soft: var(--risk-medio-soft);
+  --color-risk-alto-soft: var(--risk-alto-soft);
+
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --color-grid-line: var(--grid-line);
+
+  --shadow-glow: 0 0 0 1px rgb(45 212 191 / 0.25), 0 4px 24px rgb(20 184 166 / 0.25);
+  --shadow-card: 0 8px 24px rgb(2 6 23 / 0.5);
 }
 
 @layer base {
@@ -22,10 +113,103 @@
     @apply antialiased;
   }
   body {
-    @apply m-0 min-h-svh bg-slate-50 text-slate-800;
+    @apply m-0 min-h-svh bg-surface-0 text-content-primary;
     font-family: var(--font-sans);
   }
   #root {
     @apply min-h-svh;
+  }
+  ::selection {
+    background: rgb(45 212 191 / 0.3);
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid var(--surface-0);
+    border-radius: 9999px;
+    background: var(--surface-2);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--line-strong);
+  }
+}
+
+/* ── Leaflet: adaptación al tema ─────────────────────────────── */
+
+[data-theme='dark'] .leaflet-container {
+  background: var(--surface-0);
+}
+/* Tiles claros de OSM convertidos a un mapa oscuro legible (sin API key). */
+[data-theme='dark'] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.93) contrast(0.92) saturate(0.65);
+}
+[data-theme='dark'] .leaflet-popup-content-wrapper,
+[data-theme='dark'] .leaflet-popup-tip {
+  background: var(--surface-1);
+  color: var(--content-primary);
+  border: 1px solid var(--line-subtle);
+  box-shadow: 0 8px 24px rgb(2 6 23 / 0.5);
+}
+[data-theme='dark'] .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+}
+[data-theme='dark'] a.leaflet-popup-close-button {
+  color: var(--content-muted);
+}
+[data-theme='dark'] .leaflet-bar a {
+  background: var(--surface-1);
+  color: var(--content-primary);
+  border-color: var(--line-subtle);
+}
+[data-theme='dark'] .leaflet-bar a:hover {
+  background: var(--surface-2);
+}
+[data-theme='dark'] .leaflet-control-attribution {
+  background: rgb(12 20 37 / 0.85);
+  color: var(--content-muted);
+}
+[data-theme='dark'] .leaflet-control-attribution a {
+  color: var(--content-secondary);
+}
+
+/* ── Animaciones ──────────────────────────────────────────────── */
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .animate-toast-in {
+    animation: toast-in 180ms ease-out;
+  }
+  .animate-fade-in {
+    animation: fade-in 150ms ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-toast-in,
+    .animate-fade-in {
+      animation: none;
+    }
   }
 }

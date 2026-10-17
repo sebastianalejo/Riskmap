@@ -1,9 +1,22 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Aplica el tema antes del primer render para evitar el "flash" de tema incorrecto.
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('riskmap:theme')
+          document.documentElement.dataset.theme = stored === 'light' ? 'light' : 'dark'
+        } catch (_) {
+          document.documentElement.dataset.theme = 'dark'
+        }
+        document.documentElement.style.colorScheme = document.documentElement.dataset.theme
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#060b17" />
     <meta name="description" content="Sistema predictivo de riesgo criminal — Lima Metropolitana" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,7 +24,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <title>Riesgo Criminal — Panel</title>
+    <title>RiskMap — Panel de riesgo criminal</title>
   </head>
   <body>
     <div id="root"></div>

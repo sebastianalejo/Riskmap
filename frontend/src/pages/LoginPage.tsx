@@ -1,6 +1,9 @@
-import { AlertCircle, ArrowRight, Lock, User } from 'lucide-react'
+import { AlertCircle, ArrowRight, Eye, EyeOff, Lock, Radar, User } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Button } from '../components/ui/button'
+import { Input, Label } from '../components/ui/input'
+import { ThemeToggle } from '../components/ui/theme-toggle'
 import { useAuth } from '../context/AuthContext'
 import { getFirebaseApp } from '../firebase/client'
 import { friendlyFirebaseLoginError } from '../utils/firebaseAuthErrors'
@@ -14,6 +17,7 @@ export function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,100 +40,107 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-slate-950 px-4 py-12">
+    <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-surface-0 px-4 py-12">
       <div
-        className="pointer-events-none absolute inset-0 opacity-40"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 80% 50% at 50% -20%, rgb(13 148 136 / 0.45), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgb(59 130 246 / 0.2), transparent)',
+            'radial-gradient(ellipse 80% 50% at 50% -20%, rgb(13 148 136 / 0.4), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgb(56 189 248 / 0.16), transparent)',
         }}
+        aria-hidden
       />
+      <div className="absolute right-4 top-4 z-20">
+        <ThemeToggle />
+      </div>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-teal-500 text-white shadow-lg shadow-teal-900/30">
-            <Lock className="size-7" aria-hidden />
+          <div className="shadow-glow mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent-strong text-accent-foreground">
+            <Radar className="size-7" aria-hidden />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Acceso al panel</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-content-primary">Acceso al panel</h1>
+          <p className="mt-2 text-sm text-content-secondary">
             Usuario de Firebase Authentication (correo y contraseña).
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl backdrop-blur"
+          className="shadow-card rounded-2xl border border-line-subtle bg-surface-1/90 p-6 backdrop-blur"
         >
           {error && (
             <div
-              className="mb-4 flex gap-3 rounded-xl border border-red-500/30 bg-red-950/50 px-3 py-3 text-sm text-red-100"
+              className="mb-4 flex gap-3 rounded-xl border border-risk-alto/30 bg-risk-alto-soft px-3 py-3 text-sm text-risk-alto"
               role="alert"
             >
-              <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-400" aria-hidden />
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
               <span>{error}</span>
             </div>
           )}
 
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-400">
-              Correo
-            </span>
+          <div>
+            <Label htmlFor="login-email">Correo</Label>
             <div className="relative">
               <User
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500"
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-content-muted"
                 aria-hidden
               />
-              <input
+              <Input
+                id="login-email"
                 autoComplete="email"
                 type="email"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-10 pr-3 text-sm text-white outline-none ring-teal-500/0 transition placeholder:text-slate-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+                className="pl-10"
                 placeholder="tu@correo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-          </label>
+          </div>
 
-          <label className="mt-4 block">
-            <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-400">
-              Contraseña
-            </span>
+          <div className="mt-4">
+            <Label htmlFor="login-password">Contraseña</Label>
             <div className="relative">
               <Lock
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500"
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-content-muted"
                 aria-hidden
               />
-              <input
-                type="password"
+              <Input
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-10 pr-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30"
+                className="pl-10 pr-10"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-content-muted transition hover:text-content-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                {showPassword ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+              </button>
             </div>
-          </label>
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-500 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-900/30 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button type="submit" size="lg" loading={loading} className="mt-6 w-full">
             {loading ? 'Entrando…' : 'Entrar'}
             {!loading && <ArrowRight className="size-4" aria-hidden />}
-          </button>
+          </Button>
         </form>
 
         {!firebaseConfigured && (
-          <p className="mt-6 text-center text-xs text-slate-500">
+          <p className="mt-6 text-center text-xs text-content-muted">
             Falta la configuración web del SDK. Copia{' '}
-            <span className="font-mono text-slate-400">firebase-config.example.json</span> a{' '}
-            <span className="font-mono text-slate-400">firebase-config.json</span> en{' '}
-            <span className="font-mono text-slate-400">frontend/public/</span> con los datos de la Consola
-            Firebase (app web), luego <span className="font-mono text-slate-400">npm run build</span> y
-            despliega.
+            <span className="font-mono text-content-secondary">firebase-config.example.json</span> a{' '}
+            <span className="font-mono text-content-secondary">firebase-config.json</span> en{' '}
+            <span className="font-mono text-content-secondary">frontend/public/</span> con los datos de
+            la Consola Firebase (app web), luego{' '}
+            <span className="font-mono text-content-secondary">npm run build</span> y despliega.
           </p>
         )}
       </div>

@@ -39,6 +39,18 @@ Crea un usuario en **Authentication** (correo/contraseña) y úsalo en `/login`.
 
 `/login` · `/` (Resumen) · `/prediccion` · `/mapa` · `/datos`.
 
+## Sistema de diseño
+
+Rediseño «centro de operaciones» (tema oscuro por defecto + tema claro con toggle):
+
+- **Tokens semánticos** en `src/index.css` (`surface-*`, `content-*`, `line-*`, `accent-*`, `risk-*`).
+  Los componentes usan SIEMPRE tokens, nunca colores de paleta directa.
+- **Tema**: `src/context/ThemeContext.tsx` (persistencia en `localStorage` con la clave
+  `riskmap:theme`, sin flash al cargar).
+- **Kit UI**: `src/components/ui/` (Button, Card, Badge, Input/Label/Select/Textarea, Modal,
+  Toast, Skeleton, EmptyState, StatCard, ThemeToggle).
+- Documentación completa del sistema: [`docs/design/DESIGN.md`](../docs/design/DESIGN.md).
+
 ## Notas
 
 - La **Predicción** se resuelve en el cliente (`src/ml/localPredict.ts`): consulta Firestore y,
