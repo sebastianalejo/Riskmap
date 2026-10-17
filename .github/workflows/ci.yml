@@ -61,11 +61,13 @@ jobs:
         working-directory: tests/firestore
       - run: firebase emulators:exec --only firestore --project demo-riskmap "node tests/firestore/firestore.rules.test.mjs"
 
-  # CD: publica el frontend en Firebase Hosting solo si los tres checks pasan
-  # y el evento es un push (o lanzamiento manual) sobre `main`.
+  # CD: publica el frontend en Firebase Hosting solo si los checks de frontend y
+  # API pasan, y el evento es un push (o lanzamiento manual) sobre `main`.
   deploy:
     name: Deploy (Firebase Hosting)
-    needs: [frontend, python, firestore-rules]
+    # El deploy es solo Hosting: no depende del job de reglas Firestore (emulador),
+    # que puede fallar por cambios de reglas sin relación con el frontend.
+    needs: [frontend, python]
     if: >-
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
       && github.ref == 'refs/heads/main'
