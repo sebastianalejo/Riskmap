@@ -93,10 +93,20 @@ jobs:
           FIREBASE_WEB_CONFIG: ${{ secrets.FIREBASE_WEB_CONFIG }}
       - run: npm ci
       - run: npm run build
-      # Si el secreto de la cuenta de servicio aún no existe, el paso se omite
-      # (run verde) en vez de fallar; añade el secreto y relanza con workflow_dispatch.
+      # `secrets` no es válido dentro de `if`: comprobamos su presencia por env +
+      # output y omitimos el deploy (run verde) si aún no existe el secreto.
+      - name: Comprobar secreto de deploy
+        id: guard
+        run: |
+          if [ -n "$SA" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RISKMAP_TESIS }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RISKMAP_TESIS != '' }}
+        if: steps.guard.outputs.ok == 'true'
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RISKMAP_TESIS }}
           projectId: riskmap-tesis
