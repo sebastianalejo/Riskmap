@@ -55,7 +55,8 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          # firebase-tools exige JDK 21+ para el emulador de Firestore.
+          java-version: '21'
       - run: npm install --global firebase-tools
       - run: npm ci
         working-directory: tests/firestore
