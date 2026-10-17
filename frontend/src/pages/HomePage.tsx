@@ -15,6 +15,7 @@ import { Card, CardHeader } from '../components/ui/card'
 import { EmptyState } from '../components/ui/empty-state'
 import { Skeleton } from '../components/ui/skeleton'
 import { StatCard } from '../components/ui/stat-card'
+import { useAuth } from '../context/AuthContext'
 import { useCrimeIncidentsForMap } from '../hooks/useCrimeIncidentsForMap'
 import { useCrimeStatsMonthly } from '../hooks/useCrimeStatsMonthly'
 
@@ -31,6 +32,7 @@ const RISK_ROWS = [
 ] as const
 
 export function HomePage() {
+  const { isAdmin } = useAuth()
   const { points, loading, error } = useCrimeIncidentsForMap()
   const { rows: monthlyRows, loading: monthlyLoading, error: monthlyError } = useCrimeStatsMonthly()
   const [months, setMonths] = useState(24)
@@ -86,10 +88,12 @@ export function HomePage() {
             <BarChart3 className="size-4" aria-hidden />
             Ver análisis
           </Link>
-          <Link to="/datos" className={secondaryLink}>
-            <Upload className="size-4" aria-hidden />
-            Importar datos
-          </Link>
+          {isAdmin && (
+            <Link to="/datos" className={secondaryLink}>
+              <Upload className="size-4" aria-hidden />
+              Importar datos
+            </Link>
+          )}
         </div>
       </header>
 
@@ -123,12 +127,18 @@ export function HomePage() {
           <EmptyState
             icon={Radar}
             title="Sin registros todavía"
-            description="Importa un archivo CSV/Excel o pega JSON para ver los KPIs, el mapa de riesgo y la distribución. La tendencia de abajo ya usa datos reales del SIDPOL."
+            description={
+              isAdmin
+                ? 'Importa un archivo CSV/Excel o pega JSON para ver los KPIs, el mapa de riesgo y la distribución. La tendencia de abajo ya usa datos reales del SIDPOL.'
+                : 'Aún no hay datos cargados. Pide a un administrador que importe los registros para ver los KPIs, el mapa de riesgo y la distribución. La tendencia de abajo ya usa datos reales del SIDPOL.'
+            }
             action={
-              <Link to="/datos" className={primaryLink}>
-                <Upload className="size-4" aria-hidden />
-                Importar datos
-              </Link>
+              isAdmin ? (
+                <Link to="/datos" className={primaryLink}>
+                  <Upload className="size-4" aria-hidden />
+                  Importar datos
+                </Link>
+              ) : undefined
             }
           />
           <MonthlyTrendCard

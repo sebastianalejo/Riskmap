@@ -26,6 +26,7 @@ import { Card } from '../components/ui/card'
 import { EmptyState } from '../components/ui/empty-state'
 import { Skeleton } from '../components/ui/skeleton'
 import { StatCard } from '../components/ui/stat-card'
+import { useAuth } from '../context/AuthContext'
 import { ANALYSIS_MAX_DOCS, useIncidentsForAnalysis } from '../hooks/useIncidentsForAnalysis'
 import {
   SIN_DISTRITO,
@@ -44,6 +45,7 @@ const primaryLink =
   'inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent-strong px-4 text-sm font-semibold text-accent-foreground shadow-glow transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0'
 
 export function AnalysisPage() {
+  const { isAdmin } = useAuth()
   const { incidents, loading, error, truncated } = useIncidentsForAnalysis()
   const [filters, setFilters] = useState<AnalysisFilters>(createDefaultFilters)
 
@@ -108,12 +110,18 @@ export function AnalysisPage() {
           <EmptyState
             icon={BarChart3}
             title="Sin datos para analizar"
-            description="Importa un archivo CSV/Excel o pega JSON en «Importar datos» para explorar la composición por distrito, los patrones horarios y la frecuencia histórica."
+            description={
+              isAdmin
+                ? 'Importa un archivo CSV/Excel o pega JSON en «Importar datos» para explorar la composición por distrito, los patrones horarios y la frecuencia histórica.'
+                : 'Aún no hay datos cargados. Pide a un administrador que importe los registros para explorar la composición por distrito, los patrones horarios y la frecuencia histórica.'
+            }
             action={
-              <Link to="/datos" className={primaryLink}>
-                <Upload className="size-4" aria-hidden />
-                Importar datos
-              </Link>
+              isAdmin ? (
+                <Link to="/datos" className={primaryLink}>
+                  <Upload className="size-4" aria-hidden />
+                  Importar datos
+                </Link>
+              ) : undefined
             }
           />
           <HowToReadPanel />

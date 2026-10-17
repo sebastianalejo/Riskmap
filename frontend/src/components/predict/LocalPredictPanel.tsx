@@ -252,7 +252,7 @@ export function LocalPredictPanel() {
                 <p className="text-[11px] text-content-muted">
                   {result.method === 'firestore'
                     ? `Basado en ${result.samples} registros de Firestore (tipo + distrito)`
-                    : 'Heurística (carga datos de muestra en «Importar datos» para mayor precisión)'}
+                    : 'Heurística (sin datos suficientes; un administrador puede importar registros para mayor precisión)'}
                 </p>
               </div>
             )}

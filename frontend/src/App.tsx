@@ -48,9 +48,9 @@ export default function App() {
           />
           <Route path="prediccion" element={<PredictPage />} />
           <Route path="mapa" element={<MapPage />} />
-          <Route path="datos" element={<DataPage />} />
 
           <Route element={<AdminRoute />}>
+            <Route path="datos" element={<DataPage />} />
             <Route path="usuarios" element={<UsersPage />} />
           </Route>
         </Route>

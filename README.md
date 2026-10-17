@@ -21,7 +21,7 @@ Todo el estado compartido vive en **Firestore** (base de datos NoSQL de Firebase
 | **TypeScript** | Tipado estático de todo el frontend. |
 | **Vite** | Servidor de desarrollo y build (`tsc -b && vite build`). |
 | **Tailwind CSS 4** (plugin `@tailwindcss/vite`) | Estilos utilitarios. |
-| **React Router 7** | Rutas: `/login`, `/` (resumen), `/analisis` (analista), `/prediccion`, `/mapa`, `/datos`, `/usuarios` (admin). |
+| **React Router 7** | Rutas: `/login`, `/` (resumen), `/analisis` (analista), `/prediccion`, `/mapa`; solo admin: `/datos` (importar datos) y `/usuarios`. |
 | **Firebase JS SDK 11** | `Auth` (login), `Firestore` (lectura/escritura de incidentes). |
 | **Leaflet + react-leaflet** | Mapa de riesgo por defecto (no requiere API key). |
 | **@react-google-maps/api** | Mapa alternativo si se define una Google Maps API key. |
@@ -196,8 +196,9 @@ npm run dev
 ```
 
 Abre **http://localhost:5173** (Vite cambia a `5174`, `5175`… si el puerto está ocupado).
-Inicia sesión y navega por **Resumen**, **Predicción**, **Mapa de riesgo** e **Importar datos**.
-Las cuentas con claim `admin` ven además **Usuarios** para crear nuevas cuentas.
+Inicia sesión y navega por **Resumen**, **Análisis**, **Predicción** y **Mapa de riesgo**.
+Las cuentas con claim `admin` ven además la sección **Administración** (**Importar datos** y
+**Usuarios** para crear nuevas cuentas).
 
 ### 5.5 Otros comandos del frontend
 
@@ -213,9 +214,9 @@ npm run lint      # ESLint
 
 La app lee/escribe la colección **`crime_incidents`** de Firestore. Puedes poblarla de dos formas:
 
-**a) Desde la interfaz** — página **Importar datos**: sube un `.xlsx`, `.xls` o `.csv`, o pega un
-array JSON. Requiere una cuenta con el claim **`admin`** (§9.1); el resto de cuentas ven la página
-en modo lectura. Columnas obligatorias:
+**a) Desde la interfaz** — página **Importar datos** (sección **Administración**, visible solo para
+cuentas con el claim **`admin`**, §9.1): sube un `.xlsx`, `.xls` o `.csv`, o pega un array JSON.
+Columnas obligatorias:
 
 ```
 crime_type, hour, day_of_week, district, latitude, longitude, historical_frequency, risk_level

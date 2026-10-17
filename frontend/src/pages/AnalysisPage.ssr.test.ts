@@ -33,8 +33,19 @@ const { state, DATA } = vi.hoisted(() => {
       historicalFrequency: 230,
     },
   ]
-  return { state: { incidents: DATA as typeof DATA | [] }, DATA }
+  return { state: { incidents: DATA as typeof DATA | [], isAdmin: false }, DATA }
 })
+
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    username: 'analista',
+    authToken: 'Bearer test',
+    isAdmin: state.isAdmin,
+    isReady: true,
+    login: async () => undefined,
+    logout: async () => undefined,
+  }),
+}))
 
 vi.mock('../hooks/useIncidentsForAnalysis', () => ({
   ANALYSIS_MAX_DOCS: 5000,
@@ -84,10 +95,21 @@ describe('AnalysisPage (estructura SSR)', () => {
 
   it('muestra el estado vacío (sin registros) manteniendo la metodología', () => {
     state.incidents = []
+    state.isAdmin = false
     const html = render()
 
     expect(html).toContain('Sin datos para analizar')
     expect(html).toContain('Cómo leer este panel')
     expect(html).not.toContain('Comparación entre distritos')
+    expect(html).not.toContain('Importar datos')
+  })
+
+  it('solo muestra el acceso a Importar datos a las cuentas admin', () => {
+    state.incidents = []
+    state.isAdmin = true
+    const html = render()
+
+    expect(html).toContain('Importar datos')
+    expect(html).toContain('href="/datos"')
   })
 })

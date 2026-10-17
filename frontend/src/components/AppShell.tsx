@@ -22,10 +22,12 @@ const items = [
   { to: '/analisis', label: 'Análisis', icon: BarChart3 },
   { to: '/prediccion', label: 'Predicción', icon: Sparkles },
   { to: '/mapa', label: 'Mapa de riesgo', icon: Map },
-  { to: '/datos', label: 'Importar datos', icon: Database },
 ] as const
 
-const adminItems = [{ to: '/usuarios', label: 'Usuarios', icon: Users }] as const
+const adminItems = [
+  { to: '/datos', label: 'Importar datos', icon: Database },
+  { to: '/usuarios', label: 'Usuarios', icon: Users },
+] as const
 
 function NavItem({
   to,

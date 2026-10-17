@@ -37,7 +37,7 @@ Crea un usuario en **Authentication** (correo/contraseña) y úsalo en `/login`.
 
 ## Rutas
 
-`/login` · `/` (Resumen) · `/prediccion` · `/mapa` · `/datos`.
+`/login` · `/` (Resumen) · `/analisis` · `/prediccion` · `/mapa`; solo admin: `/datos` (Importar datos) y `/usuarios`.
 
 ## Sistema de diseño
 
