@@ -50,6 +50,26 @@ function formatDateTime(ms: number | null): string {
   return new Date(ms).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+/** Inicial para el avatar de una cuenta. */
+function userInitial(u: AdminUser): string {
+  return (u.displayName || u.email || '?').trim().charAt(0).toUpperCase() || '?'
+}
+
+/** Insignia de estado compartida por la tabla (escritorio) y las tarjetas (móvil). */
+function StatusBadge({ disabled }: { disabled: boolean }) {
+  return disabled ? (
+    <Badge tone="alto">
+      <ShieldOff className="size-3" aria-hidden />
+      Deshabilitada
+    </Badge>
+  ) : (
+    <Badge tone="bajo">
+      <ShieldCheck className="size-3" aria-hidden />
+      Activa
+    </Badge>
+  )
+}
+
 export function UsersPage() {
   const { toast } = useToast()
   const selfUid = currentAdminUid()
@@ -252,6 +272,47 @@ export function UsersPage() {
     }
   })()
 
+  /** Botones de acción de una cuenta; se usan en la tabla y en las tarjetas móviles. */
+  const accountActions = (u: AdminUser, isSelf: boolean, busy: boolean) => (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={busy || !u.email}
+        onClick={() => handleReset(u)}
+        title="Enviar correo de restablecimiento de contraseña"
+      >
+        <KeyRound className="size-3.5" aria-hidden />
+        Reset
+      </Button>
+      <Button
+        variant={u.disabled ? 'secondary' : 'ghost'}
+        size="sm"
+        disabled={busy || isSelf}
+        title={isSelf ? 'No puedes deshabilitar tu propia cuenta' : undefined}
+        onClick={() => setConfirmAction({ kind: u.disabled ? 'enable' : 'disable', user: u })}
+      >
+        {u.disabled ? 'Habilitar' : 'Deshabilitar'}
+      </Button>
+    </div>
+  )
+
+  /** Selector de rol compartido; el id permite etiquetarlo en las tarjetas móviles. */
+  const roleSelect = (u: AdminUser, isSelf: boolean, busy: boolean, id?: string) => (
+    <Select
+      id={id}
+      aria-label={`Rol de ${u.displayName || u.email || u.uid}`}
+      value={u.role}
+      disabled={busy || isSelf}
+      title={isSelf ? 'No puedes cambiar tu propio rol' : undefined}
+      onChange={(e) => void applyRole(u, e.target.value as UserRole)}
+      className="h-8 w-28 px-2 py-0 text-xs"
+    >
+      <option value="user">Usuario</option>
+      <option value="admin">Admin</option>
+    </Select>
+  )
+
   return (
     <div className="space-y-6">
       <div>
@@ -290,7 +351,7 @@ export function UsersPage() {
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[26rem_minmax(0,1fr)]">
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <CardHeader
             title="Nueva cuenta"
             description="La cuenta se crea con rol Usuario; asciéndela cuando corresponda."
@@ -413,7 +474,7 @@ export function UsersPage() {
           </p>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <CardHeader
             title="Cuentas registradas"
             description="Rol y estado según la colección users de Firestore."
@@ -443,104 +504,109 @@ export function UsersPage() {
           ) : users.length === 0 ? (
             <p className="mt-4 text-sm text-content-muted">Aún no hay cuentas registradas.</p>
           ) : (
-            <div className="mt-4 overflow-x-auto rounded-xl border border-line-subtle">
-              <table className="w-full min-w-[720px] text-left text-xs">
-                <thead className="bg-surface-2 text-[10px] uppercase tracking-wide text-content-muted">
-                  <tr>
-                    <th className="px-3 py-2 font-semibold">Usuario</th>
-                    <th className="px-3 py-2 font-semibold">Rol</th>
-                    <th className="px-3 py-2 font-semibold">Estado</th>
-                    <th className="px-3 py-2 font-semibold">Último acceso</th>
-                    <th className="px-3 py-2 font-semibold">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => {
-                    const isSelf = u.uid === selfUid
-                    const busy = pendingUid === u.uid
-                    return (
-                      <tr key={u.uid} className="border-t border-line-subtle hover:bg-surface-2/60">
-                        <td className="px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent">
-                              {(u.displayName || u.email || '?').trim().charAt(0).toUpperCase() || '?'}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate text-xs font-medium text-content-primary">
-                                {u.displayName || 'Sin nombre'}
-                                {isSelf && <span className="ml-1 text-[10px] text-content-muted">(tú)</span>}
-                              </p>
-                              <p className="truncate text-[11px] text-content-muted">
-                                {u.email ?? '—'}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          <Select
-                            aria-label={`Rol de ${u.displayName || u.email || u.uid}`}
-                            value={u.role}
-                            disabled={busy || isSelf}
-                            title={isSelf ? 'No puedes cambiar tu propio rol' : undefined}
-                            onChange={(e) => void applyRole(u, e.target.value as UserRole)}
-                            className="h-8 w-28 px-2 py-0 text-xs"
-                          >
-                            <option value="user">Usuario</option>
-                            <option value="admin">Admin</option>
-                          </Select>
-                        </td>
-                        <td className="px-3 py-2">
-                          <Badge tone={u.disabled ? 'alto' : 'bajo'}>
-                            {u.disabled ? (
-                              <>
-                                <ShieldOff className="size-3" aria-hidden />
-                                Deshabilitada
-                              </>
-                            ) : (
-                              <>
-                                <ShieldCheck className="size-3" aria-hidden />
-                                Activa
-                              </>
-                            )}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-2 text-content-secondary">
-                          <p>{formatDateTime(u.lastSignInAt)}</p>
-                          <p className="text-[11px] text-content-muted">
-                            Creada: {formatDateTime(u.createdAt)}
+            <>
+              {/* Móvil: tarjetas apiladas, sin scroll horizontal */}
+              <ul className="mt-4 space-y-3 md:hidden" aria-label="Cuentas registradas">
+                {users.map((u) => {
+                  const isSelf = u.uid === selfUid
+                  const busy = pendingUid === u.uid
+                  const roleFieldId = `user-role-${u.uid}`
+                  return (
+                    <li key={u.uid} className="rounded-xl border border-line-subtle bg-surface-1 p-3">
+                      <div className="flex items-start gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
+                          {userInitial(u)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-content-primary">
+                            {u.displayName || 'Sin nombre'}
+                            {isSelf && <span className="ml-1 text-[10px] text-content-muted">(tú)</span>}
                           </p>
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={busy || !u.email}
-                              onClick={() => handleReset(u)}
-                              title="Enviar correo de restablecimiento de contraseña"
-                            >
-                              <KeyRound className="size-3.5" aria-hidden />
-                              Reset
-                            </Button>
-                            <Button
-                              variant={u.disabled ? 'secondary' : 'ghost'}
-                              size="sm"
-                              disabled={busy || isSelf}
-                              title={isSelf ? 'No puedes deshabilitar tu propia cuenta' : undefined}
-                              onClick={() =>
-                                setConfirmAction({ kind: u.disabled ? 'enable' : 'disable', user: u })
-                              }
-                            >
-                              {u.disabled ? 'Habilitar' : 'Deshabilitar'}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          <p className="truncate text-xs text-content-muted">{u.email ?? '—'}</p>
+                        </div>
+                        <StatusBadge disabled={u.disabled} />
+                      </div>
+
+                      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="min-w-0">
+                          <dt className="text-content-muted">Último acceso</dt>
+                          <dd className="mt-0.5 truncate text-content-secondary">
+                            {formatDateTime(u.lastSignInAt)}
+                          </dd>
+                        </div>
+                        <div className="min-w-0">
+                          <dt className="text-content-muted">Creada</dt>
+                          <dd className="mt-0.5 truncate text-content-secondary">
+                            {formatDateTime(u.createdAt)}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      <div className="mt-3">
+                        <Label htmlFor={roleFieldId}>Rol</Label>
+                        {roleSelect(u, isSelf, busy, roleFieldId)}
+                      </div>
+
+                      <div className="mt-3 border-t border-line-subtle pt-3">
+                        {accountActions(u, isSelf, busy)}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {/* Escritorio: tabla */}
+              <div className="mt-4 hidden overflow-x-auto rounded-xl border border-line-subtle md:block">
+                <table className="w-full min-w-[720px] text-left text-xs">
+                  <thead className="bg-surface-2 text-[10px] uppercase tracking-wide text-content-muted">
+                    <tr>
+                      <th className="px-3 py-2 font-semibold">Usuario</th>
+                      <th className="px-3 py-2 font-semibold">Rol</th>
+                      <th className="px-3 py-2 font-semibold">Estado</th>
+                      <th className="px-3 py-2 font-semibold">Último acceso</th>
+                      <th className="px-3 py-2 font-semibold">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => {
+                      const isSelf = u.uid === selfUid
+                      const busy = pendingUid === u.uid
+                      return (
+                        <tr key={u.uid} className="border-t border-line-subtle hover:bg-surface-2/60">
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent">
+                                {userInitial(u)}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-medium text-content-primary">
+                                  {u.displayName || 'Sin nombre'}
+                                  {isSelf && <span className="ml-1 text-[10px] text-content-muted">(tú)</span>}
+                                </p>
+                                <p className="truncate text-[11px] text-content-muted">
+                                  {u.email ?? '—'}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">{roleSelect(u, isSelf, busy)}</td>
+                          <td className="px-3 py-2">
+                            <StatusBadge disabled={u.disabled} />
+                          </td>
+                          <td className="px-3 py-2 text-content-secondary">
+                            <p>{formatDateTime(u.lastSignInAt)}</p>
+                            <p className="text-[11px] text-content-muted">
+                              Creada: {formatDateTime(u.createdAt)}
+                            </p>
+                          </td>
+                          <td className="px-3 py-2">{accountActions(u, isSelf, busy)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
 
           <p className="mt-3 text-[11px] text-content-muted">
