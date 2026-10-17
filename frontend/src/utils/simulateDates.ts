@@ -17,7 +17,9 @@ export const SIMULATED_DATES_NOTICE =
 export function simulateDates(points: MapPoint[], daysBack: number): PointWithDate[] {
   if (points.length === 0) return []
 
-  const rangeMs = daysBack * 24 * 60 * 60 * 1000
+  // Se usa (daysBack - 1) para que el rango cubra exactamente `daysBack` días de calendario
+  // (hoy + días anteriores) y no genere un día extra en el borde.
+  const rangeMs = Math.max(daysBack - 1, 1) * 24 * 60 * 60 * 1000
   const endMs = Date.now()
 
   return points.map((p) => {

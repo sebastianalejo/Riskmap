@@ -13,14 +13,38 @@ interface Props {
   height?: number
 }
 
+const BAR_KEYS: Array<'bajo' | 'medio' | 'alto'> = ['bajo', 'medio', 'alto']
+
 const BAR_CLASS: Record<'bajo' | 'medio' | 'alto', string> = {
   bajo: 'fill-risk-bajo',
   medio: 'fill-risk-medio',
   alto: 'fill-risk-alto',
 }
 
-const BAR_KEYS: Array<'bajo' | 'medio' | 'alto'> = ['bajo', 'medio', 'alto']
-const BAR_LABELS: Record<string, string> = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }
+const DOT_CLASS: Record<'bajo' | 'medio' | 'alto', string> = {
+  bajo: 'bg-risk-bajo',
+  medio: 'bg-risk-medio',
+  alto: 'bg-risk-alto',
+}
+
+const BAR_LABELS: Record<'bajo' | 'medio' | 'alto', string> = {
+  bajo: 'Bajo',
+  medio: 'Medio',
+  alto: 'Alto',
+}
+
+/** Paso "bonito" para el eje Y (1 / 2 / 5 × 10^n): ticks siempre enteros para conteos. */
+function niceStep(raw: number): number {
+  if (!Number.isFinite(raw) || raw <= 0) return 1
+  const base = Math.pow(10, Math.floor(Math.log10(raw)))
+  const norm = raw / base
+  const mult = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10
+  return mult * base
+}
+
+function formatTick(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
 
 export function IncidentTrendChart({ points, range, height = 240 }: Props) {
   const { chartData, totalChange } = useMemo(() => computeChartData(points, range), [points, range])
@@ -47,40 +71,57 @@ export function IncidentTrendChart({ points, range, height = 240 }: Props) {
     )
   }
 
-  const margin = { top: 10, right: 10, bottom: 28, left: 36 }
+  const margin = { top: 26, right: 12, bottom: 30, left: 44 }
   const width = Math.max(containerWidth, 100)
   const innerW = width - margin.left - margin.right
-  const innerH = height - margin.top - margin.bottom
 
+  // Escala Y con pasos redondos (0 / 50 / 100 / 150 / 200 en vez de 38 / 76 / 114).
   const maxTotal = Math.max(...chartData.map((d) => d.bajo + d.medio + d.alto), 1)
-  const yTicks = 4
-  const yStep = Math.ceil(maxTotal / yTicks)
+  const yStep = Math.max(1, niceStep(maxTotal / 4))
+  const yMax = Math.max(yStep, Math.ceil(maxTotal / yStep) * yStep)
+  const tickCount = Math.round(yMax / yStep)
 
-  const barGap = 3
+  // Barras con ancho máximo y grupo centrado (sin bloques estirados a lo ancho).
   const barCount = chartData.length
-  const totalGaps = (barCount - 1) * barGap
-  const barW = Math.max(4, (innerW - totalGaps) / barCount)
+  const barGap = Math.min(10, Math.max(4, Math.round(innerW / barCount / 6)))
+  const barW = Math.min(56, Math.max(6, (innerW - barGap * (barCount - 1)) / barCount))
+  const groupW = barW * barCount + barGap * (barCount - 1)
+  const startX = margin.left + Math.max(0, (innerW - groupW) / 2)
+
+  const rotateLabels = barCount > 10 || barW < 26
+  const innerH = height - margin.top - (rotateLabels ? 40 : margin.bottom)
 
   const trendUp = totalChange >= 0
 
   function toX(i: number) {
-    return margin.left + i * (barW + barGap)
+    return startX + i * (barW + barGap)
   }
 
   function barHeight(val: number) {
-    return (val / maxTotal) * innerH
+    return (val / yMax) * innerH
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+      {/* Cabecera: rango + leyenda + tendencia */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-content-secondary">
           Últimos {RANGE_CONFIG[range].label.toLowerCase()}
         </span>
-        <Badge tone={trendUp ? 'alto' : 'bajo'}>
-          {trendUp ? '↑ +' : '↓ '}
-          {Math.abs(totalChange).toFixed(0)}%
-        </Badge>
+        <div className="flex flex-wrap items-center gap-3">
+          <ul className="flex items-center gap-3" aria-label="Niveles de riesgo">
+            {BAR_KEYS.map((key) => (
+              <li key={key} className="flex items-center gap-1.5">
+                <span className={`size-2.5 rounded-[3px] ${DOT_CLASS[key]}`} aria-hidden />
+                <span className="text-[11px] text-content-secondary">{BAR_LABELS[key]}</span>
+              </li>
+            ))}
+          </ul>
+          <Badge tone={trendUp ? 'alto' : 'bajo'}>
+            {trendUp ? '↑ +' : '↓ '}
+            {Math.abs(totalChange).toFixed(0)}%
+          </Badge>
+        </div>
       </div>
 
       <p className="text-[11px] leading-snug text-content-muted" role="note">
@@ -95,8 +136,9 @@ export function IncidentTrendChart({ points, range, height = 240 }: Props) {
           role="img"
           aria-label={`Tendencia de incidentes por nivel de riesgo en los últimos ${RANGE_CONFIG[range].label.toLowerCase()}`}
         >
+          {/* Rejilla y eje Y */}
           <g>
-            {Array.from({ length: yTicks + 1 }, (_, i) => {
+            {Array.from({ length: tickCount + 1 }, (_, i) => {
               const val = i * yStep
               const y = margin.top + innerH - barHeight(val)
               return (
@@ -106,65 +148,96 @@ export function IncidentTrendChart({ points, range, height = 240 }: Props) {
                     y1={y}
                     x2={margin.left + innerW}
                     y2={y}
-                    className="stroke-grid-line"
+                    className={i === 0 ? 'stroke-line-strong' : 'stroke-grid-line'}
                     strokeWidth={1}
                   />
                   <text
-                    x={margin.left - 6}
+                    x={margin.left - 8}
                     y={y + 3}
                     textAnchor="end"
-                    className="fill-content-muted"
+                    className="fill-content-muted font-mono"
                     fontSize={10}
                   >
-                    {val}
+                    {formatTick(val)}
                   </text>
                 </g>
               )
             })}
           </g>
 
-          <g>
-            {chartData.map((d, i) => {
-              const x = toX(i)
-              let accumulated = 0
-              return (
-                <g key={i}>
-                  {BAR_KEYS.map((key) => {
-                    const val = d[key]
-                    if (val === 0) return null
-                    const h = barHeight(val)
-                    const y = margin.top + innerH - accumulated - h
-                    accumulated += h
-                    return (
-                      <rect
-                        key={key}
-                        x={x}
-                        y={y}
-                        width={barW}
-                        height={Math.max(h, 1)}
-                        className={BAR_CLASS[key]}
-                        rx={key === 'alto' && i === barCount - 1 ? 2 : 0}
-                        ry={key === 'alto' && i === barCount - 1 ? 2 : 0}
-                      />
-                    )
-                  })}
-                </g>
-              )
-            })}
-          </g>
+          {/* Barras apiladas (con tooltip nativo) */}
+          {chartData.map((d, i) => {
+            const x = toX(i)
+            const total = d.bajo + d.medio + d.alto
+            if (total === 0) return null
+            const visibleKeys = BAR_KEYS.filter((key) => d[key] > 0)
+            let acc = 0
+            return (
+              <g key={i}>
+                <title>
+                  {`${d.name} — Bajo ${d.bajo} · Medio ${d.medio} · Alto ${d.alto} (total ${total})`}
+                </title>
+                {visibleKeys.map((key, idx) => {
+                  const h = barHeight(d[key])
+                  const y = margin.top + innerH - acc - h
+                  acc += h
+                  const isTop = idx === visibleKeys.length - 1
+                  return (
+                    <rect
+                      key={key}
+                      x={x}
+                      y={y}
+                      width={barW}
+                      height={Math.max(h, 1)}
+                      className={BAR_CLASS[key]}
+                      rx={isTop ? 2 : 0}
+                      ry={isTop ? 2 : 0}
+                    />
+                  )
+                })}
+                {barW >= 20 && (
+                  <text
+                    x={x + barW / 2}
+                    y={Math.max(12, margin.top + innerH - barHeight(total) - 7)}
+                    textAnchor="middle"
+                    className="fill-content-secondary font-mono"
+                    fontSize={9}
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    {total}
+                  </text>
+                )}
+              </g>
+            )
+          })}
 
+          {/* Etiquetas X (horizontales con pocas barras; rotadas con muchas) */}
           <g>
             {chartData.map((d, i) => {
-              const x = toX(i)
-              const skip = barCount > 12 && i % Math.ceil(barCount / 12) !== 0
-              return (
+              const cx = toX(i) + barW / 2
+              const y = margin.top + innerH + (rotateLabels ? 14 : 18)
+              const skip = barCount > 26 && i % Math.ceil(barCount / 26) !== 0
+              if (skip) return null
+              return rotateLabels ? (
                 <text
                   key={i}
-                  x={x + barW / 2}
-                  y={margin.top + innerH + 16}
+                  x={cx}
+                  y={y}
                   textAnchor="end"
-                  transform={`rotate(-40, ${x + barW / 2}, ${margin.top + innerH + 16})`}
-                  className={skip ? 'fill-transparent' : 'fill-content-muted'}
+                  transform={`rotate(-40, ${cx}, ${y})`}
+                  className="fill-content-muted"
+                  fontSize={10}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {d.name}
+                </text>
+              ) : (
+                <text
+                  key={i}
+                  x={cx}
+                  y={y}
+                  textAnchor="middle"
+                  className="fill-content-muted"
                   fontSize={10}
                   style={{ pointerEvents: 'none' }}
                 >
@@ -172,39 +245,6 @@ export function IncidentTrendChart({ points, range, height = 240 }: Props) {
                 </text>
               )
             })}
-          </g>
-
-          <g>
-            {chartData.map((d, i) => {
-              const total = d.bajo + d.medio + d.alto
-              const x = toX(i)
-              const y = margin.top + innerH - barHeight(total) - 14
-              if (total === 0 || barW < 16) return null
-              return (
-                <text
-                  key={i}
-                  x={x + barW / 2}
-                  y={y}
-                  textAnchor="middle"
-                  className="fill-content-secondary"
-                  fontSize={9}
-                  style={{ pointerEvents: 'none' }}
-                >
-                  {total}
-                </text>
-              )
-            })}
-          </g>
-
-          <g>
-            {BAR_KEYS.map((key, i) => (
-              <g key={key} transform={`translate(${margin.left + 12 + i * 80}, 2)`}>
-                <rect x={0} y={0} width={10} height={10} rx={2} className={BAR_CLASS[key]} />
-                <text x={14} y={9} className="fill-content-secondary" fontSize={11}>
-                  {BAR_LABELS[key]}
-                </text>
-              </g>
-            ))}
           </g>
         </svg>
       </div>

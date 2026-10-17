@@ -14,6 +14,14 @@ describe('simulateDates', () => {
     expect(result.date.getHours()).toBe(7)
   })
 
+  it('la ventana de 7 días no genera un octavo día', () => {
+    const points = Array.from({ length: 400 }, (_, i) => ({ id: String(i), lat: -12, lng: -77 }))
+    const days = new Set(
+      simulateDates(points, 7).map((p) => `${p.date.getFullYear()}-${p.date.getMonth()}-${p.date.getDate()}`),
+    )
+    expect(days.size).toBeLessThanOrEqual(7)
+  })
+
   it('devuelve una lista vacía sin puntos', () => {
     expect(simulateDates([], 30)).toEqual([])
   })
