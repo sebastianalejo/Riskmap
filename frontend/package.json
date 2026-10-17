@@ -9,9 +9,12 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "data:build": "python ../scripts/pipeline/export_web_data.py",
+    "data:check": "python ../scripts/pipeline/export_web_data.py --check"
   },
   "dependencies": {
+    "@googlemaps/markerclusterer": "^2.5.3",
     "@react-google-maps/api": "^2.20.8",
     "firebase": "^11.6.0",
     "jspdf": "^4.2.1",

@@ -3,6 +3,7 @@ import {
   AlertCircle,
   CheckCircle2,
   FileSpreadsheet,
+  Info,
   Loader2,
   ShieldAlert,
   Table2,
@@ -19,6 +20,7 @@ import { useToast } from '../components/ui/toast'
 import { useAuth } from '../context/AuthContext'
 import type { CrimeIncident } from '../data/sampleIncidents'
 import { getFirebaseApp } from '../firebase/client'
+import { formatEventTime } from '../utils/eventTime'
 import { stableRowId } from '../utils/stableId'
 
 const COLLECTION = 'crime_incidents'
@@ -352,6 +354,18 @@ export function DataPage() {
         </div>
       )}
 
+      {/* Aviso: lo importado aquí no se publica automáticamente */}
+      <div className="flex gap-2 rounded-2xl border border-info/30 bg-info-soft px-4 py-3 text-sm text-info">
+        <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <p>
+          Esta pantalla escribe en Firestore como <strong>borrador</strong>. El Resumen, el Mapa y el
+          Análisis leen el dataset publicado en{' '}
+          <code className="font-mono text-xs">/data</code>; para publicar lo importado ejecuta{' '}
+          <code className="font-mono text-xs">python scripts/pipeline/export_web_data.py</code> y
+          despliega Hosting (<code className="font-mono text-xs">firebase deploy --only hosting</code>).
+        </p>
+      </div>
+
       {/* Error */}
       {error && (
         <div
@@ -478,12 +492,12 @@ export function DataPage() {
               </div>
 
               <div className="mt-4 overflow-x-auto rounded-xl border border-line-subtle">
-                <table className="w-full min-w-[640px] text-left text-xs">
+                <table className="w-full min-w-[760px] text-left text-xs">
                   <thead className="bg-surface-2 text-[10px] uppercase tracking-wide text-content-muted">
                     <tr>
                       <th className="px-3 py-2 font-semibold">Fila</th>
                       <th className="px-3 py-2 font-semibold">Tipo</th>
-                      <th className="px-3 py-2 font-semibold">Hora</th>
+                      <th className="px-3 py-2 font-semibold">Fecha y hora</th>
                       <th className="px-3 py-2 font-semibold">Distrito</th>
                       <th className="px-3 py-2 font-semibold">Riesgo</th>
                       <th className="px-3 py-2 font-semibold">Estado</th>
@@ -502,8 +516,12 @@ export function DataPage() {
                         <td className="max-w-[180px] truncate px-3 py-2 text-content-primary">
                           {String(r.raw.crime_type ?? '—')}
                         </td>
-                        <td className="px-3 py-2 font-mono text-content-secondary">
-                          {String(r.raw.hour ?? '—')}
+                        <td className="whitespace-nowrap px-3 py-2 font-mono text-content-secondary">
+                          {formatEventTime({
+                            year: (r.raw.occurred_year ?? r.raw.year) as string | number | undefined,
+                            dayOfWeek: r.raw.day_of_week as string | undefined,
+                            hour: r.raw.hour as string | number | undefined,
+                          })}
                         </td>
                         <td className="max-w-[160px] truncate px-3 py-2 text-content-secondary">
                           {String(r.raw.district ?? '—')}

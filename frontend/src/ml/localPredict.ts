@@ -1,9 +1,8 @@
-import { collection, getDocs, getFirestore, limit, query, where } from 'firebase/firestore'
-import { getFirebaseApp } from '../firebase/client'
+import { loadPredictStats, type PredictStats } from '../data/published'
 import { CRIME_TYPES, DISTRICTS } from '../data/sampleIncidents'
-import { riskFromIncident } from '../utils/incidentRows'
+import type { RiskLevel } from '../utils/incidentRows'
 
-export type RiskLevel = 'bajo' | 'medio' | 'alto'
+export type { RiskLevel }
 
 export type PredictInput = {
   crime_type: string
@@ -20,7 +19,7 @@ export type PredictResult = {
   confidence: number                          // 0-100
   counts: Record<RiskLevel, number>
   percentages: Record<RiskLevel, number>      // 0-100 cada uno
-  method: 'firestore' | 'heuristic'
+  method: 'dataset' | 'heuristic'
   samples: number
   factors: string[]                           // explicación
 }
@@ -125,65 +124,83 @@ function adjustByHour(
   return dominant
 }
 
-/* ── Predicción principal ──────────────────────────────────────── */
+/* ── Datos publicados ──────────────────────────────────────────── */
 
-export async function predictLocal(input: PredictInput): Promise<PredictResult> {
-  const app = getFirebaseApp()
+const FALLBACK_ORDER: RiskLevel[] = ['bajo', 'medio', 'alto']
 
-  if (app) {
-    try {
-      const db  = getFirestore(app)
-      const col = collection(db, 'crime_incidents')
+/** Conteos por (tipo, distrito) o, si no hay, por tipo (con coincidencia flexible). */
+function countsFromStats(stats: PredictStats, input: PredictInput): Record<RiskLevel, number> | null {
+  const type = input.crime_type.trim().toLowerCase()
+  const district = input.district.trim().toUpperCase()
 
-      // 1er intento: tipo + distrito
-      let snap = await getDocs(
-        query(col, where('crime_type', '==', input.crime_type.trim()),
-                   where('district', '==', input.district.trim().toUpperCase()),
-                   limit(200)),
+  let values: [number, number, number] | undefined = stats.byTypeDistrict[`${type}|${district}`]
+  if (!values) {
+    const matched =
+      stats.types.find((candidate) => candidate === type) ??
+      stats.types.find((candidate) => candidate.includes(type) || type.includes(candidate))
+    if (matched) values = stats.byType[matched]
+  }
+
+  // Último recurso: agrupar por la primera palabra (p. ej. «robo a mano armada» → «robo*»).
+  if (!values) {
+    const prefix = type.split(/\s+/)[0]
+    if (prefix.length >= 4) {
+      const matches = stats.types.filter(
+        (candidate) => candidate === prefix || candidate.startsWith(`${prefix} `),
       )
-
-      // 2do intento: solo tipo
-      if (snap.empty) {
-        snap = await getDocs(
-          query(col, where('crime_type', '==', input.crime_type.trim()), limit(200)),
-        )
+      if (matches.length > 0) {
+        values = matches.reduce<[number, number, number]>((acc, key) => {
+          const counts = stats.byType[key]
+          if (!counts) return acc
+          return [acc[0] + counts[0], acc[1] + counts[1], acc[2] + counts[2]]
+        }, [0, 0, 0])
       }
-
-      if (!snap.empty) {
-        const counts: Record<RiskLevel, number> = { bajo: 0, medio: 0, alto: 0 }
-        snap.forEach((doc) => {
-          // Acepta el esquema clásico (`risk_level`) y el v2 (`severity_level`).
-          const level = riskFromIncident(doc.data() as Record<string, unknown>)
-          if (level) counts[level]++
-        })
-
-        const total = counts.bajo + counts.medio + counts.alto
-        if (total > 0) {
-          const dominant = (Object.entries(counts) as [RiskLevel, number][])
-            .sort((a, b) => b[1] - a[1])[0][0]
-          const adjusted   = adjustByHour(dominant, input.hour, input.historical_frequency)
-          const percentages = countsToPct(counts)
-          const domPct      = percentages[adjusted]
-          const confidence  = Math.min(100, Math.round(domPct * 0.7 + Math.min(total, 50) * 0.6))
-
-          return {
-            prediction: adjusted,
-            confidence,
-            counts,
-            percentages,
-            method: 'firestore',
-            samples: total,
-            factors: buildFactors(input, adjusted),
-          }
-        }
-      }
-    } catch {
-      /* cae a heurística */
     }
   }
 
+  if (!values) return null
+
+  const order = stats.riskOrder.length > 0 ? stats.riskOrder : FALLBACK_ORDER
+  const counts: Record<RiskLevel, number> = { bajo: 0, medio: 0, alto: 0 }
+  order.forEach((risk, index) => {
+    const value = values?.[index]
+    if (typeof value === 'number') counts[risk] = value
+  })
+  return counts
+}
+
+/* ── Predicción principal ──────────────────────────────────────── */
+
+export async function predictLocal(input: PredictInput): Promise<PredictResult> {
+  try {
+    const stats = await loadPredictStats()
+    const counts = countsFromStats(stats, input)
+    if (counts) {
+      const total = counts.bajo + counts.medio + counts.alto
+      if (total > 0) {
+        const dominant = (Object.entries(counts) as [RiskLevel, number][])
+          .sort((a, b) => b[1] - a[1])[0][0]
+        const adjusted    = adjustByHour(dominant, input.hour, input.historical_frequency)
+        const percentages = countsToPct(counts)
+        const confidence  = Math.min(100, Math.round(percentages[adjusted] * 0.7 + Math.min(total, 50) * 0.6))
+
+        return {
+          prediction: adjusted,
+          confidence,
+          counts,
+          percentages,
+          method: 'dataset',
+          samples: total,
+          factors: buildFactors(input, adjusted),
+        }
+      }
+    }
+  } catch {
+    /* sin dataset publicado: cae a heurística */
+  }
+
   // Heurística pura
-  const score     = heuristicScore(input)
+  const score      = heuristicScore(input)
   const prediction = scoreToLevel(score)
   const pct        = Math.round(Math.min(score, 100))
   const counts: Record<RiskLevel, number> =

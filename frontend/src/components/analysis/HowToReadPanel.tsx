@@ -26,6 +26,11 @@ const METRICS: { term: string; definition: ReactNode }[] = [
     definition: 'Tipo de delito con más registros en el distrito (moda del campo crime_type).',
   },
   {
+    term: 'Fecha y hora',
+    definition:
+      'Combina los campos temporales disponibles de cada registro: año (occurred_year, esquema INEI), día de la semana (day_of_week) y hora (hour). No es una fecha exacta.',
+  },
+  {
     term: 'Distrito más crítico',
     definition: 'Distrito con más registros tras aplicar los filtros.',
   },
@@ -33,8 +38,8 @@ const METRICS: { term: string; definition: ReactNode }[] = [
 
 const CAVEATS = [
   'Los datos provienen de denuncias registradas: existe subregistro y sesgo territorial. No equivalen a la criminalidad real de una zona.',
-  'El dataset no incluye la fecha del hecho. Este módulo analiza hora, día de la semana y frecuencia histórica; no series temporales (la tendencia mensual real vive en Resumen, con datos SIDPOL).',
-  'Se analizan como máximo 5 000 registros de la colección crime_incidents. Con datasets mayores, las cifras son una muestra.',
+  'El dataset no incluye la fecha exacta del hecho: solo el año (INEI), el día de la semana y la hora cuando están disponibles. Este módulo analiza esas variables y la frecuencia histórica; no series temporales (la tendencia mensual real vive en Resumen, con datos SIDPOL).',
+  'Se analiza el dataset publicado completo (`crime_incidents`: INEI 2021-2024 + puntos 2022, IDs deterministas y sin duplicados).',
   'Los distritos se canonicalizan en la ingesta (ámbito Lima/Callao); los registros incompletos aparecen como «Sin distrito» o «Sin tipo».',
   'Las exportaciones (CSV/PDF) respetan los filtros activos en el momento de la descarga.',
 ]

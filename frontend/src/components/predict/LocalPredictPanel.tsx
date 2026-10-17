@@ -250,9 +250,9 @@ export function LocalPredictPanel() {
 
                 {/* Método */}
                 <p className="text-[11px] text-content-muted">
-                  {result.method === 'firestore'
-                    ? `Basado en ${result.samples} registros de Firestore (tipo + distrito)`
-                    : 'Heurística (sin datos suficientes; un administrador puede importar registros para mayor precisión)'}
+                  {result.method === 'dataset'
+                    ? `Basado en ${result.samples} registros del dataset publicado (tipo + distrito)`
+                    : 'Heurística (sin datos suficientes; vuelve a publicar el dataset con el pipeline)'}
                 </p>
               </div>
             )}

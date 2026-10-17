@@ -10,7 +10,7 @@ import { Select } from '../components/ui/input'
 import { useAuth } from '../context/AuthContext'
 import { CRIME_TYPES, DISTRICTS } from '../data/sampleIncidents'
 import { getGoogleMapsApiKey } from '../firebase/client'
-import { useCrimeIncidentsForMap, MAX_DOCS, type MapPoint } from '../hooks/useCrimeIncidentsForMap'
+import { useCrimeIncidentsForMap, type MapPoint } from '../hooks/useCrimeIncidentsForMap'
 import { useCrimeStatsMonthly } from '../hooks/useCrimeStatsMonthly'
 import { aggregateByDistrict } from '../utils/districtStats'
 import { SOURCE_OPTIONS } from '../utils/incidentRows'
@@ -200,7 +200,7 @@ export function MapPage() {
               </div>
             </fieldset>
 
-            {/* Fuente de los datos (consulta filtrada en el servidor) */}
+            {/* Fuente de los datos (filtro en el navegador) */}
             <div>
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-content-muted">
                 Fuente de datos
@@ -218,8 +218,8 @@ export function MapPage() {
                 ))}
               </Select>
               <p className="mt-1 text-[10px] leading-snug text-content-muted">
-                El filtro se aplica en el servidor: acota la consulta para ver todos los puntos de
-                esa fuente (tope de 10 000 por carga).
+                El filtro se aplica en el navegador sobre el dataset publicado: no hay consultas
+                adicionales ni límite de 10 000.
               </p>
             </div>
 
@@ -373,11 +373,6 @@ export function MapPage() {
             <span className="font-mono text-xs text-content-secondary">
               {loading ? 'Cargando…' : `${points.length} / ${allPoints.length} puntos`}
             </span>
-            {!loading && allPoints.length >= MAX_DOCS && (
-              <span className="rounded-full bg-risk-medio-soft px-2 py-0.5 text-[11px] text-risk-medio ring-1 ring-risk-medio/30">
-                Límite de {MAX_DOCS.toLocaleString('es-PE')}: acota con Fuente/Año/Distrito
-              </span>
-            )}
           </div>
         </div>
 

@@ -1,7 +1,9 @@
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { GoogleMap, InfoWindow, useJsApiLoader } from '@react-google-maps/api'
+import { MarkerClusterer } from '@googlemaps/markerclusterer'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import type { MapPoint } from '../../hooks/useCrimeIncidentsForMap'
+import { formatEventTime } from '../../utils/eventTime'
 import { resolveRiskColors, riskDotColor } from './riskColors'
 
 const containerStyle = { width: '100%', height: '100%' }
@@ -28,7 +30,8 @@ type Props = {
 }
 
 export function RiskMapGoogle({ apiKey, points }: Props) {
-  const mapRef = useRef<google.maps.Map | null>(null)
+  const [map, setMap] = useState<google.maps.Map | null>(null)
+  const [selected, setSelected] = useState<MapPoint | null>(null)
   const { theme } = useTheme()
   // Los colores del canvas (Google Maps) no entienden variables CSS: se resuelven por tema.
   // `theme` dispara el recálculo al cambiar de tema (los valores vienen del CSS).
@@ -54,17 +57,45 @@ export function RiskMapGoogle({ apiKey, points }: Props) {
   }, [])
 
   const onLoad = useCallback(
-    (map: google.maps.Map) => {
-      mapRef.current = map
-      fitBounds(map, points)
+    (instance: google.maps.Map) => {
+      setMap(instance)
+      fitBounds(instance, points)
     },
     [fitBounds, points],
   )
 
   useEffect(() => {
-    const map = mapRef.current
     if (map && isLoaded) fitBounds(map, points)
-  }, [points, fitBounds, isLoaded])
+  }, [map, points, fitBounds, isLoaded])
+
+  // Agrupa los marcadores por zoom (clustering) para que miles de puntos no
+  // saturen el DOM de Google Maps. Los clics siguen abriendo el InfoWindow.
+  useEffect(() => {
+    if (!map || !isLoaded) return
+
+    const markers = points.map((point) => {
+      const marker = new google.maps.Marker({
+        position: { lat: point.lat, lng: point.lng },
+        title: [point.crimeType, point.district].filter(Boolean).join(' · '),
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: point.source === 'inei' ? 8 : 9,
+          fillColor: point.source === 'inei' ? colors.info : riskDotColor(point.riskLevel, colors),
+          fillOpacity: 0.95,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
+      })
+      marker.addListener('click', () => setSelected(point))
+      return marker
+    })
+
+    const clusterer = new MarkerClusterer({ map, markers })
+    return () => {
+      clusterer.setMap(null)
+      markers.forEach((marker) => marker.setMap(null))
+    }
+  }, [map, isLoaded, points, colors])
 
   if (loadError) {
     return (
@@ -86,6 +117,9 @@ export function RiskMapGoogle({ apiKey, points }: Props) {
     )
   }
 
+  const selectedPoint =
+    selected && points.some((p) => p.id === selected.id) ? selected : null
+
   return (
     <div className="h-full overflow-hidden rounded-xl border border-line-subtle">
       <GoogleMap
@@ -100,22 +134,42 @@ export function RiskMapGoogle({ apiKey, points }: Props) {
           styles: theme === 'dark' ? DARK_MAP_STYLE : undefined,
         }}
       >
-        {points.map((p) => (
-          <Marker
-            key={p.id}
-            position={{ lat: p.lat, lng: p.lng }}
-            title={[p.crimeType, p.district].filter(Boolean).join(' · ')}
-            icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: p.source === 'inei' ? 8 : 9,
-              fillColor:
-                p.source === 'inei' ? colors.info : riskDotColor(p.riskLevel, colors),
-              fillOpacity: 0.95,
-              strokeColor: '#ffffff',
-              strokeWeight: 2,
-            }}
-          />
-        ))}
+        {selectedPoint && (
+          <InfoWindow
+            position={{ lat: selectedPoint.lat, lng: selectedPoint.lng }}
+            onCloseClick={() => setSelected(null)}
+          >
+            <div className="text-xs">
+              {selectedPoint.source === 'inei' && (
+                <p className="mb-1 font-semibold text-info">INEI DataCrime / ArcGIS</p>
+              )}
+              {selectedPoint.crimeType && <p className="font-medium">{selectedPoint.crimeType}</p>}
+              {selectedPoint.district && (
+                <p className="text-content-secondary">{selectedPoint.district}</p>
+              )}
+              {(selectedPoint.year !== undefined ||
+                selectedPoint.hour !== undefined ||
+                selectedPoint.dayOfWeek) && (
+                <p className="text-content-secondary">
+                  Fecha y hora:{' '}
+                  {formatEventTime({
+                    year: selectedPoint.year,
+                    dayOfWeek: selectedPoint.dayOfWeek,
+                    hour: selectedPoint.hour,
+                  })}
+                </p>
+              )}
+              {selectedPoint.source === 'firestore' && selectedPoint.riskLevel && (
+                <p className="mt-1">
+                  Riesgo: <strong>{selectedPoint.riskLevel}</strong>
+                </p>
+              )}
+              <p className="font-mono text-[10px] text-content-muted">
+                {selectedPoint.lat.toFixed(5)}, {selectedPoint.lng.toFixed(5)}
+              </p>
+            </div>
+          </InfoWindow>
+        )}
       </GoogleMap>
     </div>
   )

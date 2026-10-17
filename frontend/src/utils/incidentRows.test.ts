@@ -26,6 +26,7 @@ describe('mapIncidentToPoint', () => {
       crime_type: 'hurto',
       risk_level: 'alto',
       hour: 20,
+      day_of_week: 'Viernes',
     })
     expect(point).toEqual({
       id: 'inc_1',
@@ -35,6 +36,7 @@ describe('mapIncidentToPoint', () => {
       district: 'MIRAFLORES',
       crimeType: 'hurto',
       hour: 20,
+      dayOfWeek: 'viernes',
       riskLevel: 'alto',
       year: undefined,
     })

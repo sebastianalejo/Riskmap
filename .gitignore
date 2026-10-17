@@ -76,5 +76,7 @@ models/trained/
 models/processed/
 data/processed/incidents_lima.csv
 data/raw/sidpol/
+data/raw/geo/
+data/raw/inei/
 functions/venv/
 .env.local

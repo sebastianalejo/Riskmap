@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-17T16:11:53.405531+00:00",
+  "dataset": "INEI DataCrime 2021-2024 + puntos 2022 (IDs deterministas, sin duplicados)",
+  "counts": {
+    "incidents": 9904,
+    "mapPoints": 9904,
+    "analysisRows": 9904,
+    "monthlyRows": 5141,
+    "sources": {
+      "inei": 5724,
+      "modalidad": 4180
+    }
+  },
+  "files": {
+    "map": {
+      "name": "files/incidents-map.c1baedbe5cc1.json",
+      "bytes": 1136112,
+      "sha256": "c1baedbe5cc1bee153fe2026beaad458090ce5f8d23bd0423d3fa98fae770807",
+      "count": 9904
+    },
+    "analysis": {
+      "name": "files/incidents-analysis.c87eebbfcc21.json",
+      "bytes": 894088,
+      "sha256": "c87eebbfcc210c7921644c909ea92b4815720a9d792ac548aac9786706272060",
+      "count": 9904
+    },
+    "monthly": {
+      "name": "files/crime-monthly.52832dc92991.json",
+      "bytes": 299777,
+      "sha256": "52832dc92991f938a33f029368f36948a7d215b3282e911b6d1dc5cd5c2d8851",
+      "count": 5141
+    },
+    "predict": {
+      "name": "files/predict-stats.5e1d5fe4093f.json",
+      "bytes": 29531,
+      "sha256": "5e1d5fe4093f14682b651f6fba00611d3c6b8df3d224b616125572ed0beb0043",
+      "count": 0
+    }
+  }
+}

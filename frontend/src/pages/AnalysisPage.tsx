@@ -19,6 +19,7 @@ import { DistrictTable } from '../components/analysis/DistrictTable'
 import { FrequencyRankingChart } from '../components/analysis/FrequencyRankingChart'
 import { HourPatternChart } from '../components/analysis/HourPatternChart'
 import { HowToReadPanel } from '../components/analysis/HowToReadPanel'
+import { IncidentTable } from '../components/analysis/IncidentTable'
 import { RiskCompositionChart } from '../components/analysis/RiskCompositionChart'
 import { WeekdayChart } from '../components/analysis/WeekdayChart'
 import { Button } from '../components/ui/button'
@@ -27,7 +28,7 @@ import { EmptyState } from '../components/ui/empty-state'
 import { Skeleton } from '../components/ui/skeleton'
 import { StatCard } from '../components/ui/stat-card'
 import { useAuth } from '../context/AuthContext'
-import { ANALYSIS_MAX_DOCS, useIncidentsForAnalysis } from '../hooks/useIncidentsForAnalysis'
+import { useIncidentsForAnalysis } from '../hooks/useIncidentsForAnalysis'
 import {
   SIN_DISTRITO,
   SIN_TIPO,
@@ -46,7 +47,7 @@ const primaryLink =
 
 export function AnalysisPage() {
   const { isAdmin } = useAuth()
-  const { incidents, loading, error, truncated } = useIncidentsForAnalysis()
+  const { incidents, loading, error } = useIncidentsForAnalysis()
   const [filters, setFilters] = useState<AnalysisFilters>(createDefaultFilters)
 
   const districts = useMemo(
@@ -72,7 +73,8 @@ export function AnalysisPage() {
             Análisis de datos
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-content-secondary">
-            Vista analista de <span className="font-mono text-xs">crime_incidents</span>:
+            Vista analista del dataset publicado (
+            <span className="font-mono text-xs">crime_incidents</span>):
             composición por distrito, patrones por hora y día de la semana, y frecuencia histórica.
             Solo campos reales del dataset, sin fechas simuladas.
           </p>
@@ -128,14 +130,6 @@ export function AnalysisPage() {
         </>
       ) : (
         <>
-          {truncated && (
-            <p className="flex items-center gap-2 text-xs text-content-muted" role="note">
-              <Info className="size-3.5 shrink-0 text-info" aria-hidden />
-              La colección tiene más de {formatInt(ANALYSIS_MAX_DOCS)} registros: se analizan los
-              primeros {formatInt(ANALYSIS_MAX_DOCS)}.
-            </p>
-          )}
-
           <AnalysisFiltersPanel
             filters={filters}
             districts={districts}
@@ -241,6 +235,9 @@ export function AnalysisPage() {
 
               {/* Tabla comparativa */}
               <DistrictTable incidents={filtered} />
+
+              {/* Detalle por evento (fecha y hora) */}
+              <IncidentTable incidents={filtered} />
             </>
           )}
 

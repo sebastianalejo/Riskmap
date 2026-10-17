@@ -151,22 +151,27 @@ python scripts/pipeline/upload_incidents.py --csv data/processed/incidents_lima.
   navegador**; los documentos v2 los escribe el pipeline con el Admin SDK y no pasan por reglas
   (la lectura sí está cubierta por `isSignedIn`).
 
-### Fuente y tope de 10 000 (mapa)
+### Publicación de datos (JSON) y consultas del mapa
 
-- El mapa filtra por **fuente en el servidor** (`where('source','==',…)`): `inei` (v2, con año) y
-  `modalidad` (puntos sin fecha). Los 5 179 documentos clásicos necesitan el **backfill** una vez:
+- El frontend **ya no consulta `crime_incidents`** para el mapa/análisis/resumen: el pipeline
+  publica `frontend/public/data/*.json` con IDs deterministas (sin duplicados) y el navegador
+  filtra en memoria. Esto elimina el tope de 10 000 por consulta y las 50 000 lecturas/día del
+  plan Spark.
+- Fuentes publicadas: `data/raw/inei/points_2022_legacy.csv` (fuente `modalidad`) y
+  `data/processed/incidents_lima.csv` (esquema v2, fuente `inei`). El exportador deduplica por
+  contenido; el detalle de filas leídas/válidas queda en `frontend/public/data/export_report.json`.
+- Regenerar y desplegar:
 
   ```bash
-  python scripts/pipeline/upload_incidents.py --backfill-source modalidad --verify
+  python scripts/pipeline/export_web_data.py
+  cd frontend && npm run build && cd ..
+  firebase deploy --only hosting
   ```
 
-- **Tope duro**: Firestore rechaza `limit()` mayor que **10 000** (error
-  `Limit value ... over the maximum value of 10000`). El mapa usa `MAX_DOCS = 10 000` (con prueba
-  de regresión en Vitest) y avisa «Límite de 10 000: acota con Fuente/Año/Distrito» cuando la
-  consulta se recorta. Con los filtros por fuente, cada conjunto queda por debajo del tope
-  (5 179 y ~5 977).
-- Coste: cada carga del mapa consume ~N lecturas (50 000/día en el plan gratuito) → conviene usar
-  los filtros y no abusar de recargas.
+  `python scripts/pipeline/export_web_data.py --check` valida el manifest y los archivos
+  (también se ejecuta en CI).
+- Firestore sigue siendo el **borrador** de importación (`/datos`): lo importado ahí no aparece
+  en la app hasta publicar el dataset.
 
 ### Estado de las cargas pendientes (cupo diario agotado)
 

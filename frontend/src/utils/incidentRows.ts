@@ -10,6 +10,7 @@ export type MapPoint = {
   source?: string
   year?: number
   hour?: number
+  dayOfWeek?: string
 }
 
 /** Fuentes conocidas de `crime_incidents` (para el filtro del mapa). */
@@ -61,6 +62,10 @@ export function mapIncidentToPoint(id: string, data: Record<string, unknown>): M
     district: typeof data.district === 'string' ? data.district : undefined,
     crimeType: typeof data.crime_type === 'string' ? data.crime_type : undefined,
     hour: typeof data.hour === 'number' ? data.hour : undefined,
+    dayOfWeek:
+      typeof data.day_of_week === 'string' && data.day_of_week.trim()
+        ? data.day_of_week.trim().toLowerCase()
+        : undefined,
     riskLevel: riskFromIncident(data),
     year: year === null ? undefined : year,
   }

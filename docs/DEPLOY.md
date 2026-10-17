@@ -152,12 +152,20 @@ Verificación: `GET .../prediction_health` debe devolver `status: "ok"` con `mod
 
 ## 7. Hosting
 
+Antes de compilar, publica el dataset estático (mapa, análisis, serie mensual y conteos de
+predicción local); es lo que consumen esas pantallas en lugar de Firestore:
+
 ```bash
+python scripts/pipeline/export_web_data.py
+python scripts/pipeline/export_web_data.py --check   # valida manifest y archivos
+
 cd frontend
 npm run build
 cd ..
 firebase deploy --only hosting
 ```
+
+> Si importaste datos desde `/datos` (Firestore), repite el export para que aparezcan en la app.
 
 ## 8. Verificación rápida (con un usuario autenticado)
 

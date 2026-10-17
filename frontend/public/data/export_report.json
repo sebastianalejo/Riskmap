@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-10-17T16:11:53.405531+00:00",
+  "schema_version": 1,
+  "inputs": {
+    "legacy": "data\\raw\\inei\\points_2022_legacy.csv",
+    "inei": "data\\processed\\incidents_lima.csv"
+  },
+  "sources": {
+    "legacy": {
+      "schema": "legacy",
+      "raw_rows": 4221,
+      "valid_rows": 4180,
+      "added_rows": 4180,
+      "duplicates_or_invalid": 41,
+      "errors": 0
+    },
+    "inei": {
+      "schema": "arcgis",
+      "raw_rows": 5977,
+      "valid_rows": 5724,
+      "added_rows": 5724,
+      "duplicates_or_invalid": 253,
+      "errors": 0
+    }
+  },
+  "monthly": {
+    "input": "data\\processed\\sidpol_monthly_lima.csv",
+    "raw_rows": 5141,
+    "valid_rows": 5141,
+    "errors": []
+  },
+  "valid": {
+    "incidents": 9904,
+    "monthly": 5141
+  },
+  "errors": [],
+  "outputs": {
+    "map": {
+      "name": "files/incidents-map.c1baedbe5cc1.json",
+      "bytes": 1136112,
+      "sha256": "c1baedbe5cc1bee153fe2026beaad458090ce5f8d23bd0423d3fa98fae770807",
+      "count": 9904
+    },
+    "analysis": {
+      "name": "files/incidents-analysis.c87eebbfcc21.json",
+      "bytes": 894088,
+      "sha256": "c87eebbfcc210c7921644c909ea92b4815720a9d792ac548aac9786706272060",
+      "count": 9904
+    },
+    "monthly": {
+      "name": "files/crime-monthly.52832dc92991.json",
+      "bytes": 299777,
+      "sha256": "52832dc92991f938a33f029368f36948a7d215b3282e911b6d1dc5cd5c2d8851",
+      "count": 5141
+    },
+    "predict": {
+      "name": "files/predict-stats.5e1d5fe4093f.json",
+      "bytes": 29531,
+      "sha256": "5e1d5fe4093f14682b651f6fba00611d3c6b8df3d224b616125572ed0beb0043",
+      "count": 0
+    }
+  }
+}

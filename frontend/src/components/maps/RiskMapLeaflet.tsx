@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
 import { useTheme } from '../../context/ThemeContext'
 import type { MapPoint } from '../../hooks/useCrimeIncidentsForMap'
+import { formatEventTime } from '../../utils/eventTime'
 import { resolveRiskColors, riskDotColor } from './riskColors'
 
 const LIMA_CENTER: [number, number] = [-12.0464, -77.0428]
@@ -46,6 +47,7 @@ export function RiskMapLeaflet({ points }: Props) {
         zoom={12}
         className="z-0 h-full min-h-[320px] w-full"
         scrollWheelZoom
+        preferCanvas
       >
         <FitIncidentBounds points={points} />
         <TileLayer url={tileUrl} attribution={attribution} />
@@ -68,8 +70,10 @@ export function RiskMapLeaflet({ points }: Props) {
                 )}
                 {p.crimeType && <p className="font-medium">{p.crimeType}</p>}
                 {p.district && <p className="text-content-secondary">{p.district}</p>}
-                {p.year !== undefined && Number.isFinite(p.year) && (
-                  <p className="text-content-secondary">Año: {p.year}</p>
+                {(p.year !== undefined || p.hour !== undefined || p.dayOfWeek) && (
+                  <p className="text-content-secondary">
+                    Fecha y hora: {formatEventTime({ year: p.year, dayOfWeek: p.dayOfWeek, hour: p.hour })}
+                  </p>
                 )}
                 {p.source === 'firestore' && p.riskLevel && (
                   <p className="mt-1">

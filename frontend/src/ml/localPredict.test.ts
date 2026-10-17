@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('../firebase/client', () => ({
-  getFirebaseApp: () => null,
+// Sin dataset publicado en las pruebas: `predictLocal` debe caer a la heurística.
+vi.mock('../data/published', () => ({
+  loadPredictStats: async () => {
+    throw new Error('sin dataset publicado en pruebas')
+  },
 }))
 
 import { predictLocal, type PredictInput } from './localPredict'
@@ -16,7 +19,7 @@ const base: PredictInput = {
   historical_frequency: 300,
 }
 
-describe('predictLocal (heurística, sin Firebase)', () => {
+describe('predictLocal (heurística, sin dataset publicado)', () => {
   it('delito violento de noche con frecuencia alta → riesgo alto', async () => {
     const result = await predictLocal(base)
 

@@ -75,7 +75,7 @@ export function HomePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-content-primary">Resumen</h1>
           <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-            Panel operativo conectado a Firestore (
+            Panel operativo sobre el dataset publicado (
             <span className="font-mono text-xs">crime_incidents</span>). Incidentes cargados,
             niveles de riesgo y tendencia de Lima Metropolitana.
           </p>

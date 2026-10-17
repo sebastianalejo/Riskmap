@@ -9,6 +9,7 @@ const { state, DATA } = vi.hoisted(() => {
       id: '1',
       district: 'MIRAFLORES',
       crimeType: 'hurto',
+      year: 2024,
       hour: 23,
       dayOfWeek: 'viernes',
       riskLevel: 'alto',
@@ -18,6 +19,7 @@ const { state, DATA } = vi.hoisted(() => {
       id: '2',
       district: 'MIRAFLORES',
       crimeType: 'robo agravado',
+      year: 2024,
       hour: 14,
       dayOfWeek: 'sábado',
       riskLevel: 'medio',
@@ -27,6 +29,7 @@ const { state, DATA } = vi.hoisted(() => {
       id: '3',
       district: 'COMAS',
       crimeType: 'hurto',
+      year: null,
       hour: 3,
       dayOfWeek: 'lunes',
       riskLevel: 'alto',
@@ -84,6 +87,9 @@ describe('AnalysisPage (estructura SSR)', () => {
     expect(html).toContain('Frecuencia histórica por distrito')
     // Tabla y detalle por distrito
     expect(html).toContain('Comparación entre distritos')
+    // Detalle por evento con fecha y hora
+    expect(html).toContain('Eventos con fecha y hora')
+    expect(html).toContain('2024 · Viernes · 23:00')
     expect(html).toContain('MIRAFLORES')
     expect(html).toContain('COMAS')
     // Exportaciones y metodología

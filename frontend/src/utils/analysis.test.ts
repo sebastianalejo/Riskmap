@@ -21,6 +21,7 @@ function incident(overrides: Partial<AnalysisIncident> = {}): AnalysisIncident {
     id: 'x',
     district: 'MIRAFLORES',
     crimeType: 'hurto',
+    year: null,
     hour: 12,
     dayOfWeek: 'lunes',
     riskLevel: 'bajo',

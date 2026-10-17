@@ -93,6 +93,7 @@ app sigue funcionando para login, mapa, importación de datos y estimación loca
 Tesis-main/
 ├── frontend/                      # Aplicación React + Vite
 │   ├── public/
+│   │   ├── data/                          # Dataset publicado por el pipeline (JSON + manifest)
 │   │   ├── firebase-config.example.json   # Plantilla de configuración web
 │   │   └── firebase-config.json           # Config real local (ignorada por git desde la Fase 1;
 │   │                                      #  antes estaba versionada → conviene rotar la apiKey)
@@ -101,10 +102,11 @@ Tesis-main/
 │   │   ├── components/            # AppShell, ProtectedRoute, mapa, PDF, gráficos
 │   │   ├── config/api.ts          # Mapeo ruta → nombre de Cloud Function
 │   │   ├── context/AuthContext.tsx# Estado de sesión (Firebase Auth)
+│   │   ├── data/published.ts      # Carga y conversión del JSON publicado (sin Firestore)
 │   │   ├── data/sampleIncidents.ts# 38 distritos, 10 tipos de delito, generador
 │   │   ├── firebase/client.ts     # Inicialización del SDK (env o JSON)
-│   │   ├── hooks/                 # Lectura de incidentes (mapa y análisis) y serie SIDPOL
-│   │   ├── ml/localPredict.ts     # Predicción local (Firestore + heurística)
+│   │   ├── hooks/                 # Lectura del mapa/análisis y serie SIDPOL (JSON publicado)
+│   │   ├── ml/localPredict.ts     # Predicción local (conteos publicados + heurística)
 │   │   ├── pages/                 # Login, Home, Análisis, Predict, Map, Data, Users
 │   │   └── utils/                 # Errores de Auth, serie mensual, IDs estables, análisis
 │   ├── .env.example
@@ -115,7 +117,8 @@ Tesis-main/
 │   ├── crime_ml/validation.py     # Validación de payloads de la API (Fase 1)
 │   ├── tests/                     # Pruebas pytest de validation.py
 │   └── requirements.txt
-├── scripts/                       # Generación / descarga de datasets
+├── scripts/                       # Generación / descarga / publicación de datasets
+│   └── pipeline/export_web_data.py# Exporta frontend/public/data (JSON para Hosting)
 ├── tests/firestore/               # Pruebas de firestore.rules con el emulador
 ├── data/raw/                      # Datos crudos (INEI DataCrime, top10)
 ├── crime_incidents_lima_real_1000.csv   # Dataset real de ejemplo
@@ -207,6 +210,47 @@ npm run build     # Compila a frontend/dist (tsc + vite build)
 npm run preview   # Sirve el build de producción localmente
 npm run lint      # ESLint
 ```
+
+### 5.6 Modo emuladores locales (sin Cloud Functions desplegadas)
+
+Si el proyecto no tiene Functions desplegadas (plan Spark) o quieres probar sin tocar los datos
+reales, la app puede funcionar completa (login, Firestore y Functions) contra los emuladores
+locales. Solo aplica en desarrollo: el build de producción **nunca** usa emuladores.
+
+```bash
+# Terminal 1 — emuladores (UI en http://127.0.0.1:4000)
+firebase emulators:start --only auth,firestore,functions --project riskmap-tesis
+```
+
+> Usa el mismo `projectId` que tu `firebase-config.json` / `VITE_FIREBASE_PROJECT_ID`: el modo
+> emulador deriva la URL de Functions como `http://127.0.0.1:5001/<projectId>/us-central1`.
+> Todo ocurre en tu máquina.
+
+En `frontend/.env.local` (no versionado):
+
+```bash
+VITE_USE_FIREBASE_EMULATORS=true
+```
+
+Arranca `npm run dev` (terminal 2). Para volver al proyecto real, comenta esa línea.
+
+**Primer administrador del emulador** (los emuladores empiezan sin datos): crea la cuenta desde la
+app o desde la UI del emulador (http://127.0.0.1:4000 → Authentication) y asigna el claim con el
+script apuntando al emulador:
+
+```bash
+# PowerShell
+$env:FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
+python scripts/set-admin-claim.py tu-correo@ejemplo.com
+Remove-Item Env:\FIREBASE_AUTH_EMULATOR_HOST
+
+# Bash
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 python scripts/set-admin-claim.py tu-correo@ejemplo.com
+```
+
+El script toma el project ID de `.firebaserc` (o de `GOOGLE_CLOUD_PROJECT`). Cierra sesión y
+vuelve a entrar en la web. Los datos del emulador son efímeros, salvo que uses
+`firebase emulators:start ... --import=.emulator-data --export-on-exit`.
 
 ---
 
@@ -339,6 +383,22 @@ Reglas: [`firestore.rules`](firestore.rules) · Índices: [`firestore.indexes.js
 El modelo ML espera las variables `FEATURES` y el objetivo `TARGET` definidos en
 [`functions/crime_ml/pipeline.py`](functions/crime_ml/pipeline.py).
 
+> **Datos de solo lectura publicados como JSON.** El Resumen, el Mapa, el Análisis y la
+> estimación local ya **no leen Firestore**: descargan `frontend/public/data/*.json` servidos
+> por Hosting (una sola transferencia, cacheada). Así el plan Spark no consume sus
+> 50 000 lecturas diarias. Firestore queda para Auth y para la importación desde `/datos`
+> (borrador). Para regenerar y publicar:
+>
+> ```bash
+> python scripts/pipeline/export_web_data.py        # o: cd frontend && npm run data:build
+> cd frontend && npm run build && cd ..
+> firebase deploy --only hosting
+> ```
+>
+> `python scripts/pipeline/export_web_data.py --check` (o `npm run data:check`) valida el
+> manifest y los archivos. El formato lo consume [`frontend/src/data/published.ts`](frontend/src/data/published.ts)
+> y el reporte de conteos queda en `frontend/public/data/export_report.json`.
+
 ### 9.1 Permisos de administrador (claim `admin`)
 
 Desde la Fase 1, las reglas exigen el claim `admin` para escribir o borrar en `crime_incidents`.
@@ -432,10 +492,11 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 | Capa | Herramienta | Comando | Estado |
 |---|---|---|---|
-| API + ML + pipeline (Python) | pytest · **71 pruebas** | `python -m pytest functions/tests tests/pipeline -q` | ✅ |
+| API + ML + pipeline (Python) | pytest · **82 pruebas** | `python -m pytest functions/tests tests/pipeline -q` | ✅ |
 | API end-to-end | emuladores auth+firestore+functions · **17 comprobaciones** | `firebase emulators:exec --only auth,firestore,functions --project demo-riskmap "python tests/functions/e2e_functions.py"` | ✅ |
 | Reglas de Firestore | emulador · **16 pruebas** | `firebase emulators:exec --only firestore --project demo-riskmap "node tests/firestore/firestore.rules.test.mjs"` | ✅ |
-| Frontend | Vitest · **35 pruebas** | `cd frontend && npm test` | ✅ |
+| Frontend | Vitest · **62 pruebas** | `cd frontend && npm test` | ✅ |
+| Dataset publicado (JSON) | exportador + manifest | `python scripts/pipeline/export_web_data.py --check` | ✅ |
 | Lint y build | ESLint 9 + tsc + Vite | `cd frontend && npm run lint && npm run build` | ✅ |
 | Integración continua | GitHub Actions | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en cada push/PR | configurado |
 

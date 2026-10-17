@@ -39,6 +39,8 @@ jobs:
           cache-dependency-path: functions/requirements-dev.txt
       - run: pip install -r functions/requirements-dev.txt
       - run: python -m pytest functions/tests tests/pipeline -q
+      - name: Validar dataset publicado (JSON de Hosting)
+        run: python scripts/pipeline/export_web_data.py --check
 
   firestore-rules:
     name: Reglas Firestore (emulador)

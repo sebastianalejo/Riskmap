@@ -1,22 +1,26 @@
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 import { getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { connectAuthEmulator, getAuth } from 'firebase/auth'
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 
 let _app: FirebaseApp | null = null
 let _runtimeOptions: FirebaseOptions | null = null
 let _runtimeFunctionsOrigin: string | undefined
 let _mapsApiKey: string | undefined
 let _runtimeAppCheckSiteKey: string | undefined
+let _runtimeUseEmulators = false
 let _appCheckReady = false
+let _emulatorsConnected = false
 
 /**
- * Misma forma que el objeto `firebaseConfig` de la consola, más opcional `functionsOrigin`, `mapsApiKey` y `appCheckSiteKey`.
- * Si falta `functionsOrigin`, se usa `https://us-central1-<projectId>.cloudfunctions.net`.
+ * Misma forma que el objeto `firebaseConfig` de la consola, más opcionales `functionsOrigin`,
+ * `mapsApiKey`, `appCheckSiteKey` y `useEmulators` (este último solo aplica en `npm run dev`).
  */
 type RuntimeConfigFile = FirebaseOptions & {
   functionsOrigin?: string
   mapsApiKey?: string
   appCheckSiteKey?: string
+  useEmulators?: boolean
 }
 
 function optionsFromEnv(): FirebaseOptions | null {
@@ -53,6 +57,9 @@ export async function loadFirebaseRuntimeConfig(): Promise<void> {
   }
   if (raw && typeof raw.appCheckSiteKey === 'string' && raw.appCheckSiteKey.trim()) {
     _runtimeAppCheckSiteKey = raw.appCheckSiteKey.trim()
+  }
+  if (raw && raw.useEmulators === true) {
+    _runtimeUseEmulators = true
   }
 
   if (optionsFromEnv()) return
@@ -105,13 +112,50 @@ export function initAppCheck(): void {
   }
 }
 
-/** Origen de Cloud Functions (env, JSON o derivado del projectId). */
+/**
+ * Los emuladores locales solo se usan en desarrollo (`npm run dev`), nunca en el build de
+ * producción: se activan con `VITE_USE_FIREBASE_EMULATORS=true` (env) o `useEmulators: true` en
+ * `firebase-config.json`.
+ */
+export function emulatorsEnabled(): boolean {
+  if (!import.meta.env.DEV) return false
+  return import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true' || _runtimeUseEmulators
+}
+
+const EMULATOR_HOST = '127.0.0.1'
+const EMULATOR_AUTH_PORT = 9099
+const EMULATOR_FIRESTORE_PORT = 8080
+const EMULATOR_FUNCTIONS_PORT = 5001
+
+/** Conecta Auth y Firestore a los emuladores la primera vez que se inicializa la app. */
+function connectEmulators(app: FirebaseApp): void {
+  if (_emulatorsConnected || !emulatorsEnabled()) return
+  try {
+    connectAuthEmulator(getAuth(app), `http://${EMULATOR_HOST}:${EMULATOR_AUTH_PORT}`, {
+      disableWarnings: true,
+    })
+  } catch {
+    /* auth ya conectado */
+  }
+  try {
+    connectFirestoreEmulator(getFirestore(app), EMULATOR_HOST, EMULATOR_FIRESTORE_PORT)
+  } catch {
+    /* firestore ya conectado */
+  }
+  _emulatorsConnected = true
+}
+
+/** Origen de Cloud Functions (emuladores en desarrollo, o env/JSON/projectId). */
 export function getFunctionsOrigin(): string | undefined {
+  const pid = effectiveOptions()?.projectId?.trim()
+  if (emulatorsEnabled()) {
+    // URL del emulador de Functions: http://127.0.0.1:5001/<projectId>/us-central1
+    return pid ? `http://${EMULATOR_HOST}:${EMULATOR_FUNCTIONS_PORT}/${pid}/us-central1` : undefined
+  }
   const fromEnv = import.meta.env.VITE_FIREBASE_FUNCTIONS_ORIGIN?.replace(/\/$/, '').trim()
   if (fromEnv) return fromEnv
   const fromJson = _runtimeFunctionsOrigin?.replace(/\/$/, '').trim()
   if (fromJson) return fromJson
-  const pid = effectiveOptions()?.projectId?.trim()
   if (pid) return `https://us-central1-${pid}.cloudfunctions.net`
   return undefined
 }
@@ -121,6 +165,7 @@ export function getFirebaseApp(): FirebaseApp | null {
   if (!opts?.apiKey) return null
   if (_app) return _app
   _app = getApps().length ? getApps()[0]! : initializeApp(opts)
+  connectEmulators(_app)
   return _app
 }
 

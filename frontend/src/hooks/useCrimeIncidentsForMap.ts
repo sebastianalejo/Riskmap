@@ -1,59 +1,46 @@
-import { collection, getDocs, getFirestore, limit, query, where, type QueryConstraint } from 'firebase/firestore'
-import { useEffect, useState } from 'react'
-import { getFirebaseApp } from '../firebase/client'
-import { mapIncidentToPoint, type MapPoint } from '../utils/incidentRows'
+import { useEffect, useMemo, useState } from 'react'
+import { loadMapPoints } from '../data/published'
+import type { MapPoint } from '../utils/incidentRows'
 
 export type { MapPoint } from '../utils/incidentRows'
 
-/**
- * Tope de documentos por consulta. Firestore rechaza `limit()` mayor que 10 000
- * (`Limit value in the structured query is over the maximum value of 10000`),
- * así que este valor no debe superarse nunca.
- */
-export const MAX_DOCS = 10_000
+/** Filtra los puntos publicados por fuente (`source` vacío = todas). */
+export function filterPointsBySource(points: MapPoint[], source?: string): MapPoint[] {
+  if (!source) return points
+  return points.filter((point) => point.source === source)
+}
 
+/**
+ * Puntos del mapa desde el dataset publicado (`/data`). Se descarga una sola vez
+ * y el filtro por fuente se aplica en el navegador: no hay lecturas de Firestore.
+ */
 export function useCrimeIncidentsForMap(source?: string) {
-  const [points, setPoints] = useState<MapPoint[]>([])
-  const [loading, setLoading] = useState(() => getFirebaseApp() !== null)
-  const [error, setError] = useState<string | null>(() =>
-    getFirebaseApp() ? null : 'Firebase no inicializado',
-  )
+  const [allPoints, setAllPoints] = useState<MapPoint[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const app = getFirebaseApp()
-    if (!app) return
-
     let cancelled = false
-    ;(async () => {
-      try {
-        const db = getFirestore(app)
-        // Filtrado por fuente en el servidor (igualdad: índice automático) para que
-        // cada consulta quede por debajo del tope cuando hay filtro.
-        const constraints: QueryConstraint[] = source
-          ? [where('source', '==', source), limit(MAX_DOCS)]
-          : [limit(MAX_DOCS)]
-        const snap = await getDocs(query(collection(db, 'crime_incidents'), ...constraints))
+    loadMapPoints()
+      .then((points) => {
         if (cancelled) return
-        const list: MapPoint[] = []
-        snap.forEach((doc) => {
-          const point = mapIncidentToPoint(doc.id, doc.data())
-          if (point) list.push(point)
-        })
-        setPoints(list)
+        setAllPoints(points)
         setError(null)
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'No se pudieron cargar los puntos')
-        }
-      } finally {
+      })
+      .catch((e) => {
+        if (cancelled) return
+        setError(e instanceof Error ? e.message : 'No se pudieron cargar los puntos')
+      })
+      .finally(() => {
         if (!cancelled) setLoading(false)
-      }
-    })()
+      })
 
     return () => {
       cancelled = true
     }
-  }, [source])
+  }, [])
+
+  const points = useMemo(() => filterPointsBySource(allPoints, source), [allPoints, source])
 
   return { points, loading, error }
 }
