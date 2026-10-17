@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  # Permite lanzar CI + deploy a mano desde la pestaña Actions.
+  workflow_dispatch:
 
 jobs:
   frontend:
@@ -58,3 +60,44 @@ jobs:
       - run: npm ci
         working-directory: tests/firestore
       - run: firebase emulators:exec --only firestore --project demo-riskmap "node tests/firestore/firestore.rules.test.mjs"
+
+  # CD: publica el frontend en Firebase Hosting solo si los tres checks pasan
+  # y el evento es un push (o lanzamiento manual) sobre `main`.
+  deploy:
+    name: Deploy (Firebase Hosting)
+    needs: [frontend, python, firestore-rules]
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: deploy-hosting-main
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # `firebase-config.json` está en .gitignore: se reconstruye desde el secreto
+      # para que el build de producción incluya la configuración web.
+      - name: Escribir config web de Firebase
+        run: printf '%s' "$FIREBASE_WEB_CONFIG" > public/firebase-config.json
+        env:
+          FIREBASE_WEB_CONFIG: ${{ secrets.FIREBASE_WEB_CONFIG }}
+      - run: npm ci
+      - run: npm run build
+      # Si el secreto de la cuenta de servicio aún no existe, el paso se omite
+      # (run verde) en vez de fallar; añade el secreto y relanza con workflow_dispatch.
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RISKMAP_TESIS != '' }}
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RISKMAP_TESIS }}
+          projectId: riskmap-tesis
+          channelId: live
