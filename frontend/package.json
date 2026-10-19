@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
+    "config:check": "node scripts/validate-firebase-config.mjs",
     "data:build": "python ../scripts/pipeline/export_web_data.py",
     "data:check": "python ../scripts/pipeline/export_web_data.py --check"
   },

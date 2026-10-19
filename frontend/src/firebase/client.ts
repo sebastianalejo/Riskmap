@@ -48,7 +48,21 @@ export async function loadFirebaseRuntimeConfig(): Promise<void> {
   let raw: Partial<RuntimeConfigFile> | null = null
   try {
     const r = await fetch('/firebase-config.json', { cache: 'no-store' })
-    if (r.ok) raw = await r.json()
+    if (r.ok) {
+      const text = await r.text()
+      if (text.trim()) {
+        try {
+          raw = JSON.parse(text) as Partial<RuntimeConfigFile>
+        } catch {
+          // El hosting reescribe rutas inexistentes a index.html, así que también
+          // se llega aquí si el archivo falta. El aviso debe ser accionable.
+          console.error(
+            '[firebase] /firebase-config.json no contiene JSON válido. ' +
+              'Revisa public/firebase-config.json o el secreto FIREBASE_WEB_CONFIG del despliegue.',
+          )
+        }
+      }
+    }
   } catch {
     /* sin archivo */
   }

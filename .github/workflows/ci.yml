@@ -94,6 +94,10 @@ jobs:
         run: printf '%s' "$FIREBASE_WEB_CONFIG" > public/firebase-config.json
         env:
           FIREBASE_WEB_CONFIG: ${{ secrets.FIREBASE_WEB_CONFIG }}
+      # Falla antes del build si el secreto no contiene JSON válido con los campos
+      # mínimos. Así un secreto mal cargado no vuelve a publicar una app sin configurar.
+      - name: Validar config web de Firebase
+        run: node scripts/validate-firebase-config.mjs
       - run: npm ci
       - run: npm run build
       # `secrets` no es válido dentro de `if`: comprobamos su presencia por env +
